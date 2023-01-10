@@ -1,2 +1,2 @@
-include ':app', ':audience'
+include ':audience'
 rootProject.name='audience-sdk'
