@@ -217,6 +217,10 @@ dependencies {
         changing = true
     }
 
+    //noinspection GradleDependency,GradleCompatible
+    implementation 'androidx.appcompat:appcompat:1.0.0'
+    //noinspection GradleDependency
+
     testImplementation "androidx.test.ext:junit:${rootProject.ext.junitVersion}"
     testImplementation "org.mockito:mockito-core:${rootProject.ext.mockitoCoreVersion}"
     testImplementation "org.mockito:mockito-inline:${rootProject.ext.mockitoCoreVersion}"
