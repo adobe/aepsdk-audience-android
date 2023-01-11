@@ -25,15 +25,18 @@ import com.adobe.marketing.mobile.audience.AudienceExtension;
 import com.adobe.marketing.mobile.services.Log;
 import com.adobe.marketing.mobile.util.StringUtils;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 public final class Audience {
 	private static final String EXTENSION_VERSION = "2.0.0";
 	private static final String LOG_TAG = "Audience";
-	private static final String CLASS_NAME = Audience.class.getSimpleName();
+	private static final String CLASS_NAME = "Audience";
 
 	// config defaults
 	private static final int CALLBACK_TIMEOUT_MILLIS = 5000;
 
-	public static final Class<? extends Extension> EXTENSION = AudienceExtension.class;
+	public static final @NonNull Class<? extends Extension> EXTENSION = AudienceExtension.class;
 
 	private Audience() { }
 
@@ -42,7 +45,7 @@ public final class Audience {
 	 *
 	 * @return A {@link String} representing the Audience extension version
 	 */
-	public static String extensionVersion() {
+	public static @NonNull String extensionVersion() {
 		return EXTENSION_VERSION;
 	}
 
@@ -73,7 +76,7 @@ public final class Audience {
 	 *
 	 * @see #signalWithData(Map, AdobeCallback)
 	 */
-	public static void getVisitorProfile(final AdobeCallback<Map<String, String>> adobeCallback) {
+	public static void getVisitorProfile(@NonNull final AdobeCallback<Map<String, String>> adobeCallback) {
 		identityRequest(EventDataKeys.AAM.VISITOR_PROFILE, adobeCallback);
 	}
 
@@ -102,8 +105,8 @@ public final class Audience {
 	 *        when an {@link AdobeCallbackWithError} is provided, an {@link AdobeError} can be returned in the
 	 *        eventuality of an unexpected error or if the default timeout (5000ms) is met before the callback is returned with AAM profile.
 	 */
-	public static void signalWithData(final Map<String, String> data,
-									  final AdobeCallback<Map<String, String>> adobeCallback) {
+	public static void signalWithData(@NonNull final Map<String, String> data,
+									  @Nullable final AdobeCallback<Map<String, String>> adobeCallback) {
 		final Map<String, Object> eventData = new HashMap<String, Object>() {{ put(EventDataKeys.AAM.VISITOR_TRAITS, data); }};
 		final Event event = new Event.Builder("AudienceRequestContent", EventType.AUDIENCEMANAGER, EventSource.REQUEST_CONTENT)
 				.setEventData(eventData).build();
@@ -141,7 +144,7 @@ public final class Audience {
 	 *
 	 * @see EventDataKeys.AAM
 	 */
-	private static void identityRequest(final String keyName, final AdobeCallback<Map<String, String>> callback) {
+	private static void identityRequest(@NonNull final String keyName, @NonNull final AdobeCallback<Map<String, String>> callback) {
 		// both parameters are required
 		if (StringUtils.isNullOrEmpty(keyName) || callback == null) {
 			Log.debug(LOG_TAG, CLASS_NAME, "Failed to send Identity request due to missing parameters in the call; keyName is empty or Callback is null");
@@ -193,10 +196,10 @@ public final class Audience {
 			static final String VISITOR_TRAITS = "aamtraits";
 
 			// response keys
-			static final String VISITOR_PROFILE = "aamprofile";
 			static final String AUDIENCE_IDS = "audienceids";
-			static final String DPID            = "dpid";
-			static final String DPUUID          = "dpuuid";
+			static final String DPID = "dpid";
+			static final String DPUUID = "dpuuid";
+			static final String VISITOR_PROFILE = "aamprofile";
 
 			private AAM() {}
 		}
