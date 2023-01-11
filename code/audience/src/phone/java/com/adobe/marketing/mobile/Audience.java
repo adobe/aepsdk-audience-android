@@ -31,7 +31,7 @@ import androidx.annotation.Nullable;
 public final class Audience {
 	private static final String EXTENSION_VERSION = "2.0.0";
 	private static final String LOG_TAG = "Audience";
-	private static final String CLASS_NAME = Audience.class.getSimpleName();
+	private static final String CLASS_NAME = "Audience";
 
 	// config defaults
 	private static final int CALLBACK_TIMEOUT_MILLIS = 5000;

@@ -22,7 +22,9 @@ import static com.adobe.marketing.mobile.audience.AudienceConstants.LOG_PREFIX;
 import androidx.annotation.VisibleForTesting;
 
 import com.adobe.marketing.mobile.MobilePrivacyStatus;
-import com.adobe.marketing.mobile.services.*;
+import com.adobe.marketing.mobile.services.Log;
+import com.adobe.marketing.mobile.services.NamedCollection;
+import com.adobe.marketing.mobile.services.ServiceProvider;
 import com.adobe.marketing.mobile.util.StringUtils;
 
 import java.util.HashMap;
@@ -32,15 +34,15 @@ import java.util.Map;
  * AudienceState class is responsible for the following:
  * <ol>
  *     <li>Keeping the current state of all Audience-related variables.</li>
- *     <li>Persisting variables via {@link DataStoring}.</li>
+ *     <li>Persisting variables via {@link NamedCollection}.</li>
  *     <li>Providing getters and setters for all maintained variables.</li>
  * </ol>
  */
 class AudienceState {
-	private static final String CLASS_NAME = AudienceState.class.getSimpleName();
+	private static final String CLASS_NAME = "AudienceState";
 
 	// configuration settings
-	final private DataStoring localStorageService;
+	final private NamedCollection localStorage;
 	private String uuid = null;
 	private String dpid = null;
 	private String dpuuid = null;
@@ -51,8 +53,8 @@ class AudienceState {
 	 * Constructor.
 	 */
 	@VisibleForTesting
-	AudienceState(final DataStoring storageService) {
-		this.localStorageService = storageService;
+	AudienceState(final NamedCollection namedCollection) {
+		this.localStorage = namedCollection;
 	}
 
 	// ========================================================
@@ -100,15 +102,14 @@ class AudienceState {
 		}
 
 		// update uuid in data store
-		final NamedCollection audienceDataStore = getDataStore();
-		if (audienceDataStore != null) {
+		if (localStorage != null) {
 			if (StringUtils.isNullOrEmpty(uuid)) {
-				audienceDataStore.remove(AudienceConstants.AUDIENCE_MANAGER_SHARED_PREFS_USER_ID_KEY);
+				localStorage.remove(AudienceConstants.AUDIENCE_MANAGER_SHARED_PREFS_USER_ID_KEY);
 			} else if (privacyStatus != MobilePrivacyStatus.OPT_OUT) {
-				audienceDataStore.setString(AudienceConstants.AUDIENCE_MANAGER_SHARED_PREFS_USER_ID_KEY, uuid);
+				localStorage.setString(AudienceConstants.AUDIENCE_MANAGER_SHARED_PREFS_USER_ID_KEY, uuid);
 			}
 		} else {
-			Log.warning(LOG_PREFIX, CLASS_NAME, "Unable to update uuid in persistence - shared preferences collection could not be retrieved.");
+			Log.warning(LOG_PREFIX, CLASS_NAME, "Unable to update uuid in persistence - persistence collection could not be retrieved.");
 		}
 	}
 
@@ -127,16 +128,15 @@ class AudienceState {
 			this.visitorProfile = visitorProfile;
 		}
 
-		// update the visitor profile in our data store
-		final NamedCollection audienceDataStore = getDataStore();
-		if (audienceDataStore != null) {
+		// update the visitor profile in the data store
+		if (localStorage != null) {
 			if (visitorProfile == null || visitorProfile.isEmpty()) {
-				audienceDataStore.remove(AudienceConstants.AUDIENCE_MANAGER_SHARED_PREFS_PROFILE_KEY);
+				localStorage.remove(AudienceConstants.AUDIENCE_MANAGER_SHARED_PREFS_PROFILE_KEY);
 			} else if (privacyStatus != MobilePrivacyStatus.OPT_OUT) {
-				audienceDataStore.setMap(AudienceConstants.AUDIENCE_MANAGER_SHARED_PREFS_PROFILE_KEY, visitorProfile);
+				localStorage.setMap(AudienceConstants.AUDIENCE_MANAGER_SHARED_PREFS_PROFILE_KEY, visitorProfile);
 			}
 		} else {
-			Log.warning(LOG_PREFIX, CLASS_NAME, "Unable to update visitor profile in persistence - shared preferences collection could not be retrieved.");
+			Log.warning(LOG_PREFIX, CLASS_NAME, "Unable to update visitor profile in persistence - persistence collection could not be retrieved.");
 		}
 	}
 
@@ -176,12 +176,10 @@ class AudienceState {
 	String getUuid() {
 		if (StringUtils.isNullOrEmpty(uuid)) {
 			// load uuid from data store if we have one
-			final NamedCollection audienceDataStore = getDataStore();
-
-			if (audienceDataStore != null) {
-				uuid = audienceDataStore.getString(AudienceConstants.AUDIENCE_MANAGER_SHARED_PREFS_USER_ID_KEY, uuid);
+			if (localStorage != null) {
+				uuid = localStorage.getString(AudienceConstants.AUDIENCE_MANAGER_SHARED_PREFS_USER_ID_KEY, uuid);
 			} else {
-				Log.warning(LOG_PREFIX, CLASS_NAME, "Unable to retrieve uuid from persistence - shared preferences could not be accessed.");
+				Log.warning(LOG_PREFIX, CLASS_NAME, "Unable to retrieve uuid from persistence - persistence could not be accessed.");
 			}
 		}
 
@@ -198,12 +196,10 @@ class AudienceState {
 	Map<String, String> getVisitorProfile() {
 		if (visitorProfile == null || visitorProfile.isEmpty()) {
 			// load visitor profile from data store if we have one
-			final NamedCollection audienceDataStore = getDataStore();
-
-			if (audienceDataStore == null) {
-				Log.warning(LOG_PREFIX, CLASS_NAME, "Unable to retrieve visitor profile from persistence - shared preferences could not be accessed.");
-			} else if (audienceDataStore.contains(AudienceConstants.AUDIENCE_MANAGER_SHARED_PREFS_PROFILE_KEY)) {
-				visitorProfile = audienceDataStore.getMap(AudienceConstants.AUDIENCE_MANAGER_SHARED_PREFS_PROFILE_KEY);
+			if (localStorage == null) {
+				Log.warning(LOG_PREFIX, CLASS_NAME, "Unable to retrieve visitor profile from persistence - persistence could not be accessed.");
+			} else if (localStorage.contains(AudienceConstants.AUDIENCE_MANAGER_SHARED_PREFS_PROFILE_KEY)) {
+				visitorProfile = localStorage.getMap(AudienceConstants.AUDIENCE_MANAGER_SHARED_PREFS_PROFILE_KEY);
 			}
 		}
 
@@ -274,21 +270,5 @@ class AudienceState {
 		setDpid(null);
 		setDpuuid(null);
 		setVisitorProfile(null);
-	}
-
-	// ========================================================
-	// private methods
-	// ========================================================
-	/**
-	 * Returns {@link NamedCollection } from this {@link #localStorageService}.
-	 *
-	 * @return {@code NamedCollection} for the {@code Audience} module or null if {@code localStorageService} is unavailable.
-	 */
-	private NamedCollection getDataStore() {
-		if (localStorageService == null) {
-			return null;
-		}
-
-		return localStorageService.getNamedCollection(AudienceConstants.AUDIENCE_MANAGER_SHARED_PREFS_DATA_STORE);
 	}
 }

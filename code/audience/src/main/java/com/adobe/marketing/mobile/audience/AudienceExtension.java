@@ -26,6 +26,7 @@ import androidx.annotation.VisibleForTesting;
 
 import com.adobe.marketing.mobile.*;
 import com.adobe.marketing.mobile.services.Log;
+import com.adobe.marketing.mobile.services.ServiceProvider;
 import com.adobe.marketing.mobile.util.StringUtils;
 
 import java.util.ArrayList;
@@ -65,7 +66,7 @@ import java.net.HttpURLConnection;
  */
 public final class AudienceExtension extends Extension {
 	private static final String LOG_TAG = "Audience";
-	private static final String CLASS_NAME = AudienceExtension.class.getSimpleName();
+	private static final String CLASS_NAME = "AudienceState";
 
 	private AudienceState internalState = null;
 	private AudienceHitsDatabase internalDatabase = null;
@@ -127,7 +128,6 @@ public final class AudienceExtension extends Extension {
 		getApi().registerEventListener(EventType.AUDIENCEMANAGER, EventSource.REQUEST_RESET, this::handleAudienceRequestReset);
 		getApi().registerEventListener(EventType.CONFIGURATION, EventSource.RESPONSE_CONTENT, this::processConfiguration);
 		getApi().registerEventListener(EventType.GENERIC_IDENTITY, EventSource.REQUEST_RESET, this::handleEvent);
-		getApi().registerEventListener(EventType.HUB, EventSource.SHARED_STATE, this::processSharedStateChange);
 		getApi().registerEventListener(EventType.LIFECYCLE, EventSource.RESPONSE_CONTENT, this::handleLifecycleResponseContent);
 
 		Log.trace(LOG_TAG, CLASS_NAME, "Dispatching Audience shared state");
@@ -139,12 +139,16 @@ public final class AudienceExtension extends Extension {
 
 	@Override
 	public boolean readyForEvent(@NonNull final Event event) {
-		if (!hasValidSharedState(AudienceConstants.EventDataKeys.Configuration.MODULE_NAME, event)) {
-			Log.trace(LOG_TAG, CLASS_NAME, "Event processing is paused - waiting for valid Configuration");
-			return false;
+		final SharedStateStatus configSharedState = getSharedStateForExtension(AudienceConstants.EventDataKeys.Configuration.MODULE_NAME, event);
+		final SharedStateStatus identitySharedState = getSharedStateForExtension(AudienceConstants.EventDataKeys.Identity.MODULE_NAME, event);
+
+		// signal events require both config and identity shared states
+		if ((event.getType().equals(EventType.AUDIENCEMANAGER) && event.getSource().equals(EventSource.REQUEST_CONTENT)) ||
+				(event.getType().equals(EventType.LIFECYCLE) && event.getSource().equals(EventSource.RESPONSE_CONTENT))) {
+			return configSharedState != SharedStateStatus.PENDING && identitySharedState != SharedStateStatus.PENDING;
 		}
 
-		return true;
+		return configSharedState == SharedStateStatus.SET;
 	}
 
 	//endregion
@@ -177,7 +181,7 @@ public final class AudienceExtension extends Extension {
 	}
 
 	// analytics response content
-	void handleAnalyticsResponse(final Event event) {
+	void handleAnalyticsResponse(@NonNull final Event event) {
 		EventData eventData = event.getData();
 
 		if (eventData == null
@@ -197,12 +201,12 @@ public final class AudienceExtension extends Extension {
 	}
 
 	// audience response content
-	void handleAudienceRequestContent(final Event event) {
+	void handleAudienceRequestContent(@NonNull final Event event) {
 		queueAamEvent(event);
 	}
 
 	// audience request identity
-	void handleAudienceRequestIdentity(final Event event) {
+	void handleAudienceRequestIdentity(@NonNull final Event event) {
 		final EventData eventData = event.getData();
 
 		// if the event data for the request contains dpid and dpuuid, call the setter
@@ -220,12 +224,12 @@ public final class AudienceExtension extends Extension {
 	}
 
 	// audience request reset
-	void handleAudienceRequestReset(final Event event) {
+	void handleAudienceRequestReset(@NonNull final Event event) {
 		reset(event);
 	}
 
 	// process shared state change
-	void processSharedStateChange(final Event event) {
+	void processSharedStateChange(@NonNull final Event event) {
 		final EventData eventData = event.getData();
 
 		if (eventData == null || eventData.isEmpty()) {
@@ -242,7 +246,7 @@ public final class AudienceExtension extends Extension {
 		}
 	}
 
-	void handleLifecycleResponseContent(final Event event) {
+	void handleLifecycleResponseContent(@NonNull final Event event) {
 		final EventData eventData = event.getData();
 
 		// if we don't have valid data in our event, don't queue it
@@ -307,13 +311,10 @@ public final class AudienceExtension extends Extension {
 	 * @return {@code AudienceHitsDatabase} object of AudienceState
 	 */
 	private AudienceState getState() {
-		PlatformServices  services = getPlatformServices();
-
-		if (internalState == null && services != null) {
-			internalState = new AudienceState(services.getLocalStorageService());
+		if (internalState == null) {
+			internalState = new AudienceState(ServiceProvider.getInstance().getDataStoreService().getNamedCollection(AudienceConstants.AUDIENCE_MANAGER_SHARED_PREFS_DATA_STORE));
 		}
 
-		Log.trace(LOG_TAG, "getState - Get internal Audience State");
 		return internalState;
 	}
 
@@ -1291,5 +1292,14 @@ public final class AudienceExtension extends Extension {
 		}
 		final Map<String, Object> configuration = result.getValue();
 		return configuration != null && !configuration.isEmpty();
+	}
+
+	private SharedStateStatus getSharedStateForExtension(final String extensionName, final Event event) {
+		final SharedStateResult result = getApi().getSharedState(extensionName, event, false, SharedStateResolution.LAST_SET);
+		if (result == null) {
+			return SharedStateStatus.NONE;
+		}
+
+		return result.getStatus();
 	}
 }
