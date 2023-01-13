@@ -1,5 +1,6 @@
 plugins {
     id 'com.android.library'
+    id 'com.diffplug.spotless'
     id 'jacoco'
     id 'maven-publish'
     id 'signing'
@@ -23,13 +24,8 @@ android {
     defaultConfig {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        // flag for e2e tests
-        buildConfigField "java.util.concurrent.atomic.AtomicBoolean", "IS_E2E_TEST", "new java.util.concurrent.atomic.AtomicBoolean(false)"
-        // flag for functional tests
-        buildConfigField "java.util.concurrent.atomic.AtomicBoolean", "IS_FUNCTIONAL_TEST", "new java.util.concurrent.atomic.AtomicBoolean(false)"
 
         testInstrumentationRunner rootProject.ext.testInstrumentationRunner
-        consumerProguardFiles 'consumer-rules.pro'
     }
 
     flavorDimensions "target"
@@ -42,10 +38,12 @@ android {
     buildTypes {
         debug {
             testCoverageEnabled true
+            debuggable true
         }
+
         release {
             minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
 
@@ -57,34 +55,33 @@ android {
         sourceCompatibility rootProject.ext.sourceCompatibility
         targetCompatibility rootProject.ext.targetCompatibility
     }
+}
 
-    libraryVariants.all { variant ->
-        variant.getRuntimeConfiguration().exclude group: 'com.adobe.marketing.mobile', module: 'core'
-    }
+// Code formatting settings
+preBuild.dependsOn spotlessApply
 
-    sourceSets {
-        final def resourceDir = 'src/test/resources'
-
-        test {
-            resources.srcDirs += [resourceDir]
-        }
-
-        androidTest {
-            resources.srcDirs += [resourceDir]
-        }
+spotless {
+    java {
+        toggleOffOn("format:off", "format:on")
+        target "src/*/java/**/*.java"
+        removeUnusedImports()
+        prettier(['prettier': '2.7.1', 'prettier-plugin-java': '1.6.2'])
+                .config(['parser': 'java', 'tabWidth': 4, 'useTabs': true, 'printWidth': 120])
+        endWithNewline()
+        licenseHeaderFile "../../config/formatter/adobe.header.txt"
     }
 }
 
-android.libraryVariants.all { variant ->
+// Javadocs settings
+afterEvaluate {
     tasks.withType(Javadoc) {
-        ext.androidJar = "${android.sdkDirectory}/platforms/${android.compileSdkVersion}/android.jar"
-
-        doFirst {
-            classpath = files(variant.javaCompile.classpath.files) + files(ext.androidJar)
-        }
-        exclude "**/BuildConfig.java"
-        exclude "**/R.java"
+        source = android.sourceSets.main.java.srcDirs
+        classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+        classpath += files(android.libraryVariants.collect { variant ->
+            variant.javaCompileProvider.get().classpath.files
+        })
         options {
+            source = "8"
             links "https://developer.android.com/reference"
         }
     }
@@ -105,6 +102,7 @@ task javadocPublish(type: Jar) {
     archiveClassifier.set('javadoc')
 }
 
+// Release and publishing settings
 def isReleaseBuild() {
     return hasProperty('release')
 }
@@ -178,25 +176,30 @@ signing {
     sign publishing.publications
 }
 
+// Jacoco reports
+
 task platformUnitTestJacocoReport(type: JacocoReport, dependsOn: "testPhoneDebugUnitTest") {
-    def excludeRegex = ['**/ADB*.class', '**/BuildConfig.class']
-    def debugTree = fileTree(dir: "${project.buildDir}/intermediates/javac/phoneDebug/classes/com/adobe/marketing/mobile/messaging", excludes: excludeRegex)
+    def excludeRegex = ['**/BuildConfig.class']
+    def debugTree = fileTree(dir: "${project.buildDir}/intermediates/javac/phoneDebug/classes/com/adobe/marketing/mobile", excludes: excludeRegex)
 
     additionalClassDirs.setFrom files([debugTree])
     additionalSourceDirs.setFrom files(android.sourceSets.main.java.sourceFiles)
     sourceDirectories.setFrom files(android.sourceSets.phone.java.sourceFiles)
-    executionData "jacoco.exec"
+    executionData fileTree(dir: "$buildDir", includes: [
+            "outputs/unit_test_code_coverage/phoneDebugUnitTest/testPhoneDebugUnitTest.exec"
+    ])
 
+    // Report dir: build/reports/jacoco/platformUnitTestJacocoReport/
     reports {
-        xml.enabled true
-        csv.enabled false
-        html.enabled true
+        xml.required = true
+        csv.required = false
+        html.required = true
     }
 }
 
 task platformFunctionalTestJacocoReport(type: JacocoReport, dependsOn: "createPhoneDebugCoverageReport") {
-    def excludeRegex = ['**/ADB*.class']
-    def debugTree = fileTree(dir: "${project.buildDir}/intermediates/javac/phoneDebug/classes/com/adobe/marketing/mobile/messaging", excludes: excludeRegex)
+    def excludeRegex = ['**/BuildConfig.class']
+    def debugTree = fileTree(dir: "${project.buildDir}/intermediates/javac/phoneDebug/classes/com/adobe/marketing/mobile", excludes: excludeRegex)
 
     additionalClassDirs.setFrom files([debugTree])
     additionalSourceDirs.setFrom files(android.sourceSets.main.java.sourceFiles)
@@ -205,27 +208,32 @@ task platformFunctionalTestJacocoReport(type: JacocoReport, dependsOn: "createPh
             "outputs/code_coverage/phoneDebugAndroidTest/connected/*coverage.ec"
     ])
 
+    // Report dir: build/reports/coverage/androidTest/phone/debug/connected/
     reports {
-        xml.enabled true
-        csv.enabled false
-        html.enabled true
+        xml.required = true
+        csv.required = false
+        html.required = true
     }
 }
 
-dependencies {
-    implementation("com.adobe.marketing.mobile:core:${mavenCoreVersion}-SNAPSHOT") {
-        changing = true
+tasks.withType(Test) {
+    testLogging {
+        showStandardStreams = true
     }
+}
 
-    //noinspection GradleDependency,GradleCompatible
+configurations.all {
+    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+}
+
+dependencies {
+    implementation "com.adobe.marketing.mobile:core:${mavenCoreVersion}-SNAPSHOT"
     implementation 'androidx.annotation:annotation:1.5.0'
-    //noinspection GradleDependency
 
     testImplementation "androidx.test.ext:junit:${rootProject.ext.junitVersion}"
     testImplementation "org.mockito:mockito-core:${rootProject.ext.mockitoCoreVersion}"
     testImplementation "org.mockito:mockito-inline:${rootProject.ext.mockitoCoreVersion}"
     testImplementation 'org.json:json:20180813'
-
 
     androidTestImplementation "androidx.test.ext:junit:${rootProject.ext.junitVersion}"
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
@@ -233,12 +241,5 @@ dependencies {
     // the root issue appears to be a dependency with Objenesis in Mockito-Core
     // where Objenesis 2 requires minimum Android API 26
     androidTestImplementation 'org.powermock:powermock-module-junit4:1+'
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.9.9'
-
-}
-
-tasks.withType(Test) {
-    testLogging {
-        showStandardStreams = true
-    }
+    androidTestImplementation 'com.fasterxml.jackson.core:jackson-databind:2.9.9'
 }
