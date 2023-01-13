@@ -18,6 +18,7 @@
 package com.adobe.marketing.mobile.audience;
 
 import com.adobe.marketing.mobile.MobilePrivacyStatus;
+import com.adobe.marketing.mobile.Event;
 import java.io.File;
 import java.net.HttpURLConnection;
 import java.util.Map;

@@ -617,17 +617,17 @@ public final class AudienceExtension extends Extension {
 	 * @return {@link String} value of Data Provider and Identity variables
 	 */
 	private String getDataProviderUrlVariables(final Event event) {
-		final SharedStateResult visitorResult = getSharedStateForExtension(AudienceConstants.EventDataKeys.Identity.MODULE_NAME, event);
-		final Map<String, Object> visitorIdState = visitorResult != null ? visitorResult.getValue() : null;
+		final SharedStateResult identityResult = getSharedStateForExtension(AudienceConstants.EventDataKeys.Identity.MODULE_NAME, event);
+		final Map<String, Object> identitySharedState = identityResult != null ? identityResult.getValue() : null;
 		final SharedStateResult configResult = getSharedStateForExtension(AudienceConstants.EventDataKeys.Configuration.MODULE_NAME, event);
-		final Map<String, Object> configData = configResult != null ? configResult.getValue() : null;
+		final Map<String, Object> configurationSharedState = configResult != null ? configResult.getValue() : null;
 
 		final StringBuilder urlVars = new StringBuilder(1024);
 
-		if (visitorIdState != null) {
-			final String marketingCloudId = DataReader.optString(visitorIdState, AudienceConstants.EventDataKeys.Identity.VISITOR_ID_MID, null);
-			final String blob = DataReader.optString(visitorIdState, AudienceConstants.EventDataKeys.Identity.VISITOR_ID_BLOB, null);
-			final String locationHint = DataReader.optString(visitorIdState, AudienceConstants.EventDataKeys.Identity.VISITOR_ID_LOCATION_HINT,
+		if (identitySharedState != null) {
+			final String marketingCloudId = DataReader.optString(identitySharedState, AudienceConstants.EventDataKeys.Identity.VISITOR_ID_MID, null);
+			final String blob = DataReader.optString(identitySharedState, AudienceConstants.EventDataKeys.Identity.VISITOR_ID_BLOB, null);
+			final String locationHint = DataReader.optString(identitySharedState, AudienceConstants.EventDataKeys.Identity.VISITOR_ID_LOCATION_HINT,
 					null);
 
 			// append mid
@@ -646,7 +646,7 @@ public final class AudienceExtension extends Extension {
 			}
 
 			// append customer Ids
-			List<VisitorID> customerIds = DataReader.optTypedList(VisitorID.class, visitorIdState, AudienceConstants.EventDataKeys.Identity.VISITOR_IDS_LIST, null);
+			List<VisitorID> customerIds = DataReader.optTypedList(VisitorID.class, identitySharedState, AudienceConstants.EventDataKeys.Identity.VISITOR_IDS_LIST, null);
 
 			String customerIdString = generateCustomerVisitorIdString(customerIds);
 
@@ -655,8 +655,8 @@ public final class AudienceExtension extends Extension {
 			}
 		}
 
-		if (configData != null) {
-			final String marketingCloudOrgId = DataReader.optString(configData, AudienceConstants.EventDataKeys.Configuration.EXPERIENCE_CLOUD_ORGID, null);
+		if (configurationSharedState != null) {
+			final String marketingCloudOrgId = DataReader.optString(configurationSharedState, AudienceConstants.EventDataKeys.Configuration.EXPERIENCE_CLOUD_ORGID, null);
 
 			// append orgId
 			if (!StringUtils.isNullOrEmpty(marketingCloudOrgId)) {
