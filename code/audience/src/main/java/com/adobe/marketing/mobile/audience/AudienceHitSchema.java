@@ -22,19 +22,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.adobe.marketing.mobile.DatabaseService.QueryResult;
-import com.adobe.marketing.mobile.DatabaseService.Database.ColumnDataType;
-import com.adobe.marketing.mobile.DatabaseService.Database.ColumnConstraint;
 
 
 /**
  * AudienceHitSchema class takes on the following role:
  * <ol>
- *     <li>Provides the format of the database table to be used by the {@link AudienceHitsDatabase} class.</li>
- *     <li>Provides methods for interfacing between a {@link DatabaseService.QueryResult} and an {@link AudienceHit}.</li>
+ *     <li>Provides the format of the database table to be used by the {@link AudienceHitProcessor} class.</li>
+ *     <li>Provides methods for interfacing between a {@code DatabaseService.QueryResult} and an {@link AudienceDataEntity}.</li>
  * </ol>
  */
-class AudienceHitSchema extends AbstractHitSchema<AudienceHit> {
+class AudienceHitSchema {
 
 	private static final String LOG_TAG = "AudienceHitSchema";
 
@@ -56,97 +53,7 @@ class AudienceHitSchema extends AbstractHitSchema<AudienceHit> {
 	/**
 	 * Constructor.
 	 */
-	AudienceHitSchema() {
-		this.columnConstraints = new ArrayList<List<ColumnConstraint>>();
-		List<ColumnConstraint> idColumnConstraints = new ArrayList<DatabaseService.Database.ColumnConstraint>();
-		idColumnConstraints.add(ColumnConstraint.PRIMARY_KEY);
-		idColumnConstraints.add(ColumnConstraint.AUTOINCREMENT);
-		columnConstraints.add(idColumnConstraints);                  // id
-		columnConstraints.add(new ArrayList<ColumnConstraint>());    // url
-		columnConstraints.add(new ArrayList<ColumnConstraint>());    // timeout
-		columnConstraints.add(new ArrayList<ColumnConstraint>());    // timestamp
-		columnConstraints.add(new ArrayList<ColumnConstraint>());    // pair id
-		columnConstraints.add(new ArrayList<ColumnConstraint>());    // event number
-
-		this.columnNames = new String[] {
-			COL_REQUESTS_ID,
-			COL_REQUESTS_URL,
-			COL_REQUESTS_TIMEOUT,
-			COL_REQUESTS_TIMESTAMP,
-			COL_REQUESTS_PAIR_ID,
-			COL_REQUESTS_EVENT_NUMBER
-		};
-
-		this.columnDataTypes = new ColumnDataType[] {
-			ColumnDataType.INTEGER,    // id
-			ColumnDataType.TEXT,       // url
-			ColumnDataType.INTEGER,    // timeout
-			ColumnDataType.INTEGER,    // timestamp
-			ColumnDataType.TEXT,       // pair id
-			ColumnDataType.INTEGER     // event number
-		};
-	}
-
-	/**
-	 * Accepts a {@code QueryResult} object provided by the {@code DatabaseService} and
-	 * converts it to an {@code AudienceHit} instance.
-	 * <p>
-	 * If {@link DatabaseService} provided {@code queryResult} is null or an exception occurs while processing the {@code queryResult},
-	 * null will be returned.
-	 *
-	 * @param queryResult the query result provided by the {@code DatabaseService}
-	 * @return {@link AudienceHit} representation of the provided {@code queryResult}
-	 */
-	@Override
-	AudienceHit generateHit(final QueryResult queryResult) {
-		if (queryResult == null) {
-			Log.debug(LOG_TAG, "Unable to generate AudienceHit, query result was null");
-			return null;
-		}
-
-		try {
-			AudienceHit audienceHit = new AudienceHit();
-			audienceHit.identifier = queryResult.getString(COL_INDEX_REQUESTS_ID);
-			audienceHit.url = queryResult.getString(COL_INDEX_REQUESTS_URL);
-			audienceHit.timestamp = queryResult.getInt(COL_INDEX_REQUESTS_TIMESTAMP);
-			audienceHit.timeout = queryResult.getInt(COL_INDEX_REQUESTS_TIMEOUT);
-			audienceHit.pairId = queryResult.getString(COL_INDEX_REQUESTS_PAIR_ID);
-			audienceHit.eventNumber = queryResult.getInt(COL_INDEX_REQUESTS_EVENT_NUMBER);
-			return audienceHit;
-		} catch (Exception e) {
-			Log.error(LOG_TAG, "Unable to read from database. Query failed with error %s", e);
-			return null;
-		} finally {
-			queryResult.close();
-		}
-	}
-
-	/**
-	 * Accepts an {@code AudienceHit} instance and converts it to a {@code Map<String, Object>}.
-	 * <p>
-	 * The main usage for this method is to provide the parameters needed for the {@link DatabaseService} to
-	 * insert a new record into the table.
-	 * <p>
-	 * This method intentionally leaves out the {@link #COL_REQUESTS_ID}, because that column is
-	 * {@link ColumnConstraint#AUTOINCREMENT} in the database.
-	 *
-	 * @param hit the {@link AudienceHit} instance
-	 * @return {@code Map<String, Object>} representation of the provided {@code hit}
-	 */
-	@Override
-	Map<String, Object> generateDataMap(final AudienceHit hit) {
-		if (hit == null) {
-			return new HashMap<String, Object>();
-		}
-
-		Map<String, Object> dataMap = new HashMap<String, Object>();
-		dataMap.put(COL_REQUESTS_URL, hit.url);
-		dataMap.put(COL_REQUESTS_TIMESTAMP, hit.timestamp);
-		dataMap.put(COL_REQUESTS_TIMEOUT, hit.timeout);
-		dataMap.put(COL_REQUESTS_PAIR_ID, hit.pairId);
-		dataMap.put(COL_REQUESTS_EVENT_NUMBER, hit.eventNumber);
-		return dataMap;
-	}
+	AudienceHitSchema() {}
 
 	/**
 	 * Generates a {@code Map<String, Object>} which is used in a database query to reset {@link #COL_REQUESTS_PAIR_ID} and

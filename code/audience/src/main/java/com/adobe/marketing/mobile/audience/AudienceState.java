@@ -22,6 +22,7 @@ import static com.adobe.marketing.mobile.audience.AudienceConstants.LOG_PREFIX;
 import androidx.annotation.VisibleForTesting;
 
 import com.adobe.marketing.mobile.MobilePrivacyStatus;
+import com.adobe.marketing.mobile.services.HitQueuing;
 import com.adobe.marketing.mobile.services.Log;
 import com.adobe.marketing.mobile.services.NamedCollection;
 import com.adobe.marketing.mobile.services.ServiceProvider;
@@ -41,13 +42,17 @@ import java.util.Map;
 class AudienceState {
 	private static final String CLASS_NAME = "AudienceState";
 
+	private final HitQueuing hitQueue;
+	private final NamedCollection localStorage;
+
 	// configuration settings
-	final private NamedCollection localStorage;
 	private String uuid = null;
 	private String dpid = null;
 	private String dpuuid = null;
 	private Map<String, String> visitorProfile = null;
 	private MobilePrivacyStatus privacyStatus = AudienceConstants.DEFAULT_PRIVACY_STATUS;
+
+	//TODO: implement handlePrivacyStatusChange which calls the default core hitQueue.handlePrivacyChange(status:privacyStatus)
 
 	/**
 	 * Constructor.
@@ -57,7 +62,8 @@ class AudienceState {
 	}
 
 	@VisibleForTesting
-	AudienceState(final NamedCollection namedCollection) {
+	AudienceState(final HitQueuing hitQueue, final NamedCollection namedCollection) {
+		this.hitQueue = hitQueue;
 		this.localStorage = namedCollection;
 	}
 

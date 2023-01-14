@@ -24,7 +24,6 @@ import static com.adobe.marketing.mobile.audience.AudienceConstants.LOG_PREFIX;
 import android.app.usage.UsageEvents;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
 import com.adobe.marketing.mobile.*;
@@ -81,14 +80,14 @@ public final class AudienceExtension extends Extension {
 	private static final String CLASS_NAME = "AudienceExtension";
 
 	private final AudienceState internalState;
-	private final AudienceHitsDatabase internalDatabase;
+	private final AudienceHitProcessor internalDatabase;
 
 	AudienceExtension(final ExtensionApi extensionApi) {
 		this(extensionApi, null, null);
 	}
 
 	@VisibleForTesting
-	AudienceExtension(final ExtensionApi extensionApi, final AudienceState audienceState, final AudienceHitsDatabase audienceHitsDatabase) {
+	AudienceExtension(final ExtensionApi extensionApi, final AudienceState audienceState, final AudienceHitProcessor audienceHitsDatabase) {
 		super(extensionApi);
 
 		this.internalState = audienceState != null ? audienceState : new AudienceState();
