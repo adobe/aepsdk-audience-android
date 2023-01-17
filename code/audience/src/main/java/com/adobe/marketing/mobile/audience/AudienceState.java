@@ -52,6 +52,10 @@ class AudienceState {
 	/**
 	 * Constructor.
 	 */
+	AudienceState() {
+		this(ServiceProvider.getInstance().getDataStoreService().getNamedCollection(AudienceConstants.AUDIENCE_MANAGER_SHARED_PREFS_DATA_STORE));
+	}
+
 	@VisibleForTesting
 	AudienceState(final NamedCollection namedCollection) {
 		this.localStorage = namedCollection;
@@ -146,6 +150,9 @@ class AudienceState {
 	 */
 	void setMobilePrivacyStatus(final MobilePrivacyStatus privacyStatus) {
 		this.privacyStatus = privacyStatus;
+		if (privacyStatus == MobilePrivacyStatus.OPT_OUT) {
+			clearIdentifiers();
+		}
 	}
 
 	/**
