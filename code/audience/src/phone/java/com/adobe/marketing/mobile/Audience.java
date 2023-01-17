@@ -1,35 +1,28 @@
-/* ***********************************************************************
- * ADOBE CONFIDENTIAL
- * ___________________
- *
- * Copyright 2018 Adobe Systems Incorporated
- * All Rights Reserved.
- *
- * NOTICE:  All information contained herein is, and remains
- * the property of Adobe Systems Incorporated and its suppliers,
- * if any.  The intellectual and technical concepts contained
- * herein are proprietary to Adobe Systems Incorporated and its
- * suppliers and are protected by trade secret or copyright law.
- * Dissemination of this information or reproduction of this material
- * is strictly forbidden unless prior written permission is obtained
- * from Adobe Systems Incorporated.
- **************************************************************************/
+/*
+  Copyright 2018 Adobe. All rights reserved.
+  This file is licensed to you under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License. You may obtain a copy
+  of the License at http://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing, software distributed under
+  the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTATIONS
+  OF ANY KIND, either express or implied. See the License for the specific language
+  governing permissions and limitations under the License.
+*/
 
 package com.adobe.marketing.mobile;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.adobe.marketing.mobile.audience.AudienceExtension;
 import com.adobe.marketing.mobile.services.Log;
 import com.adobe.marketing.mobile.util.DataReader;
 import com.adobe.marketing.mobile.util.StringUtils;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public final class Audience {
+
 	private static final String EXTENSION_VERSION = "2.0.0";
 	private static final String LOG_TAG = "Audience";
 	private static final String CLASS_NAME = "Audience";
@@ -37,9 +30,10 @@ public final class Audience {
 	// config defaults
 	private static final int CALLBACK_TIMEOUT_MILLIS = 5000;
 
-	public static final @NonNull Class<? extends Extension> EXTENSION = AudienceExtension.class;
+	@NonNull
+	public static final Class<? extends Extension> EXTENSION = AudienceExtension.class;
 
-	private Audience() { }
+	private Audience() {}
 
 	/**
 	 * Returns the current version of the Audience extension.
@@ -59,11 +53,19 @@ public final class Audience {
 	 */
 	@Deprecated
 	public static void registerExtension() {
-		MobileCore.registerExtension(AudienceExtension.class, extensionError -> {
-			if (extensionError != null) {
-				Log.error(LOG_TAG, CLASS_NAME, "There was an error registering the Audience Extension: %s", extensionError.getErrorName());
+		MobileCore.registerExtension(
+			AudienceExtension.class,
+			extensionError -> {
+				if (extensionError != null) {
+					Log.error(
+						LOG_TAG,
+						CLASS_NAME,
+						"There was an error registering the Audience Extension: %s",
+						extensionError.getErrorName()
+					);
+				}
 			}
-		});
+		);
 	}
 
 	/**
@@ -87,7 +89,12 @@ public final class Audience {
 	 * Audience reset also clears the current in-memory DPID and DPUUID variables.
 	 */
 	public static void reset() {
-		final Event event = new Event.Builder("AudienceRequestReset", EventType.AUDIENCEMANAGER, EventSource.REQUEST_RESET).build();
+		final Event event = new Event.Builder(
+			"AudienceRequestReset",
+			EventType.AUDIENCEMANAGER,
+			EventSource.REQUEST_RESET
+		)
+			.build();
 		MobileCore.dispatchEvent(event);
 		Log.debug(LOG_TAG, CLASS_NAME, "Request to reset Audience Manager values for this device has been dispatched.");
 	}
@@ -106,33 +113,57 @@ public final class Audience {
 	 *        when an {@link AdobeCallbackWithError} is provided, an {@link AdobeError} can be returned in the
 	 *        eventuality of an unexpected error or if the default timeout (5000ms) is met before the callback is returned with AAM profile.
 	 */
-	public static void signalWithData(@NonNull final Map<String, String> data,
-									  @Nullable final AdobeCallback<Map<String, String>> adobeCallback) {
-		final Map<String, Object> eventData = new HashMap<String, Object>() {{ put(EventDataKeys.AAM.VISITOR_TRAITS, data); }};
-		final Event event = new Event.Builder("AudienceRequestContent", EventType.AUDIENCEMANAGER, EventSource.REQUEST_CONTENT)
-				.setEventData(eventData).build();
+	public static void signalWithData(
+		@NonNull final Map<String, String> data,
+		@Nullable final AdobeCallback<Map<String, String>> adobeCallback
+	) {
+		final Map<String, Object> eventData = new HashMap<String, Object>() {
+			{
+				put(EventDataKeys.AAM.VISITOR_TRAITS, data);
+			}
+		};
+		final Event event = new Event.Builder(
+			"AudienceRequestContent",
+			EventType.AUDIENCEMANAGER,
+			EventSource.REQUEST_CONTENT
+		)
+			.setEventData(eventData)
+			.build();
 
-		Log.debug(LOG_TAG, CLASS_NAME,"Audience Profile data was submitted: %s", data.toString());
-		MobileCore.dispatchEventWithResponseCallback(event, CALLBACK_TIMEOUT_MILLIS, new AdobeCallbackWithError<Event>() {
-			@Override
-			public void fail(AdobeError adobeError) {
-				Log.warning(LOG_TAG, CLASS_NAME, "An error occurred dispatching Audience Profile data: %s", adobeError.getErrorName());
-				if (adobeCallback != null) {
-					adobeCallback.call(null);
+		Log.debug(LOG_TAG, CLASS_NAME, "Audience Profile data was submitted: %s", data.toString());
+		MobileCore.dispatchEventWithResponseCallback(
+			event,
+			CALLBACK_TIMEOUT_MILLIS,
+			new AdobeCallbackWithError<Event>() {
+				@Override
+				public void fail(AdobeError adobeError) {
+					Log.warning(
+						LOG_TAG,
+						CLASS_NAME,
+						"An error occurred dispatching Audience Profile data: %s",
+						adobeError.getErrorName()
+					);
+					if (adobeCallback != null) {
+						adobeCallback.call(null);
+					}
+				}
+
+				@Override
+				public void call(Event event) {
+					if (adobeCallback == null) {
+						return;
+					}
+
+					final Map<String, Object> eventData = event.getEventData();
+					final Map<String, String> profileMap = DataReader.optStringMap(
+						eventData,
+						EventDataKeys.AAM.VISITOR_PROFILE,
+						null
+					);
+					adobeCallback.call(profileMap);
 				}
 			}
-
-			@Override
-			public void call(Event event) {
-				if (adobeCallback == null) {
-					return;
-				}
-
-				final Map<String, Object> eventData = event.getEventData();
-				final Map<String, String> profileMap = DataReader.optStringMap(eventData, EventDataKeys.AAM.VISITOR_PROFILE, null);
-				adobeCallback.call(profileMap);
-			}
-		});
+		);
 	}
 
 	/**
@@ -145,52 +176,80 @@ public final class Audience {
 	 *
 	 * @see EventDataKeys.AAM
 	 */
-	private static void identityRequest(@NonNull final String keyName, @NonNull final AdobeCallback<Map<String, String>> callback) {
+	private static void identityRequest(
+		@NonNull final String keyName,
+		@NonNull final AdobeCallback<Map<String, String>> callback
+	) {
 		// both parameters are required
 		if (StringUtils.isNullOrEmpty(keyName)) {
-			Log.debug(LOG_TAG, CLASS_NAME, "Failed to send Identity request due to missing parameters in the call; keyName is empty or Callback is null");
+			Log.debug(
+				LOG_TAG,
+				CLASS_NAME,
+				"Failed to send Identity request due to missing parameters in the call; keyName is empty or Callback is null"
+			);
 			return;
 		}
 
-		final Event event = new Event.Builder("AudienceRequestIdentity", EventType.AUDIENCEMANAGER, EventSource.REQUEST_IDENTITY)
-				.build();
+		final Event event = new Event.Builder(
+			"AudienceRequestIdentity",
+			EventType.AUDIENCEMANAGER,
+			EventSource.REQUEST_IDENTITY
+		)
+			.build();
 
 		Log.debug(LOG_TAG, CLASS_NAME, "Dispatching Identity request event: %s", event);
-		MobileCore.dispatchEventWithResponseCallback(event, CALLBACK_TIMEOUT_MILLIS, new AdobeCallbackWithError<Event>() {
-			@Override
-			public void fail(AdobeError adobeError) {
-				Log.warning(LOG_TAG, CLASS_NAME, "An error occurred dispatching Audience Profile data: %s", adobeError.getErrorName());
-				callback.call(null);
-			}
-
-			@Override
-			public void call(Event event) {
-				final Map<String, Object> eventData = event.getEventData();
-
-				if (keyName.equals(EventDataKeys.AAM.AUDIENCE_IDS)) {
-					final String dpid = (String) eventData.get(EventDataKeys.AAM.DPID);
-					final String dpuuid = (String) eventData.get(EventDataKeys.AAM.DPUUID);
-					final Map<String, String> value = new HashMap<String, String>() {{
-						put(EventDataKeys.AAM.DPID, dpid);
-						put(EventDataKeys.AAM.DPUUID, dpuuid);
-					}};
-					callback.call(value);
-
-				} else if (keyName.equals(EventDataKeys.AAM.VISITOR_PROFILE)) {
-					final Map<String, String> value = DataReader.optStringMap (eventData, keyName, new HashMap<>());
-					callback.call(value);
-				} else {
-					Log.debug(LOG_TAG, CLASS_NAME, "Attempting to process the response from an identityRequest but the requested value (%s) was not found.", keyName);
+		MobileCore.dispatchEventWithResponseCallback(
+			event,
+			CALLBACK_TIMEOUT_MILLIS,
+			new AdobeCallbackWithError<Event>() {
+				@Override
+				public void fail(AdobeError adobeError) {
+					Log.warning(
+						LOG_TAG,
+						CLASS_NAME,
+						"An error occurred dispatching Audience Profile data: %s",
+						adobeError.getErrorName()
+					);
 					callback.call(null);
 				}
+
+				@Override
+				public void call(Event event) {
+					final Map<String, Object> eventData = event.getEventData();
+
+					if (keyName.equals(EventDataKeys.AAM.AUDIENCE_IDS)) {
+						final String dpid = (String) eventData.get(EventDataKeys.AAM.DPID);
+						final String dpuuid = (String) eventData.get(EventDataKeys.AAM.DPUUID);
+						final Map<String, String> value = new HashMap<String, String>() {
+							{
+								put(EventDataKeys.AAM.DPID, dpid);
+								put(EventDataKeys.AAM.DPUUID, dpuuid);
+							}
+						};
+						callback.call(value);
+					} else if (keyName.equals(EventDataKeys.AAM.VISITOR_PROFILE)) {
+						final Map<String, String> value = DataReader.optStringMap(eventData, keyName, new HashMap<>());
+						callback.call(value);
+					} else {
+						Log.debug(
+							LOG_TAG,
+							CLASS_NAME,
+							"Attempting to process the response from an identityRequest but the requested value (%s) was not found.",
+							keyName
+						);
+						callback.call(null);
+					}
+				}
 			}
-		});
+		);
 	}
 
 	private static final class EventDataKeys {
+
 		private EventDataKeys() {}
 
 		static final class AAM {
+
 			// request keys
 			static final String VISITOR_TRAITS = "aamtraits";
 
@@ -204,4 +263,3 @@ public final class Audience {
 		}
 	}
 }
-

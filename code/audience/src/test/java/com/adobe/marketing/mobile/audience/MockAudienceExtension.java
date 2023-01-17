@@ -1,8 +1,20 @@
+/*
+  Copyright 2023 Adobe. All rights reserved.
+  This file is licensed to you under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License. You may obtain a copy
+  of the License at http://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing, software distributed under
+  the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTATIONS
+  OF ANY KIND, either express or implied. See the License for the specific language
+  governing permissions and limitations under the License.
+*/
+
 package com.adobe.marketing.mobile;
 
 import java.util.HashMap;
 
 public class MockAudienceExtension extends AudienceExtension {
+
 	MockAudienceExtension(EventHub eventHub, PlatformServices platformServices) {
 		super(eventHub, platformServices);
 	}
@@ -10,6 +22,7 @@ public class MockAudienceExtension extends AudienceExtension {
 	boolean submitSignalWasCalled;
 	int submitSignalCallCount = 0;
 	Event submitSignalParameterEvent;
+
 	@Override
 	protected void submitSignal(final Event event) {
 		submitSignalWasCalled = true;
@@ -19,6 +32,7 @@ public class MockAudienceExtension extends AudienceExtension {
 
 	boolean getIdentityVariablesWasCalled;
 	String getIdentityVariablesParameterPairId;
+
 	@Override
 	void getIdentityVariables(final String pairId) {
 		getIdentityVariablesWasCalled = true;
@@ -29,6 +43,7 @@ public class MockAudienceExtension extends AudienceExtension {
 	String setDpidAndDpuuidParameterDpid;
 	String setDpidAndDpuuidParameterDpuuid;
 	Event setDpidAndDpuuidParameterEvent;
+
 	@Override
 	void setDpidAndDpuuid(final String dpid, final String dpuuid, final Event event) {
 		setDpidAndDpuuidParameterEvent = event;
@@ -39,6 +54,7 @@ public class MockAudienceExtension extends AudienceExtension {
 
 	boolean resetWasCalled;
 	Event resetParameterEvent;
+
 	@Override
 	void reset(final Event event) {
 		resetParameterEvent = event;
@@ -47,6 +63,7 @@ public class MockAudienceExtension extends AudienceExtension {
 
 	boolean bootupWasCalled;
 	Event bootEvent;
+
 	@Override
 	void bootup(final Event event) {
 		bootEvent = event;
@@ -54,8 +71,9 @@ public class MockAudienceExtension extends AudienceExtension {
 	}
 
 	boolean processResponseWasCalled;
-	String  processResponseParameterResponse;
+	String processResponseParameterResponse;
 	Event processResponseParameterEvent;
+
 	@Override
 	protected HashMap<String, String> processResponse(final String response, final Event event) {
 		processResponseWasCalled = true;
@@ -66,6 +84,7 @@ public class MockAudienceExtension extends AudienceExtension {
 
 	boolean processStateChangeWasCalled = false;
 	String processStateChangeParameterStateName;
+
 	@Override
 	protected void processStateChange(final String stateName) {
 		processStateChangeParameterStateName = stateName;
@@ -75,16 +94,17 @@ public class MockAudienceExtension extends AudienceExtension {
 	boolean handleNetworkResponseWasCalled = false;
 	String handleNetworkResponseParamResponse;
 	Event handleNetworkResponseParamEvent;
+
 	@Override
 	void handleNetworkResponse(String response, Event event) {
 		handleNetworkResponseWasCalled = true;
 		handleNetworkResponseParamResponse = response;
 		handleNetworkResponseParamEvent = event;
-
 	}
 
 	boolean processConfigurationWasCalled = false;
 	Event processConfigurationParameterEvent;
+
 	@Override
 	void processConfiguration(Event event) {
 		processConfigurationWasCalled = true;

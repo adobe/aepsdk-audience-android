@@ -1,19 +1,13 @@
-/* ************************************************************************
- * ADOBE CONFIDENTIAL
- * ___________________
- *
- * Copyright 2017 Adobe Systems Incorporated
- * All Rights Reserved.
- *
- * NOTICE:  All information contained herein is, and remains
- * the property of Adobe Systems Incorporated and its suppliers,
- * if any.  The intellectual and technical concepts contained
- * herein are proprietary to Adobe Systems Incorporated and its
- * suppliers and are protected by trade secret or copyright law.
- * Dissemination of this information or reproduction of this material
- * is strictly forbidden unless prior written permission is obtained
- * from Adobe Systems Incorporated.
- **************************************************************************/
+/*
+  Copyright 2017 Adobe. All rights reserved.
+  This file is licensed to you under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License. You may obtain a copy
+  of the License at http://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing, software distributed under
+  the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTATIONS
+  OF ANY KIND, either express or implied. See the License for the specific language
+  governing permissions and limitations under the License.
+*/
 
 package com.adobe.marketing.mobile.audience;
 
@@ -39,14 +33,18 @@ class AudienceCore {
 		this.eventHub = eventHub;
 
 		if (registerExtension) {
-
 			Class audienceClass = AudienceExtension.class;
 
 			try {
 				eventHub.registerModule(audienceClass, moduleDetails);
 				Log.debug(LOG_TAG, "Registered %s extension", AudienceExtension.class.getSimpleName());
 			} catch (InvalidModuleException e) {
-				Log.debug(LOG_TAG, "AudienceCore - Failed to register %s module (%s)", audienceClass.getSimpleName(), e);
+				Log.debug(
+					LOG_TAG,
+					"AudienceCore - Failed to register %s module (%s)",
+					audienceClass.getSimpleName(),
+					e
+				);
 			}
 		}
 
@@ -62,11 +60,7 @@ class AudienceCore {
 	 *  	                     or an error if there is an error with the underlying call or if it times out.
 	 *
 	 */
-	void submitAudienceProfileData(final Map<String, String> data,
-								   final AdobeCallback<Map<String, String>> callback) {
-
-	}
-
+	void submitAudienceProfileData(final Map<String, String> data, final AdobeCallback<Map<String, String>> callback) {}
 
 	/**
 	 * Returns the current Data Provider ID (DPID) and the current Data Provider Unique User ID (DPUUID).
@@ -117,41 +111,54 @@ class AudienceCore {
 	void identityRequest(final String keyName, final AdobeCallback<Map<String, String>> callback) {
 		// both parameters are required
 		if (StringUtils.isNullOrEmpty(keyName) || callback == null) {
-			Log.debug(LOG_TAG, "identityRequest - Failed to send Identity request. Key name is empty or Callback is null");
+			Log.debug(
+				LOG_TAG,
+				"identityRequest - Failed to send Identity request. Key name is empty or Callback is null"
+			);
 			return;
 		}
 
-		final Event event = new Event.Builder("AudienceRequestIdentity",
-											  EventType.AUDIENCEMANAGER, EventSource.REQUEST_IDENTITY).setPairID("").build();
+		final Event event = new Event.Builder(
+			"AudienceRequestIdentity",
+			EventType.AUDIENCEMANAGER,
+			EventSource.REQUEST_IDENTITY
+		)
+			.setPairID("")
+			.build();
 
-		final AdobeCallbackWithError adobeCallbackWithError = callback instanceof AdobeCallbackWithError ?
-				(AdobeCallbackWithError)callback : null;
+		final AdobeCallbackWithError adobeCallbackWithError = callback instanceof AdobeCallbackWithError
+			? (AdobeCallbackWithError) callback
+			: null;
 
-		eventHub.registerOneTimeListener(event.getResponsePairID(), new Module.OneTimeListenerBlock() {
-			@Override
-			@SuppressWarnings("unchecked")
-			public void call(final Event e) {
-				final EventData eventData = e.getData();
+		eventHub.registerOneTimeListener(
+			event.getResponsePairID(),
+			new Module.OneTimeListenerBlock() {
+				@Override
+				@SuppressWarnings("unchecked")
+				public void call(final Event e) {
+					final EventData eventData = e.getData();
 
-				if (keyName.equals(AudienceConstants.EventDataKeys.Audience.AUDIENCE_IDS)) {
-					final String dpid = eventData.optString("dpid", null);
-					final  String dpuuid = eventData.optString("dpuuid", null);
-					final Map<String, String> value = new HashMap<String, String>();
-					value.put(AudienceConstants.EventDataKeys.Audience.DPID, dpid);
-					value.put(AudienceConstants.EventDataKeys.Audience.DPUUID, dpuuid);
-					callback.call(value);
-
-				} else if (keyName.equals(AudienceConstants.EventDataKeys.Audience.VISITOR_PROFILE)) {
-					final Map<String, String> value = eventData.optStringMap(keyName, new HashMap<String, String>());
-					callback.call(value);
-				} else {
-					Log.debug(LOG_TAG, "identityRequest - Failed to register REQUEST_IDENTITY listener");
-					callback.call(null);
+					if (keyName.equals(AudienceConstants.EventDataKeys.Audience.AUDIENCE_IDS)) {
+						final String dpid = eventData.optString("dpid", null);
+						final String dpuuid = eventData.optString("dpuuid", null);
+						final Map<String, String> value = new HashMap<String, String>();
+						value.put(AudienceConstants.EventDataKeys.Audience.DPID, dpid);
+						value.put(AudienceConstants.EventDataKeys.Audience.DPUUID, dpuuid);
+						callback.call(value);
+					} else if (keyName.equals(AudienceConstants.EventDataKeys.Audience.VISITOR_PROFILE)) {
+						final Map<String, String> value = eventData.optStringMap(
+							keyName,
+							new HashMap<String, String>()
+						);
+						callback.call(value);
+					} else {
+						Log.debug(LOG_TAG, "identityRequest - Failed to register REQUEST_IDENTITY listener");
+						callback.call(null);
+					}
 				}
-
-
-			}
-		}, adobeCallbackWithError);
+			},
+			adobeCallbackWithError
+		);
 
 		eventHub.dispatch(event);
 		Log.debug(LOG_TAG, "identityRequest - Identity request was sent: %s", event);
@@ -167,11 +174,17 @@ class AudienceCore {
 	void setDataProviderIds(final String dpid, final String dpuuid) {
 		final EventData data = new EventData();
 		data.putString(AudienceConstants.EventDataKeys.Audience.DPID, StringUtils.isNullOrEmpty(dpid) ? "" : dpid);
-		data.putString(AudienceConstants.EventDataKeys.Audience.DPUUID, StringUtils.isNullOrEmpty(dpuuid) ? "" : dpuuid);
-		final Event event = new Event.Builder("AudienceSetDataProviderIds",
-											  EventType.AUDIENCEMANAGER, EventSource.REQUEST_IDENTITY)
-		.setData(data)
-		.build();
+		data.putString(
+			AudienceConstants.EventDataKeys.Audience.DPUUID,
+			StringUtils.isNullOrEmpty(dpuuid) ? "" : dpuuid
+		);
+		final Event event = new Event.Builder(
+			"AudienceSetDataProviderIds",
+			EventType.AUDIENCEMANAGER,
+			EventSource.REQUEST_IDENTITY
+		)
+			.setData(data)
+			.build();
 		eventHub.dispatch(event);
 		Log.debug(LOG_TAG, "setDataProviderIds - Date Provider IDs were set");
 	}
@@ -179,8 +192,5 @@ class AudienceCore {
 	/**
 	 * This method should be called from the Platform to initiate an Audience Manager Request Reset event
 	 */
-	void reset() {
-
-	}
-
+	void reset() {}
 }
