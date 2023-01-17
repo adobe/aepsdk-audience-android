@@ -569,7 +569,8 @@ public final class AudienceExtension extends Extension {
 				.addQuery(getCustomUrlVariables(customerData), URLBuilder.EncodeType.NONE)
 				.addQuery(getDataProviderUrlVariables(event), URLBuilder.EncodeType.NONE)
 				.addQuery(getPlatformSuffix(), URLBuilder.EncodeType.NONE)
-				.addQuery(AudienceConstants.AUDIENCE_MANAGER_URL_SUFFIX, URLBuilder.EncodeType.NONE)
+				.addQuery(AudienceConstants.AUDIENCE_MANAGER_URL_PARAM_DST, URLBuilder.EncodeType.NONE)
+				.addQuery(AudienceConstants.AUDIENCE_MANAGER_URL_PARAM_RTBD, URLBuilder.EncodeType.NONE)
 				.build();
 
 		return urlString;
@@ -795,7 +796,7 @@ public final class AudienceExtension extends Extension {
 	 * @param jsonResponse the {@link JSONObject} representation of the AAM server response
 	 * @return a {@code Map<String, String>} representing the segments for the user
 	 */
-	private Map<String, String> processStuffArray(final JSONObject jsonResponse) {
+	private @NonNull Map<String, String> processStuffArray(final JSONObject jsonResponse) {
 		final Map<String, String> returnedMap = new HashMap<String, String>();
 
 		try {
