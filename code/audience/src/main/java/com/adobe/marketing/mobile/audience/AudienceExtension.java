@@ -35,6 +35,7 @@ import com.adobe.marketing.mobile.services.ServiceProvider;
 import com.adobe.marketing.mobile.util.DataReader;
 import com.adobe.marketing.mobile.util.JSONUtils;
 import com.adobe.marketing.mobile.util.StringUtils;
+import com.adobe.marketing.mobile.util.URLBuilder;
 import com.adobe.marketing.mobile.util.UrlUtils;
 import com.adobe.marketing.mobile.VisitorID;
 
@@ -145,9 +146,6 @@ public final class AudienceExtension extends Extension {
 	}
 
 	@Override
-	protected void onUnregistered() { super.onUnregistered(); }
-
-	@Override
 	public boolean readyForEvent(@NonNull final Event event) {
 		final SharedStateResult configSharedState = getSharedStateForExtension(AudienceConstants.EventDataKeys.Configuration.MODULE_NAME, event);
 		final SharedStateResult identitySharedState = getSharedStateForExtension(AudienceConstants.EventDataKeys.Identity.MODULE_NAME, event);
@@ -178,9 +176,17 @@ public final class AudienceExtension extends Extension {
 		shareStateForEvent(event);
 	}
 
-	// used for both reset request events
+	/**
+	 * Resets UUID, DPID, DPUUID, and the Audience Manager Visitor Profile from the {@code AudienceState} instance.
+	 * <p>
+	 * This method also updates shared state for version provided by {@code event} param.
+	 *
+	 * @param event {@link Event} containing instruction to reset identities
+	 */
 	private void handleResetIdentities(@NonNull final Event event) {
-		resetIdentities(event);
+		Log.debug(LOG_PREFIX, CLASS_NAME, "Resetting stored Audience Manager identities and visitor profile.");
+		internalState.clearIdentifiers();
+		shareStateForEvent(event);
 	}
 
 	private void handleAnalyticsResponse(@NonNull final Event event) {
@@ -292,13 +298,14 @@ public final class AudienceExtension extends Extension {
 	 */
 	private Map<String, String> processResponse(final String response, final Event event) {
 		if (StringUtils.isNullOrEmpty(response)) {
-			Log.warning(LOG_PREFIX, CLASS_NAME, "Unable to process Audience Manager server response - response was null or empty.");
+			Log.trace(LOG_PREFIX, CLASS_NAME, "Unable to process Audience Manager server response - response was null or empty.");
 			return null;
 		}
 
 		// get timeout from config
 		final SharedStateResult configSharedState = getSharedStateForExtension(AudienceConstants.EventDataKeys.Configuration.MODULE_NAME, event);
 		if (configSharedState.getStatus() == SharedStateStatus.PENDING) {
+			Log.trace(LOG_PREFIX, CLASS_NAME, "Unable to process Audience Manager server response - configuration shared state is pending.");
 			return null;
 		}
 
@@ -318,7 +325,6 @@ public final class AudienceExtension extends Extension {
 
 		try {
 			// save uuid for use with subsequent calls
-			// Note, the AudienceState may have a different privacy status than that of the calling event.
 			// Setting the UUID may fail if the AudienceState's current privacy is opt-out
 			internalState.setUuid(jsonResponse.getString(AudienceConstants.AUDIENCE_MANAGER_JSON_USER_ID_KEY));
 		} catch (final JSONException ex) {
@@ -356,6 +362,7 @@ public final class AudienceExtension extends Extension {
 	private boolean serverSideForwardingToAam(final Event event) {
 		final SharedStateResult configSharedState = getSharedStateForExtension(AudienceConstants.EventDataKeys.Configuration.MODULE_NAME, event);
 		if (configSharedState.getStatus() != SharedStateStatus.SET) {
+			Log.trace(LOG_PREFIX, CLASS_NAME, "Attempted to retrieve AAM configuration for server-side forwarding but shared state was not set.");
 			return false;
 		}
 		return DataReader.optBoolean(configSharedState.getValue(), AudienceConstants.EventDataKeys.Configuration.ANALYTICS_CONFIG_AAMFORWARDING, false);
@@ -388,7 +395,7 @@ public final class AudienceExtension extends Extension {
 		if (StringUtils.isNullOrEmpty(server) || privacyStatus == MobilePrivacyStatus.OPT_OUT) {
 			// create an empty valid shared state if privacy is opt-out.
 			// if not configured, dispatch an empty event for the pairId (if necessary)
-			Log.debug(LOG_PREFIX, CLASS_NAME, "Dispatching an empty profile - privacy status is opted-out.");
+			Log.debug(LOG_PREFIX, CLASS_NAME, "Dispatching an empty profile - AAM server configuration is unavailable or privacy status is opted-out.");
 			dispatchPairedIdResponseIfNecessary(null, event);
 			return;
 		}
@@ -430,19 +437,6 @@ public final class AudienceExtension extends Extension {
 				.build();
 
 		getApi().dispatch(responseEvent);
-	}
-
-	/**
-	 * Resets UUID, DPID, DPUUID, and the Audience Manager Visitor Profile from the {@code AudienceState} instance.
-	 * <p>
-	 * This method also updates shared state for version provided by {@code event} param.
-	 *
-	 * @param event {@link Event} containing shared state version information to be updated
-	 */
-	private void resetIdentities(final Event event) {
-		Log.debug(LOG_PREFIX, CLASS_NAME, "Resetting stored Audience Manager identities and visitor profile.");
-		internalState.clearIdentifiers();
-		shareStateForEvent(event);
 	}
 
 	/**
@@ -563,16 +557,22 @@ public final class AudienceExtension extends Extension {
 	 * @return {@code String} representation of the URL to be used
 	 */
 	private String buildSignalUrl(final String server, final Event event) {
-		final String urlPrefix = String.format("https://%s/event?", server);
-
 		// get traits from event
 		final Map<String, Object> customerEventData = event.getEventData();
 		final Map<String, String> customerData = customerEventData == null ? null :
 				DataReader.optStringMap(customerEventData, AudienceConstants.EventDataKeys.Audience.VISITOR_TRAITS, null);
-		String urlString = urlPrefix + getCustomUrlVariables(customerData) + getDataProviderUrlVariables(event)
-				+ getPlatformSuffix() + AudienceConstants.AUDIENCE_MANAGER_URL_SUFFIX;
 
-		return urlString.replace("?&", "?");
+		final String urlString = new URLBuilder()
+				.enableSSL(true)
+				.setServer(server)
+				.addPath(AudienceConstants.AUDIENCE_MANAGER_EVENT_PATH)
+				.addQuery(getCustomUrlVariables(customerData), URLBuilder.EncodeType.NONE)
+				.addQuery(getDataProviderUrlVariables(event), URLBuilder.EncodeType.NONE)
+				.addQuery(getPlatformSuffix(), URLBuilder.EncodeType.NONE)
+				.addQuery(AudienceConstants.AUDIENCE_MANAGER_URL_SUFFIX, URLBuilder.EncodeType.NONE)
+				.build();
+
+		return urlString;
 	}
 
 	/**
@@ -598,13 +598,16 @@ public final class AudienceExtension extends Extension {
 				continue;
 			}
 
-			if (value.getClass() == String.class) {
-				urlVars.append("&")
-						.append(AudienceConstants.AUDIENCE_MANAGER_CUSTOMER_DATA_PREFIX)
-						.append(UrlUtils.urlEncode(key.replace(".", "_")))
-						.append("=")
-						.append(UrlUtils.urlEncode(value));
+			// the first variable should have no '&' character,
+			// but subsequent variables appended to this string should
+			if (urlVars.length() != 0) {
+				urlVars.append("&");
 			}
+
+			urlVars.append(AudienceConstants.AUDIENCE_MANAGER_CUSTOMER_DATA_PREFIX)
+					.append(UrlUtils.urlEncode(key.replace(".", "_")))
+					.append("=")
+					.append(UrlUtils.urlEncode(value));
 		}
 
 		return urlVars.toString();
@@ -683,7 +686,8 @@ public final class AudienceExtension extends Extension {
 			}
 		}
 
-		return urlVars.toString();
+		// remove leading '&' if we have a query string
+		return urlVars.length() > 0 ? urlVars.substring(1) : "";
 	}
 
 	/**

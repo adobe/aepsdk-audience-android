@@ -23,6 +23,7 @@ import java.util.Map;
 
 import com.adobe.marketing.mobile.audience.AudienceExtension;
 import com.adobe.marketing.mobile.services.Log;
+import com.adobe.marketing.mobile.util.DataReader;
 import com.adobe.marketing.mobile.util.StringUtils;
 
 import androidx.annotation.NonNull;
@@ -128,7 +129,7 @@ public final class Audience {
 				}
 
 				final Map<String, Object> eventData = event.getEventData();
-				final Map<String, String> profileMap = (Map<String, String>) eventData.get(EventDataKeys.AAM.VISITOR_PROFILE);
+				final Map<String, String> profileMap = DataReader.optStringMap(eventData, EventDataKeys.AAM.VISITOR_PROFILE, null);
 				adobeCallback.call(profileMap);
 			}
 		});
@@ -146,7 +147,7 @@ public final class Audience {
 	 */
 	private static void identityRequest(@NonNull final String keyName, @NonNull final AdobeCallback<Map<String, String>> callback) {
 		// both parameters are required
-		if (StringUtils.isNullOrEmpty(keyName) || callback == null) {
+		if (StringUtils.isNullOrEmpty(keyName)) {
 			Log.debug(LOG_TAG, CLASS_NAME, "Failed to send Identity request due to missing parameters in the call; keyName is empty or Callback is null");
 			return;
 		}
@@ -159,9 +160,7 @@ public final class Audience {
 			@Override
 			public void fail(AdobeError adobeError) {
 				Log.warning(LOG_TAG, CLASS_NAME, "An error occurred dispatching Audience Profile data: %s", adobeError.getErrorName());
-				if (callback != null) {
-					callback.call(null);
-				}
+				callback.call(null);
 			}
 
 			@Override
@@ -178,8 +177,8 @@ public final class Audience {
 					callback.call(value);
 
 				} else if (keyName.equals(EventDataKeys.AAM.VISITOR_PROFILE)) {
-					final Map<String, String> value = (Map<String, String>) eventData.get(keyName);
-					callback.call(value != null ? value : new HashMap<String, String>());
+					final Map<String, String> value = DataReader.optStringMap (eventData, keyName, new HashMap<>());
+					callback.call(value);
 				} else {
 					Log.debug(LOG_TAG, CLASS_NAME, "Attempting to process the response from an identityRequest but the requested value (%s) was not found.", keyName);
 					callback.call(null);

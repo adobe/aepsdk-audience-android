@@ -41,9 +41,10 @@ class AudienceConstants {
 	static final String VISITOR_ID_CID_DELIMITER				    = "%01";
 
 	// url stitching
+	static final String AUDIENCE_MANAGER_EVENT_PATH					= "event";
 	static final String AUDIENCE_MANAGER_CUSTOMER_DATA_PREFIX       = "c_";
-	static final String AUDIENCE_MANAGER_URL_SUFFIX                 = "&d_dst=1&d_rtbd=json";
-	static final String AUDIENCE_MANAGER_URL_PLATFORM_KEY			= "&d_ptfm=";
+	static final String AUDIENCE_MANAGER_URL_SUFFIX                 = "d_dst=1&d_rtbd=json";
+	static final String AUDIENCE_MANAGER_URL_PLATFORM_KEY			= "d_ptfm=";
 
 	// persistent storage
 	static final String AUDIENCE_MANAGER_SHARED_PREFS_DATA_STORE	= "AAMDataStore";
