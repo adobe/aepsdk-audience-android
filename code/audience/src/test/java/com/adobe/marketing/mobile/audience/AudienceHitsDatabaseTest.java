@@ -1,30 +1,21 @@
-/**
- * **********************************************************************
- * ADOBE CONFIDENTIAL
- * ___________________
- * <p>
- * Copyright 2017 Adobe Systems Incorporated
- * All Rights Reserved.
- * <p>
- * NOTICE:  All information contained herein is, and remains
- * the property of Adobe Systems Incorporated and its suppliers,
- * if any.  The intellectual and technical concepts contained
- * herein are proprietary to Adobe Systems Incorporated and its
- * suppliers and are protected by trade secret or copyright law.
- * Dissemination of this information or reproduction of this material
- * is strictly forbidden unless prior written permission is obtained
- * from Adobe Systems Incorporated.
- **************************************************************************/
+/*
+  Copyright 2017 Adobe. All rights reserved.
+  This file is licensed to you under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License. You may obtain a copy
+  of the License at http://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing, software distributed under
+  the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTATIONS
+  OF ANY KIND, either express or implied. See the License for the specific language
+  governing permissions and limitations under the License.
+*/
 
 package com.adobe.marketing.mobile.audience;
 
-import org.junit.Before;
-import org.junit.Test;
-
-import java.net.HttpURLConnection;
-
 import static org.junit.Assert.*;
 
+import java.net.HttpURLConnection;
+import org.junit.Before;
+import org.junit.Test;
 
 public class AudienceHitsDatabaseTest extends BaseTest {
 
@@ -56,15 +47,12 @@ public class AudienceHitsDatabaseTest extends BaseTest {
 		assertEquals("pairId", parentModule.handleNetworkResponseParamEvent.getResponsePairID());
 		assertEquals(3, parentModule.handleNetworkResponseParamEvent.getEventNumber());
 		assertEquals(3000, parentModule.handleNetworkResponseParamEvent.getTimestamp());
-
 	}
-
 
 	@Test
 	public void testProcess_NotRetry_When_ResponseIsValid() throws Exception {
 		AudienceDataEntity audienceHit = createHit("id", 3000, "serverName2.com", "pairId", 3, 5);
-		MockConnection mockConnection = new MockConnection("", 200, null,
-				null);
+		MockConnection mockConnection = new MockConnection("", 200, null, null);
 		networkService.connectUrlReturnValue = mockConnection;
 
 		HitQueue.RetryType retryType = audienceHitsDatabase.process(audienceHit);
@@ -76,14 +64,12 @@ public class AudienceHitsDatabaseTest extends BaseTest {
 		assertEquals("pairId", parentModule.handleNetworkResponseParamEvent.getResponsePairID());
 		assertEquals(3, parentModule.handleNetworkResponseParamEvent.getEventNumber());
 		assertEquals(3000, parentModule.handleNetworkResponseParamEvent.getTimestamp());
-
 	}
 
 	@Test
 	public void testProcess_Retry_When_ConnectionTimeOout() throws Exception {
 		AudienceDataEntity audienceHit = createHit("id", 3000, "serverName2.com", "pairId", 3, 5);
-		MockConnection mockConnection = new MockConnection("", HttpURLConnection.HTTP_CLIENT_TIMEOUT, null,
-				null);
+		MockConnection mockConnection = new MockConnection("", HttpURLConnection.HTTP_CLIENT_TIMEOUT, null, null);
 		networkService.connectUrlReturnValue = mockConnection;
 
 		HitQueue.RetryType retryType = audienceHitsDatabase.process(audienceHit);
@@ -94,8 +80,7 @@ public class AudienceHitsDatabaseTest extends BaseTest {
 	@Test
 	public void testProcess_Retry_When_GateWayOout() throws Exception {
 		AudienceDataEntity audienceHit = createHit("id", 3000, "serverName2.com", "pairId", 3, 5);
-		MockConnection mockConnection = new MockConnection("", HttpURLConnection.HTTP_GATEWAY_TIMEOUT, null,
-				null);
+		MockConnection mockConnection = new MockConnection("", HttpURLConnection.HTTP_GATEWAY_TIMEOUT, null, null);
 		networkService.connectUrlReturnValue = mockConnection;
 
 		HitQueue.RetryType retryType = audienceHitsDatabase.process(audienceHit);
@@ -103,12 +88,10 @@ public class AudienceHitsDatabaseTest extends BaseTest {
 		assertFalse(parentModule.handleNetworkResponseWasCalled);
 	}
 
-
 	@Test
 	public void testProcess_Retry_When_HttpUnavailable() throws Exception {
 		AudienceDataEntity audienceHit = createHit("id", 3000, "serverName2.com", "pairId", 3, 5);
-		MockConnection mockConnection = new MockConnection("", HttpURLConnection.HTTP_UNAVAILABLE, null,
-				null);
+		MockConnection mockConnection = new MockConnection("", HttpURLConnection.HTTP_UNAVAILABLE, null, null);
 		networkService.connectUrlReturnValue = mockConnection;
 
 		HitQueue.RetryType retryType = audienceHitsDatabase.process(audienceHit);
@@ -119,8 +102,7 @@ public class AudienceHitsDatabaseTest extends BaseTest {
 	@Test
 	public void testProcess_NotRetry_When_OtherRepsonseCode() throws Exception {
 		AudienceDataEntity audienceHit = createHit("id", 3000, "serverName2.com", "pairId", 3, 5);
-		MockConnection mockConnection = new MockConnection("", 301, null,
-				null);
+		MockConnection mockConnection = new MockConnection("", 301, null, null);
 		networkService.connectUrlReturnValue = mockConnection;
 
 		HitQueue.RetryType retryType = audienceHitsDatabase.process(audienceHit);
@@ -133,7 +115,9 @@ public class AudienceHitsDatabaseTest extends BaseTest {
 	@Test
 	public void testQueue_When_PrivacyOptIN() throws Exception {
 		Event event = new Event.Builder("AAM Request", EventType.AUDIENCEMANAGER, EventSource.REQUEST_CONTENT)
-		.setResponsePairID("pairId").setTimestamp(123456000).build();
+			.setResponsePairID("pairId")
+			.setTimestamp(123456000)
+			.build();
 		event.setEventNumber(20);
 
 		audienceHitsDatabase.queue("url", 5, MobilePrivacyStatus.OPT_IN, event);
@@ -150,7 +134,9 @@ public class AudienceHitsDatabaseTest extends BaseTest {
 	@Test
 	public void testQueue_When_PrivacyOptOut() throws Exception {
 		Event event = new Event.Builder("AAM Request", EventType.AUDIENCEMANAGER, EventSource.REQUEST_CONTENT)
-		.setResponsePairID("pairId").setTimestamp(123456000).build();
+			.setResponsePairID("pairId")
+			.setTimestamp(123456000)
+			.build();
 		event.setEventNumber(20);
 
 		audienceHitsDatabase.queue("url", 5, MobilePrivacyStatus.OPT_OUT, event);
@@ -167,7 +153,9 @@ public class AudienceHitsDatabaseTest extends BaseTest {
 	@Test
 	public void testQueue_When_PrivacyOptUnknown() throws Exception {
 		Event event = new Event.Builder("AAM Request", EventType.AUDIENCEMANAGER, EventSource.REQUEST_CONTENT)
-		.setResponsePairID("pairId").setTimestamp(123456000).build();
+			.setResponsePairID("pairId")
+			.setTimestamp(123456000)
+			.build();
 		event.setEventNumber(20);
 
 		audienceHitsDatabase.queue("url", 5, MobilePrivacyStatus.UNKNOWN, event);
@@ -205,8 +193,14 @@ public class AudienceHitsDatabaseTest extends BaseTest {
 		assertFalse(hitQueue.deleteAllHitsWasCalled);
 	}
 
-	private AudienceDataEntity createHit(String identifier, long timeStamp, String url, String pairId,
-										 int eventNumber, int timeout) {
+	private AudienceDataEntity createHit(
+		String identifier,
+		long timeStamp,
+		String url,
+		String pairId,
+		int eventNumber,
+		int timeout
+	) {
 		AudienceDataEntity newHit = new AudienceDataEntity();
 		newHit.identifier = identifier;
 		newHit.eventNumber = eventNumber;

@@ -1,44 +1,37 @@
-/* **************************************************************************
- *
- * ADOBE CONFIDENTIAL
- * ___________________
- *
- * Copyright 2017 Adobe Systems Incorporated
- * All Rights Reserved.
- *
- * NOTICE:  All information contained herein is, and remains
- * the property of Adobe Systems Incorporated and its suppliers,
- * if any.  The intellectual and technical concepts contained
- * herein are proprietary to Adobe Systems Incorporated and its
- * suppliers and are protected by trade secret or copyright law.
- * Dissemination of this information or reproduction of this material
- * is strictly forbidden unless prior written permission is obtained
- * from Adobe Systems Incorporated.
- *
- **************************************************************************/
+/*
+  Copyright 2017 Adobe. All rights reserved.
+  This file is licensed to you under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License. You may obtain a copy
+  of the License at http://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing, software distributed under
+  the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTATIONS
+  OF ANY KIND, either express or implied. See the License for the specific language
+  governing permissions and limitations under the License.
+*/
+
 package com.adobe.marketing.mobile;
 
-import com.adobe.marketing.mobile.NetworkService.HttpCommand;
-import com.adobe.marketing.mobile.JsonUtilityService.*;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.*;
 
+import com.adobe.marketing.mobile.JsonUtilityService.*;
+import com.adobe.marketing.mobile.NetworkService.HttpCommand;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
 
 public class AudienceTest extends BaseTest {
-	private MockNetworkService                                    mockNetworkService;
-	private LocalStorageService                                   fakeLocalStorageService;
-	private JsonUtilityService                                    fakeJsonUtilityService;
-	private MockDispatcherAudienceResponseContentAudienceManager  mockDispatcherAudienceResponseContent;
+
+	private MockNetworkService mockNetworkService;
+	private LocalStorageService fakeLocalStorageService;
+	private JsonUtilityService fakeJsonUtilityService;
+	private MockDispatcherAudienceResponseContentAudienceManager mockDispatcherAudienceResponseContent;
 	private MockDispatcherAudienceResponseIdentityAudienceManager mockDispatcherAudienceResponseIdentity;
-	private MockAudienceRequestsDatabase                          mockAudienceRequestsDatabase;
-	private TestableAudience                                      audience;
-	private AudienceState                                         state;
+	private MockAudienceRequestsDatabase mockAudienceRequestsDatabase;
+	private TestableAudience audience;
+	private AudienceState state;
 
 	@Before
 	public void setup() throws MissingPlatformServicesException {
@@ -51,9 +44,15 @@ public class AudienceTest extends BaseTest {
 		mockDispatcherAudienceResponseIdentity = new MockDispatcherAudienceResponseIdentityAudienceManager();
 		state = new AudienceState(fakeLocalStorageService);
 		state.setMobilePrivacyStatus(MobilePrivacyStatus.OPT_IN);
-		audience = new TestableAudience(eventHub, platformServices, mockDispatcherAudienceResponseContent,
-										mockDispatcherAudienceResponseIdentity, state);
-		mockAudienceRequestsDatabase = (MockAudienceRequestsDatabase)audience.internalDatabase;
+		audience =
+			new TestableAudience(
+				eventHub,
+				platformServices,
+				mockDispatcherAudienceResponseContent,
+				mockDispatcherAudienceResponseIdentity,
+				state
+			);
+		mockAudienceRequestsDatabase = (MockAudienceRequestsDatabase) audience.internalDatabase;
 	}
 
 	// =================================================================================================================
@@ -70,7 +69,8 @@ public class AudienceTest extends BaseTest {
 		state.setVisitorProfile(visitorProfile);
 
 		Event bootEvent = new Event.Builder("AudienceTest", EventType.HUB, EventSource.BOOTED)
-		.setEventNumber(0).build();
+			.setEventNumber(0)
+			.build();
 
 		// test
 		audience.bootup(bootEvent);
@@ -83,15 +83,18 @@ public class AudienceTest extends BaseTest {
 		assertEquals("mock-uuid", aamSharedState.optString(AudienceTestConstants.EventDataKeys.Audience.UUID, ""));
 		assertEquals("mock-dpid", aamSharedState.optString(AudienceTestConstants.EventDataKeys.Audience.DPID, ""));
 		assertEquals("mock-dpuuid", aamSharedState.optString(AudienceTestConstants.EventDataKeys.Audience.DPUUID, ""));
-		assertEquals(visitorProfile, aamSharedState.optStringMap(AudienceTestConstants.EventDataKeys.Audience.VISITOR_PROFILE,
-					 null));
+		assertEquals(
+			visitorProfile,
+			aamSharedState.optStringMap(AudienceTestConstants.EventDataKeys.Audience.VISITOR_PROFILE, null)
+		);
 	}
 
 	@Test
 	public void testBootup_when_UUID_NotAvailable() throws Exception {
 		// setup
 		Event bootEvent = new Event.Builder("AudienceTest", EventType.HUB, EventSource.BOOTED)
-		.setEventNumber(0).build();
+			.setEventNumber(0)
+			.build();
 
 		// test
 		audience.bootup(bootEvent);
@@ -179,7 +182,6 @@ public class AudienceTest extends BaseTest {
 
 	@Test
 	public void testProcessChange_when_stateNameIsConfiguration_then_shouldProcessQueuedEvents() throws Exception {
-
 		// test
 		audience.processStateChange(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME);
 
@@ -207,8 +209,8 @@ public class AudienceTest extends BaseTest {
 	@Test
 	public void testQueueAamEvent_when_validEvent_then_shouldQueueAndProcessEvents() throws Exception {
 		// setup
-		final Event testEvent = new Event.Builder("TestAAM", EventType.AUDIENCEMANAGER,
-				EventSource.REQUEST_PROFILE).build();
+		final Event testEvent = new Event.Builder("TestAAM", EventType.AUDIENCEMANAGER, EventSource.REQUEST_PROFILE)
+			.build();
 
 		// test
 		audience.queueAamEvent(testEvent);
@@ -227,8 +229,8 @@ public class AudienceTest extends BaseTest {
 	@Test
 	public void testReset_when_happy_then_shouldSetStatePropertiesToNullAndUpdateSharedState() throws Exception {
 		// setup
-		final Event testEvent = new Event.Builder("TestAAM", EventType.AUDIENCEMANAGER,
-				EventSource.REQUEST_PROFILE).build();
+		final Event testEvent = new Event.Builder("TestAAM", EventType.AUDIENCEMANAGER, EventSource.REQUEST_PROFILE)
+			.build();
 		final HashMap<String, String> visitorProfile = new HashMap<String, String>();
 		visitorProfile.put("someKey", "someValue");
 		state.setDpid("value");
@@ -249,14 +251,22 @@ public class AudienceTest extends BaseTest {
 
 		final EventData aamSharedState = audience.getSharedAAMStateFromEventHub(testEvent);
 		assertEquals(0, aamSharedState.size());
-		assertNull("dpid from shared state should be null",
-				   aamSharedState.optString(AudienceTestConstants.EventDataKeys.Audience.DPID, null));
-		assertNull("dpuuid from shared state should be null",
-				   aamSharedState.optString(AudienceTestConstants.EventDataKeys.Audience.DPUUID, null));
-		assertNull("uuid from shared state should be null",
-				   aamSharedState.optString(AudienceTestConstants.EventDataKeys.Audience.UUID, null));
-		assertNull("visitorProfile from shared state should be null",
-				   aamSharedState.optStringMap(AudienceTestConstants.EventDataKeys.Audience.VISITOR_PROFILE, null));
+		assertNull(
+			"dpid from shared state should be null",
+			aamSharedState.optString(AudienceTestConstants.EventDataKeys.Audience.DPID, null)
+		);
+		assertNull(
+			"dpuuid from shared state should be null",
+			aamSharedState.optString(AudienceTestConstants.EventDataKeys.Audience.DPUUID, null)
+		);
+		assertNull(
+			"uuid from shared state should be null",
+			aamSharedState.optString(AudienceTestConstants.EventDataKeys.Audience.UUID, null)
+		);
+		assertNull(
+			"visitorProfile from shared state should be null",
+			aamSharedState.optStringMap(AudienceTestConstants.EventDataKeys.Audience.VISITOR_PROFILE, null)
+		);
 	}
 
 	@Test
@@ -294,14 +304,17 @@ public class AudienceTest extends BaseTest {
 		EventData configuration = new EventData();
 		configuration.putString("global.privacy", "optedin");
 		Event testEvent = new Event.Builder("TEST", EventType.CONFIGURATION, EventSource.RESPONSE_CONTENT)
-		.setData(configuration)
-		.build();
+			.setData(configuration)
+			.build();
 		audience.processConfiguration(testEvent);
 		waitForExecutor(audience.getExecutor(), 1);
 		assertFalse(mockDispatcherAudienceResponseContent.dispatchOptOutResultCalled);
 		assertTrue(audience.processQueuedEventsCalled);
 		assertTrue(mockAudienceRequestsDatabase.updatePrivacyStatusWasCalled);
-		assertEquals(MobilePrivacyStatus.OPT_IN, mockAudienceRequestsDatabase.updatePrivacyStatusParameterPrivacyStatus);
+		assertEquals(
+			MobilePrivacyStatus.OPT_IN,
+			mockAudienceRequestsDatabase.updatePrivacyStatusParameterPrivacyStatus
+		);
 		assertFalse(audience.resetWasCalled);
 	}
 
@@ -312,8 +325,8 @@ public class AudienceTest extends BaseTest {
 		configuration.putString("global.privacy", "optedout");
 		configuration.putString("audience.server", "server");
 		Event testEvent = new Event.Builder("TEST", EventType.CONFIGURATION, EventSource.RESPONSE_CONTENT)
-		.setData(configuration)
-		.build();
+			.setData(configuration)
+			.build();
 		final Event aamEvent1 = getSubmitSignalEvent(getFakeAamTraitsEventData(), null);
 		final Event aamEvent2 = getSubmitSignalEvent(getFakeAamTraitsEventData(), null);
 		audience.waitingEvents.add(aamEvent1);
@@ -328,7 +341,10 @@ public class AudienceTest extends BaseTest {
 		assertTrue(mockDispatcherAudienceResponseContent.dispatchOptOutResultParameterOptedOut);
 		assertTrue(audience.processQueuedEventsCalled);
 		assertTrue(mockAudienceRequestsDatabase.updatePrivacyStatusWasCalled);
-		assertEquals(MobilePrivacyStatus.OPT_OUT, mockAudienceRequestsDatabase.updatePrivacyStatusParameterPrivacyStatus);
+		assertEquals(
+			MobilePrivacyStatus.OPT_OUT,
+			mockAudienceRequestsDatabase.updatePrivacyStatusParameterPrivacyStatus
+		);
 		assertTrue(audience.resetWasCalled);
 		assertEquals(testEvent, audience.resetParameterEvent);
 		assertEquals(0, audience.waitingEvents.size());
@@ -340,8 +356,8 @@ public class AudienceTest extends BaseTest {
 		EventData configuration = new EventData();
 		configuration.putString("global.privacy", "optedout");
 		Event testEvent = new Event.Builder("TEST", EventType.CONFIGURATION, EventSource.RESPONSE_CONTENT)
-		.setData(configuration)
-		.build();
+			.setData(configuration)
+			.build();
 		final Event aamEvent1 = getSubmitSignalEvent(getFakeAamTraitsEventData(), null);
 		final Event aamEvent2 = getSubmitSignalEvent(getFakeAamTraitsEventData(), null);
 		audience.waitingEvents.add(aamEvent1);
@@ -356,7 +372,10 @@ public class AudienceTest extends BaseTest {
 		assertFalse(mockDispatcherAudienceResponseContent.dispatchOptOutResultParameterOptedOut);
 		assertTrue(audience.processQueuedEventsCalled);
 		assertTrue(mockAudienceRequestsDatabase.updatePrivacyStatusWasCalled);
-		assertEquals(MobilePrivacyStatus.OPT_OUT, mockAudienceRequestsDatabase.updatePrivacyStatusParameterPrivacyStatus);
+		assertEquals(
+			MobilePrivacyStatus.OPT_OUT,
+			mockAudienceRequestsDatabase.updatePrivacyStatusParameterPrivacyStatus
+		);
 		assertTrue(audience.resetWasCalled);
 		assertEquals(testEvent, audience.resetParameterEvent);
 		assertEquals(0, audience.waitingEvents.size());
@@ -369,8 +388,8 @@ public class AudienceTest extends BaseTest {
 		configuration.putString("global.privacy", "optedout");
 		configuration.putString("audience.server", "server");
 		Event testEvent = new Event.Builder("TEST", EventType.CONFIGURATION, EventSource.RESPONSE_CONTENT)
-		.setData(configuration)
-		.build();
+			.setData(configuration)
+			.build();
 		final Event aamEvent1 = getSubmitSignalEvent(getFakeAamTraitsEventData(), null);
 		final Event aamEvent2 = getSubmitSignalEvent(getFakeAamTraitsEventData(), null);
 		audience.waitingEvents.add(aamEvent1);
@@ -384,7 +403,10 @@ public class AudienceTest extends BaseTest {
 		assertFalse(mockDispatcherAudienceResponseContent.dispatchOptOutResultParameterOptedOut);
 		assertTrue(audience.processQueuedEventsCalled);
 		assertTrue(mockAudienceRequestsDatabase.updatePrivacyStatusWasCalled);
-		assertEquals(MobilePrivacyStatus.OPT_OUT, mockAudienceRequestsDatabase.updatePrivacyStatusParameterPrivacyStatus);
+		assertEquals(
+			MobilePrivacyStatus.OPT_OUT,
+			mockAudienceRequestsDatabase.updatePrivacyStatusParameterPrivacyStatus
+		);
 		assertTrue(audience.resetWasCalled);
 		assertEquals(testEvent, audience.resetParameterEvent);
 		assertEquals(0, audience.waitingEvents.size());
@@ -395,8 +417,8 @@ public class AudienceTest extends BaseTest {
 		EventData configuration = new EventData();
 		configuration.putString("global.privacy", "optunknown");
 		Event testEvent = new Event.Builder("TEST", EventType.CONFIGURATION, EventSource.RESPONSE_CONTENT)
-		.setData(configuration)
-		.build();
+			.setData(configuration)
+			.build();
 		audience.processConfiguration(testEvent);
 
 		waitForExecutor(audience.getExecutor(), 1);
@@ -404,7 +426,10 @@ public class AudienceTest extends BaseTest {
 		assertFalse(mockDispatcherAudienceResponseContent.dispatchOptOutResultCalled);
 		assertTrue(audience.processQueuedEventsCalled);
 		assertTrue(mockAudienceRequestsDatabase.updatePrivacyStatusWasCalled);
-		assertEquals(MobilePrivacyStatus.UNKNOWN, mockAudienceRequestsDatabase.updatePrivacyStatusParameterPrivacyStatus);
+		assertEquals(
+			MobilePrivacyStatus.UNKNOWN,
+			mockAudienceRequestsDatabase.updatePrivacyStatusParameterPrivacyStatus
+		);
 		assertFalse(audience.resetWasCalled);
 	}
 
@@ -428,14 +453,26 @@ public class AudienceTest extends BaseTest {
 
 		final EventData aamSharedState = audience.getSharedAAMStateFromEventHub(testEvent);
 		assertEquals(4, aamSharedState.size());
-		assertEquals("dpid from shared state should be updated", testDpid,
-					 aamSharedState.getString2(AudienceTestConstants.EventDataKeys.Audience.DPID));
-		assertEquals("dpuuid from shared state should be updated", testDpuuid,
-					 aamSharedState.getString2(AudienceTestConstants.EventDataKeys.Audience.DPUUID));
-		assertEquals("uuid from shared state should be set", "testuuid",
-					 aamSharedState.getString2(AudienceTestConstants.EventDataKeys.Audience.UUID));
-		assertEquals("visitor profile from shared state should be set", 1,
-					 aamSharedState.getStringMap(AudienceTestConstants.EventDataKeys.Audience.VISITOR_PROFILE).size());
+		assertEquals(
+			"dpid from shared state should be updated",
+			testDpid,
+			aamSharedState.getString2(AudienceTestConstants.EventDataKeys.Audience.DPID)
+		);
+		assertEquals(
+			"dpuuid from shared state should be updated",
+			testDpuuid,
+			aamSharedState.getString2(AudienceTestConstants.EventDataKeys.Audience.DPUUID)
+		);
+		assertEquals(
+			"uuid from shared state should be set",
+			"testuuid",
+			aamSharedState.getString2(AudienceTestConstants.EventDataKeys.Audience.UUID)
+		);
+		assertEquals(
+			"visitor profile from shared state should be set",
+			1,
+			aamSharedState.getStringMap(AudienceTestConstants.EventDataKeys.Audience.VISITOR_PROFILE).size()
+		);
 	}
 
 	@Test
@@ -460,8 +497,8 @@ public class AudienceTest extends BaseTest {
 	// protected void processQueuedEvents()
 	// =================================================================================================================
 	@Test
-	public void testProcessQueuedEvents_when_happy_then_shouldLoopThroughAndSubmitSignalForAllWaitingEvents() throws
-		Exception {
+	public void testProcessQueuedEvents_when_happy_then_shouldLoopThroughAndSubmitSignalForAllWaitingEvents()
+		throws Exception {
 		// setup
 		final MockAudienceExtension mockAudienceExtension = new MockAudienceExtension(eventHub, platformServices);
 		final Event aamEvent1 = getSubmitSignalEvent(getFakeAamTraitsEventData(), null);
@@ -470,7 +507,10 @@ public class AudienceTest extends BaseTest {
 		mockAudienceExtension.waitingEvents.add(aamEvent1);
 		mockAudienceExtension.waitingEvents.add(aamEvent2);
 		mockAudienceExtension.waitingEvents.add(lifecycleEvent);
-		eventHub.setSharedState(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME, getFakeConfigEventData());
+		eventHub.setSharedState(
+			AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME,
+			getFakeConfigEventData()
+		);
 
 		// test
 		mockAudienceExtension.processQueuedEvents();
@@ -501,7 +541,8 @@ public class AudienceTest extends BaseTest {
 	}
 
 	@Test
-	public void testProcessQueuedEvents_when_configurationHasNoAamServer_then_shouldNotProcessEvents() throws Exception {
+	public void testProcessQueuedEvents_when_configurationHasNoAamServer_then_shouldNotProcessEvents()
+		throws Exception {
 		// setup
 		final MockAudienceExtension mockAudienceExtension = new MockAudienceExtension(eventHub, platformServices);
 		final Event aamEvent1 = getSubmitSignalEvent(getFakeAamTraitsEventData(), null);
@@ -533,7 +574,10 @@ public class AudienceTest extends BaseTest {
 		mockAudienceExtension.waitingEvents.add(aamEvent2);
 		mockAudienceExtension.waitingEvents.add(lifecycleEvent);
 		final EventData fakeConfigData = getFakeConfigEventData();
-		fakeConfigData.putBoolean(AudienceTestConstants.EventDataKeys.Configuration.ANALYTICS_CONFIG_AAMFORWARDING, true);
+		fakeConfigData.putBoolean(
+			AudienceTestConstants.EventDataKeys.Configuration.ANALYTICS_CONFIG_AAMFORWARDING,
+			true
+		);
 		eventHub.setSharedState(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME, fakeConfigData);
 
 		// test
@@ -551,21 +595,28 @@ public class AudienceTest extends BaseTest {
 	public void testProcessResponse_when_happy_then_responseIsProperlyProcessed() throws Exception {
 		// setup
 		final Event testEvent = getSubmitSignalEvent(getFakeAamTraitsEventData(), null);
-		final String jsonResponse = "{" +
-									"'uuid':'12345', " +
-									"'stuff':[{'cn':'cookieName', 'cv':'key1=value1'}], " +
-									"'dests':[{'c':'https://www.adobe.com'}]}";
-		eventHub.setSharedState(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME, getFakeConfigEventData());
+		final String jsonResponse =
+			"{" +
+			"'uuid':'12345', " +
+			"'stuff':[{'cn':'cookieName', 'cv':'key1=value1'}], " +
+			"'dests':[{'c':'https://www.adobe.com'}]}";
+		eventHub.setSharedState(
+			AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME,
+			getFakeConfigEventData()
+		);
 
 		// test
 		audience.processResponse(jsonResponse, testEvent);
 
 		// verify
 		assertEquals("uuid should be set in state", "12345", audience.internalState.getUuid());
-		final HashMap<String, String> profile = (HashMap<String, String>)audience.internalState.getVisitorProfile();
+		final HashMap<String, String> profile = (HashMap<String, String>) audience.internalState.getVisitorProfile();
 		assertNotNull("visitor profile should be set in state", profile);
 		assertEquals("visitor profile should have the correct value", "key1=value1", profile.get("cookieName"));
-		assertTrue("the dest was properly forwarded", platformServices.getMockNetworkService().connectUrlAsyncWasCalled);
+		assertTrue(
+			"the dest was properly forwarded",
+			platformServices.getMockNetworkService().connectUrlAsyncWasCalled
+		);
 	}
 
 	@Test
@@ -573,7 +624,10 @@ public class AudienceTest extends BaseTest {
 		// setup
 		final Event testEvent = getSubmitSignalEvent(getFakeAamTraitsEventData(), null);
 		final String jsonResponse = null;
-		eventHub.setSharedState(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME, getFakeConfigEventData());
+		eventHub.setSharedState(
+			AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME,
+			getFakeConfigEventData()
+		);
 
 		// test
 		audience.processResponse(jsonResponse, testEvent);
@@ -591,7 +645,10 @@ public class AudienceTest extends BaseTest {
 		// setup
 		final Event testEvent = getSubmitSignalEvent(getFakeAamTraitsEventData(), null);
 		final String jsonResponse = "";
-		eventHub.setSharedState(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME, getFakeConfigEventData());
+		eventHub.setSharedState(
+			AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME,
+			getFakeConfigEventData()
+		);
 
 		// test
 		audience.processResponse(jsonResponse, testEvent);
@@ -608,10 +665,11 @@ public class AudienceTest extends BaseTest {
 	public void testProcessResponse_when_noConfiguration_then_doNothing() throws Exception {
 		// setup
 		final Event testEvent = getSubmitSignalEvent(getFakeAamTraitsEventData(), null);
-		final String jsonResponse = "{" +
-									"'uuid':'12345', " +
-									"'stuff':[{'cn':'cookieName', 'cv':'key1=value1'}], " +
-									"'dests':[{'c':'https://www.adobe.com'}]}";
+		final String jsonResponse =
+			"{" +
+			"'uuid':'12345', " +
+			"'stuff':[{'cn':'cookieName', 'cv':'key1=value1'}], " +
+			"'dests':[{'c':'https://www.adobe.com'}]}";
 		eventHub.setSharedState(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME, null);
 
 		// test
@@ -629,11 +687,15 @@ public class AudienceTest extends BaseTest {
 	public void testProcessResponse_when_malFormedJSON_doNothing() throws Exception {
 		// setup
 		final Event testEvent = getSubmitSignalEvent(getFakeAamTraitsEventData(), null);
-		final String jsonResponse = "{" +
-									"'uuid':'12345', " +
-									"'stuff':{'cn':'cookieName', 'cv':'key1=value1'}], " +
-									"'dests':[{'c':'https://www.adobe.com']";
-		eventHub.setSharedState(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME, getFakeConfigEventData());
+		final String jsonResponse =
+			"{" +
+			"'uuid':'12345', " +
+			"'stuff':{'cn':'cookieName', 'cv':'key1=value1'}], " +
+			"'dests':[{'c':'https://www.adobe.com']";
+		eventHub.setSharedState(
+			AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME,
+			getFakeConfigEventData()
+		);
 
 		// test
 		audience.processResponse(jsonResponse, testEvent);
@@ -667,8 +729,10 @@ public class AudienceTest extends BaseTest {
 		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData(), "pairId");
 
 		final EventData fakeConfigData = getFakeConfigEventData();
-		fakeConfigData.putString(AudienceTestConstants.EventDataKeys.Configuration.EXPERIENCE_CLOUD_ORGID,
-								 "testExperience@adobeorg");
+		fakeConfigData.putString(
+			AudienceTestConstants.EventDataKeys.Configuration.EXPERIENCE_CLOUD_ORGID,
+			"testExperience@adobeorg"
+		);
 		eventHub.setSharedState(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME, fakeConfigData);
 
 		// test
@@ -734,7 +798,10 @@ public class AudienceTest extends BaseTest {
 		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData(), "pairId");
 		platformServices.getMockSystemInfoService().mockCanonicalPlatformName = null;
 
-		eventHub.setSharedState(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME, getFakeConfigEventData());
+		eventHub.setSharedState(
+			AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME,
+			getFakeConfigEventData()
+		);
 		eventHub.setSharedState(AudienceTestConstants.EventDataKeys.Identity.MODULE_NAME, getFakeIdentityEventData());
 
 		setAudienceManagerStateProperties();
@@ -753,7 +820,10 @@ public class AudienceTest extends BaseTest {
 		// setup
 		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData(), "pairId");
 
-		eventHub.setSharedState(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME, getFakeConfigEventData());
+		eventHub.setSharedState(
+			AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME,
+			getFakeConfigEventData()
+		);
 		eventHub.setSharedState(AudienceTestConstants.EventDataKeys.Identity.MODULE_NAME, getFakeIdentityEventData());
 
 		setAudienceManagerStateProperties();
@@ -774,8 +844,11 @@ public class AudienceTest extends BaseTest {
 		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.contains("d_mid=testMarketingID"));
 		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.contains("d_blob=testBlob"));
 		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.contains("dcs_region=testLocationHint"));
-		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.contains(
-					   "d_cid_ic=id_type1%01id1%011&d_cid_ic=id_type2%01id2%012&d_cid_ic=id_type3%012&d_cid_ic=id_type4%01id4%010"));
+		assertTrue(
+			mockAudienceRequestsDatabase.queueParameterUrl.contains(
+				"d_cid_ic=id_type1%01id1%011&d_cid_ic=id_type2%01id2%012&d_cid_ic=id_type3%012&d_cid_ic=id_type4%01id4%010"
+			)
+		);
 		assertEquals(4, mockAudienceRequestsDatabase.queueParameterTimeout);
 	}
 
@@ -784,7 +857,10 @@ public class AudienceTest extends BaseTest {
 		// setup
 		final Event event = getSubmitSignalEvent(null, "pairId");
 
-		eventHub.setSharedState(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME, getFakeConfigEventData());
+		eventHub.setSharedState(
+			AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME,
+			getFakeConfigEventData()
+		);
 		eventHub.setSharedState(AudienceTestConstants.EventDataKeys.Identity.MODULE_NAME, getFakeIdentityEventData());
 
 		setAudienceManagerStateProperties();
@@ -804,8 +880,11 @@ public class AudienceTest extends BaseTest {
 		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.contains("d_mid=testMarketingID"));
 		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.contains("d_blob=testBlob"));
 		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.contains("dcs_region=testLocationHint"));
-		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.contains(
-					   "d_cid_ic=id_type1%01id1%011&d_cid_ic=id_type2%01id2%012&d_cid_ic=id_type3%012&d_cid_ic=id_type4%01id4%010"));
+		assertTrue(
+			mockAudienceRequestsDatabase.queueParameterUrl.contains(
+				"d_cid_ic=id_type1%01id1%011&d_cid_ic=id_type2%01id2%012&d_cid_ic=id_type3%012&d_cid_ic=id_type4%01id4%010"
+			)
+		);
 		assertEquals(4, mockAudienceRequestsDatabase.queueParameterTimeout);
 	}
 
@@ -816,7 +895,10 @@ public class AudienceTest extends BaseTest {
 		additionalTraits.put("nullKey", null);
 		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData(additionalTraits), "pairId");
 
-		eventHub.setSharedState(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME, getFakeConfigEventData());
+		eventHub.setSharedState(
+			AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME,
+			getFakeConfigEventData()
+		);
 		eventHub.setSharedState(AudienceTestConstants.EventDataKeys.Identity.MODULE_NAME, getFakeIdentityEventData());
 
 		setAudienceManagerStateProperties();
@@ -838,8 +920,11 @@ public class AudienceTest extends BaseTest {
 		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.contains("d_mid=testMarketingID"));
 		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.contains("d_blob=testBlob"));
 		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.contains("dcs_region=testLocationHint"));
-		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.contains(
-					   "d_cid_ic=id_type1%01id1%011&d_cid_ic=id_type2%01id2%012&d_cid_ic=id_type3%012&d_cid_ic=id_type4%01id4%010"));
+		assertTrue(
+			mockAudienceRequestsDatabase.queueParameterUrl.contains(
+				"d_cid_ic=id_type1%01id1%011&d_cid_ic=id_type2%01id2%012&d_cid_ic=id_type3%012&d_cid_ic=id_type4%01id4%010"
+			)
+		);
 		assertEquals(4, mockAudienceRequestsDatabase.queueParameterTimeout);
 	}
 
@@ -848,7 +933,10 @@ public class AudienceTest extends BaseTest {
 		// setup
 		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData(), "pairId");
 
-		eventHub.setSharedState(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME, getFakeConfigEventData());
+		eventHub.setSharedState(
+			AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME,
+			getFakeConfigEventData()
+		);
 		eventHub.setSharedState(AudienceTestConstants.EventDataKeys.Identity.MODULE_NAME, null);
 
 		setAudienceManagerStateProperties();
@@ -869,15 +957,21 @@ public class AudienceTest extends BaseTest {
 		assertFalse(mockAudienceRequestsDatabase.queueParameterUrl.contains("d_mid=testMarketingID"));
 		assertFalse(mockAudienceRequestsDatabase.queueParameterUrl.contains("d_blob=testBlob"));
 		assertFalse(mockAudienceRequestsDatabase.queueParameterUrl.contains("dcs_region=testLocationHint"));
-		assertFalse(mockAudienceRequestsDatabase.queueParameterUrl.contains(
-						"d_cid_ic=id_type1%01id1%011&d_cid_ic=id_type2%01id2%012&d_cid_ic=id_type3%012&d_cid_ic=id_type4%01id4%010"));
+		assertFalse(
+			mockAudienceRequestsDatabase.queueParameterUrl.contains(
+				"d_cid_ic=id_type1%01id1%011&d_cid_ic=id_type2%01id2%012&d_cid_ic=id_type3%012&d_cid_ic=id_type4%01id4%010"
+			)
+		);
 		assertEquals(4, mockAudienceRequestsDatabase.queueParameterTimeout);
 	}
 
 	@Test
 	public void testSubmitSignal_SanitizesTraitKeys() throws Exception {
 		// setup
-		eventHub.setSharedState(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME, getFakeConfigEventData());
+		eventHub.setSharedState(
+			AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME,
+			getFakeConfigEventData()
+		);
 		final HashMap<String, String> additionalTraits = new HashMap<String, String>();
 		additionalTraits.put("trait.key", "trait.value");
 		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData(additionalTraits), "pairId");
@@ -894,7 +988,10 @@ public class AudienceTest extends BaseTest {
 	@Test
 	public void testSubmitSignal_Trait_with_EmptyKey() throws Exception {
 		// setup
-		eventHub.setSharedState(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME, getFakeConfigEventData());
+		eventHub.setSharedState(
+			AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME,
+			getFakeConfigEventData()
+		);
 		final HashMap<String, String> additionalTraits = new HashMap<String, String>();
 		additionalTraits.put("", "traitvalue");
 		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData(additionalTraits), "pairId");
@@ -911,7 +1008,10 @@ public class AudienceTest extends BaseTest {
 	@Test
 	public void testSubmitSignal_when_dpid_notProvided() throws Exception {
 		// setup
-		eventHub.setSharedState(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME, getFakeConfigEventData());
+		eventHub.setSharedState(
+			AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME,
+			getFakeConfigEventData()
+		);
 		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData(), "pairId");
 		state.setDpuuid("testdpuuid");
 
@@ -928,7 +1028,10 @@ public class AudienceTest extends BaseTest {
 	@Test
 	public void testSubmitSignal_when_dpuuid_notProvided() throws Exception {
 		// setup
-		eventHub.setSharedState(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME, getFakeConfigEventData());
+		eventHub.setSharedState(
+			AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME,
+			getFakeConfigEventData()
+		);
 		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData(), "pairId");
 		state.setDpid("testdpid");
 
@@ -965,7 +1068,10 @@ public class AudienceTest extends BaseTest {
 		// setup
 		final String mockResponse = "{'uuid':'testuuid'}";
 		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData(), "pairId");
-		eventHub.setSharedState(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME, getFakeConfigEventData());
+		eventHub.setSharedState(
+			AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME,
+			getFakeConfigEventData()
+		);
 
 		// test
 		audience.handleNetworkResponse(mockResponse, event);
@@ -981,7 +1087,10 @@ public class AudienceTest extends BaseTest {
 		// setup
 		final String mockResponse = "{'stuff':[]}";
 		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData(), "pairId");
-		eventHub.setSharedState(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME, getFakeConfigEventData());
+		eventHub.setSharedState(
+			AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME,
+			getFakeConfigEventData()
+		);
 
 		// test
 		audience.handleNetworkResponse(mockResponse, event);
@@ -998,7 +1107,10 @@ public class AudienceTest extends BaseTest {
 		final String stuffArrayAsString = prepareStuffArray().toString();
 		final String mockResponse = "{'stuff':" + stuffArrayAsString + "}";
 		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData(), "pairId");
-		eventHub.setSharedState(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME, getFakeConfigEventData());
+		eventHub.setSharedState(
+			AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME,
+			getFakeConfigEventData()
+		);
 
 		// test
 		audience.handleNetworkResponse(mockResponse, event);
@@ -1008,9 +1120,15 @@ public class AudienceTest extends BaseTest {
 		assertEquals(2, mockDispatcherAudienceResponseContent.dispatchCallCount);
 		assertEquals(2, mockDispatcherAudienceResponseContent.dispatchParametersProfileMap.size());
 		assertEquals(2, state.getVisitorProfile().size());
-		assertEquals("seg=mobile_android", mockDispatcherAudienceResponseContent.dispatchParametersProfileMap.get("aud"));
+		assertEquals(
+			"seg=mobile_android",
+			mockDispatcherAudienceResponseContent.dispatchParametersProfileMap.get("aud")
+		);
 		assertEquals("seg=mobile_android", state.getVisitorProfile().get("aud"));
-		assertEquals("cookieValue", mockDispatcherAudienceResponseContent.dispatchParametersProfileMap.get("cookieKey"));
+		assertEquals(
+			"cookieValue",
+			mockDispatcherAudienceResponseContent.dispatchParametersProfileMap.get("cookieKey")
+		);
 		assertEquals("cookieValue", state.getVisitorProfile().get("cookieKey"));
 	}
 
@@ -1020,7 +1138,10 @@ public class AudienceTest extends BaseTest {
 		final String destsArrayAsString = prepareDestArray().toString();
 		final String mockResponse = "{'dests':" + destsArrayAsString + "}";
 		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData(), "pairId");
-		eventHub.setSharedState(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME, getFakeConfigEventData());
+		eventHub.setSharedState(
+			AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME,
+			getFakeConfigEventData()
+		);
 
 		// test
 		audience.handleNetworkResponse(mockResponse, event);
@@ -1034,13 +1155,16 @@ public class AudienceTest extends BaseTest {
 	}
 
 	@Test
-	public void testHandleNetworkResponse_when_response_ValidDestArray_responsePairID_NotAvailable_ForEvent() throws
-		Exception {
+	public void testHandleNetworkResponse_when_response_ValidDestArray_responsePairID_NotAvailable_ForEvent()
+		throws Exception {
 		// setup
 		final String destsArrayAsString = prepareDestArray().toString();
 		final String mockResponse = "{'dests':" + destsArrayAsString + "}";
 		final Event event = getSubmitSignalEventWithOutPairID(getFakeAamTraitsEventData(), "pairId");
-		eventHub.setSharedState(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME, getFakeConfigEventData());
+		eventHub.setSharedState(
+			AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME,
+			getFakeConfigEventData()
+		);
 
 		// test
 		audience.handleNetworkResponse(mockResponse, event);
@@ -1075,7 +1199,10 @@ public class AudienceTest extends BaseTest {
 		fakeConfigData.putString(AudienceTestConstants.EventDataKeys.Configuration.GLOBAL_CONFIG_PRIVACY, "optedin");
 		fakeConfigData.putString(AudienceTestConstants.EventDataKeys.Configuration.AAM_CONFIG_SERVER, "server");
 		fakeConfigData.putInteger(AudienceTestConstants.EventDataKeys.Configuration.AAM_CONFIG_TIMEOUT, 4);
-		fakeConfigData.putBoolean(AudienceTestConstants.EventDataKeys.Configuration.ANALYTICS_CONFIG_AAMFORWARDING, false);
+		fakeConfigData.putBoolean(
+			AudienceTestConstants.EventDataKeys.Configuration.ANALYTICS_CONFIG_AAMFORWARDING,
+			false
+		);
 
 		return fakeConfigData;
 	}
@@ -1084,39 +1211,54 @@ public class AudienceTest extends BaseTest {
 		final EventData fakeIdentityData = new EventData();
 		fakeIdentityData.putString(AudienceTestConstants.EventDataKeys.Identity.VISITOR_ID_MID, "testMarketingID");
 		fakeIdentityData.putString(AudienceTestConstants.EventDataKeys.Identity.VISITOR_ID_BLOB, "testBlob");
-		fakeIdentityData.putString(AudienceTestConstants.EventDataKeys.Identity.VISITOR_ID_LOCATION_HINT, "testLocationHint");
+		fakeIdentityData.putString(
+			AudienceTestConstants.EventDataKeys.Identity.VISITOR_ID_LOCATION_HINT,
+			"testLocationHint"
+		);
 
 		List<VisitorID> visitorIDList = new ArrayList<VisitorID>();
 		visitorIDList.add(new VisitorID("d_cid_ic", "id_type1", "id1", VisitorID.AuthenticationState.AUTHENTICATED));
 		visitorIDList.add(new VisitorID("d_cid_ic", "id_type2", "id2", VisitorID.AuthenticationState.LOGGED_OUT));
 		visitorIDList.add(new VisitorID("d_cid_ic", "id_type3", null, VisitorID.AuthenticationState.LOGGED_OUT));
 		visitorIDList.add(new VisitorID("d_cid_ic", "id_type4", "id4", VisitorID.AuthenticationState.UNKNOWN));
-		fakeIdentityData.putTypedList(AudienceTestConstants.EventDataKeys.Identity.VISITOR_IDS_LIST, visitorIDList,
-									  VisitorID.VARIANT_SERIALIZER);
+		fakeIdentityData.putTypedList(
+			AudienceTestConstants.EventDataKeys.Identity.VISITOR_IDS_LIST,
+			visitorIDList,
+			VisitorID.VARIANT_SERIALIZER
+		);
 
 		return fakeIdentityData;
 	}
 
 	private EventData getFakeLifecycleEventData() {
 		final EventData fakeLifecycleData = new EventData();
-		fakeLifecycleData.putStringMap(AudienceTestConstants.EventDataKeys.Lifecycle.LIFECYCLE_CONTEXT_DATA,
-									   fakeLifeCycleData());
+		fakeLifecycleData.putStringMap(
+			AudienceTestConstants.EventDataKeys.Lifecycle.LIFECYCLE_CONTEXT_DATA,
+			fakeLifeCycleData()
+		);
 		return fakeLifecycleData;
 	}
 
 	private Event getSubmitSignalEvent(final EventData eventData, final String pairId) {
 		return new Event.Builder("TEST", EventType.AUDIENCEMANAGER, EventSource.REQUEST_CONTENT)
-			   .setPairID(pairId).setData(eventData).build();
+			.setPairID(pairId)
+			.setData(eventData)
+			.build();
 	}
 
 	private Event getSubmitSignalEventWithOutPairID(final EventData eventData, final String pairId) {
 		return new Event.Builder("TEST", EventType.AUDIENCEMANAGER, EventSource.REQUEST_CONTENT)
-			   .setPairID(pairId).setData(eventData).setResponsePairID(null).build();
+			.setPairID(pairId)
+			.setData(eventData)
+			.setResponsePairID(null)
+			.build();
 	}
 
 	private Event getLifecycleEvent(final EventData eventData, final String pairId) {
 		return new Event.Builder("TEST", EventType.LIFECYCLE, EventSource.REQUEST_CONTENT)
-			   .setPairID(pairId).setData(eventData).build();
+			.setPairID(pairId)
+			.setData(eventData)
+			.build();
 	}
 
 	private void setAudienceManagerStateProperties() {
@@ -1168,5 +1310,4 @@ public class AudienceTest extends BaseTest {
 		lifecycleData.put("launches", "2");
 		return lifecycleData;
 	}
-
 }
