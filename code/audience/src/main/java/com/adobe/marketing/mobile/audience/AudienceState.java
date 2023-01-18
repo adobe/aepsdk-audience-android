@@ -43,6 +43,8 @@ class AudienceState {
 	private Map<String, String> visitorProfile = null;
 	private MobilePrivacyStatus privacyStatus = AudienceConstants.DEFAULT_PRIVACY_STATUS;
 
+	private long lastResetTimestampMillis; // Stores the timestamp for most recent resetIdentities API call
+
 	/**
 	 * Constructor.
 	 */
@@ -234,6 +236,21 @@ class AudienceState {
 	 */
 	MobilePrivacyStatus getMobilePrivacyStatus() {
 		return privacyStatus;
+	}
+
+	/**
+	 * Updates the last reset timestamp in memory
+	 * @param timestampMillis the timestamp of the reset event, in milliseconds
+	 */
+	void setLastResetTimestamp(final long timestampMillis) {
+		this.lastResetTimestampMillis = timestampMillis;
+	}
+
+	/**
+	 * @return last reset timestamp, in milliseconds
+	 */
+	long getLastResetTimestampMillis() {
+		return this.lastResetTimestampMillis;
 	}
 
 	/**

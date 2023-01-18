@@ -22,7 +22,7 @@ class AudienceConstants {
 	// general strings
 	static final String EXTENSION_NAME = "com.adobe.module.audience";
 	static final String FRIENDLY_EXTENSION_NAME = "Audience";
-	static final String LOG_TAG = EXTENSION_NAME;
+	static final String LOG_TAG = FRIENDLY_EXTENSION_NAME;
 
 	// destination variable keys
 	static final String AUDIENCE_MANAGER_DATA_PROVIDER_ID_KEY = "d_dpid";

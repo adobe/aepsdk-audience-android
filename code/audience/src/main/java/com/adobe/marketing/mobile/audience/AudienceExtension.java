@@ -71,34 +71,6 @@ public final class AudienceExtension extends Extension {
 	private final AudienceState internalState;
 	private final PersistentHitQueue hitQueue;
 
-	private final AudienceNetworkResponseHandler networkResponseHandler = (responsePayload, requestEvent) -> {
-		final String LOG_SOURCE = "AudienceNetworkResponseHandler";
-		if (requestEvent == null) {
-			Log.warning(LOG_TAG, LOG_SOURCE, "Unable to process network response, invalid request event.");
-			return;
-		}
-
-		Map<String, String> profile = new HashMap<>();
-
-		if (StringUtils.isNullOrEmpty(responsePayload)) {
-			Log.warning(LOG_TAG, LOG_SOURCE, "Null/empty response from server, nothing to process.");
-			shareStateForEvent(requestEvent);
-			dispatchAudienceResponseContent(profile, requestEvent);
-			return;
-		}
-
-		// process the response from the AAM server and share the shared state
-		profile = processResponse(responsePayload, requestEvent);
-
-		// if profile is empty, there was a json error in the response, don't dispatch a generic event
-		if (profile != null && !profile.isEmpty()) {
-			dispatchAudienceResponseContent(profile, null);
-		}
-
-		// dispatch paired event
-		dispatchAudienceResponseContent(profile, requestEvent);
-	};
-
 	AudienceExtension(final ExtensionApi extensionApi) {
 		this(extensionApi, null, null);
 	}
@@ -113,6 +85,42 @@ public final class AudienceExtension extends Extension {
 		this.internalState = audienceState != null ? audienceState : new AudienceState();
 		final DataQueue dataQueue = ServiceProvider.getInstance().getDataQueueService().getDataQueue(getName());
 		if (audienceHitProcessor == null) {
+			final AudienceNetworkResponseHandler networkResponseHandler = (responsePayload, requestEvent) -> {
+				final String LOG_SOURCE = "AudienceNetworkResponseHandler";
+				if (requestEvent == null) {
+					Log.warning(LOG_TAG, LOG_SOURCE, "Unable to process network response, invalid request event.");
+					return;
+				}
+
+				if (requestEvent.getTimestamp() < internalState.getLastResetTimestampMillis()) {
+					Log.debug(
+						LOG_TAG,
+						LOG_SOURCE,
+						"Not dispatching Audience hit response since resetIdentities API was called after queuing this hit."
+					);
+					return;
+				}
+
+				Map<String, String> profile = new HashMap<>();
+
+				if (StringUtils.isNullOrEmpty(responsePayload)) {
+					Log.warning(LOG_TAG, LOG_SOURCE, "Null/empty response from server, nothing to process.");
+					shareStateForEvent(requestEvent);
+					dispatchAudienceResponseContent(profile, requestEvent);
+					return;
+				}
+
+				// process the response from the AAM server and share the shared state
+				profile = processResponse(responsePayload, requestEvent);
+
+				// if profile is empty, there was a json error in the response, don't dispatch a generic event
+				if (profile != null && !profile.isEmpty()) {
+					dispatchAudienceResponseContent(profile, null);
+				}
+
+				// dispatch paired event
+				dispatchAudienceResponseContent(profile, requestEvent);
+			};
 			this.hitQueue =
 				new PersistentHitQueue(
 					dataQueue,
@@ -247,7 +255,12 @@ public final class AudienceExtension extends Extension {
 	 */
 	private void handleResetIdentities(@NonNull final Event event) {
 		Log.debug(LOG_TAG, LOG_SOURCE, "Resetting stored Audience Manager identities and visitor profile.");
+		if (EventType.GENERIC_IDENTITY.equals(event.getType())) {
+			hitQueue.clear();
+		}
+
 		internalState.clearIdentifiers();
+		internalState.setLastResetTimestamp(event.getTimestamp());
 		shareStateForEvent(event);
 	}
 
@@ -538,6 +551,12 @@ public final class AudienceExtension extends Extension {
 				LOG_SOURCE,
 				"Dispatching an empty profile - AAM server configuration is unavailable or privacy status is opted-out."
 			);
+			dispatchAudienceResponseContent(null, event);
+			return;
+		}
+
+		if (event.getTimestamp() < internalState.getLastResetTimestampMillis()) {
+			Log.debug(LOG_TAG, LOG_SOURCE, "Dropping Audience hit, resetIdentities API was called after this request.");
 			dispatchAudienceResponseContent(null, event);
 			return;
 		}
