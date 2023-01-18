@@ -24,6 +24,7 @@ import com.adobe.marketing.mobile.services.Log;
 import com.adobe.marketing.mobile.services.NetworkRequest;
 import com.adobe.marketing.mobile.services.Networking;
 import com.adobe.marketing.mobile.services.NetworkingConstants;
+import com.adobe.marketing.mobile.services.ServiceProvider;
 import com.adobe.marketing.mobile.util.StreamUtils;
 import java.net.HttpURLConnection;
 
@@ -38,8 +39,8 @@ class AudienceHitProcessor implements HitProcessing {
 	private final Networking networkService;
 	private final AudienceNetworkResponseHandler networkResponseHandler;
 
-	AudienceHitProcessor(final Networking networkService, final AudienceNetworkResponseHandler networkResponseHandler) {
-		this.networkService = networkService;
+	AudienceHitProcessor(final AudienceNetworkResponseHandler networkResponseHandler) {
+		this.networkService = ServiceProvider.getInstance().getNetworkService();
 		this.networkResponseHandler = networkResponseHandler;
 	}
 
@@ -50,6 +51,16 @@ class AudienceHitProcessor implements HitProcessing {
 
 	@Override
 	public void processHit(@NonNull DataEntity dataEntity, @NonNull HitProcessingResult processingResult) {
+		if (networkService == null) {
+			Log.warning(
+				LOG_TAG,
+				LOG_SOURCE,
+				"Unexpected null NetworkService, unable to execute the request at this time."
+			);
+			processingResult.complete(false);
+			return;
+		}
+
 		AudienceDataEntity entity = AudienceDataEntity.fromDataEntity(dataEntity);
 
 		if (entity == null) {
@@ -68,15 +79,6 @@ class AudienceHitProcessor implements HitProcessing {
 			entity.getTimeoutSec(),
 			entity.getTimeoutSec()
 		);
-		if (networkService == null) {
-			Log.warning(
-				LOG_TAG,
-				LOG_SOURCE,
-				"Unexpected null NetworkService, unable to execute the request at this time."
-			);
-			processingResult.complete(false);
-			return;
-		}
 
 		networkService.connectAsync(
 			networkRequest,

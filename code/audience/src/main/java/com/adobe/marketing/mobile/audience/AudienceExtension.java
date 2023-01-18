@@ -121,11 +121,7 @@ public final class AudienceExtension extends Extension {
 				// dispatch paired event
 				dispatchAudienceResponseContent(profile, requestEvent);
 			};
-			this.hitQueue =
-				new PersistentHitQueue(
-					dataQueue,
-					new AudienceHitProcessor(ServiceProvider.getInstance().getNetworkService(), networkResponseHandler)
-				);
+			this.hitQueue = new PersistentHitQueue(dataQueue, new AudienceHitProcessor(networkResponseHandler));
 		} else {
 			this.hitQueue = new PersistentHitQueue(dataQueue, audienceHitProcessor);
 		}
