@@ -1,33 +1,24 @@
-/* ***********************************************************************
- * ADOBE CONFIDENTIAL
- * ___________________
- *
- * Copyright 2018 Adobe Systems Incorporated
- * All Rights Reserved.
- *
- * NOTICE:  All information contained herein is, and remains
- * the property of Adobe Systems Incorporated and its suppliers,
- * if any.  The intellectual and technical concepts contained
- * herein are proprietary to Adobe Systems Incorporated and its
- * suppliers and are protected by trade secret or copyright law.
- * Dissemination of this information or reproduction of this material
- * is strictly forbidden unless prior written permission is obtained
- * from Adobe Systems Incorporated.
- **************************************************************************/
+/*
+  Copyright 2018 Adobe. All rights reserved.
+  This file is licensed to you under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License. You may obtain a copy
+  of the License at http://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing, software distributed under
+  the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTATIONS
+  OF ANY KIND, either express or implied. See the License for the specific language
+  governing permissions and limitations under the License.
+*/
 
 package com.adobe.marketing.mobile.audience;
 
-import static com.adobe.marketing.mobile.audience.AudienceConstants.LOG_PREFIX;
+import static com.adobe.marketing.mobile.audience.AudienceConstants.LOG_TAG;
 
 import androidx.annotation.VisibleForTesting;
-
 import com.adobe.marketing.mobile.MobilePrivacyStatus;
-import com.adobe.marketing.mobile.services.HitQueuing;
 import com.adobe.marketing.mobile.services.Log;
 import com.adobe.marketing.mobile.services.NamedCollection;
 import com.adobe.marketing.mobile.services.ServiceProvider;
 import com.adobe.marketing.mobile.util.StringUtils;
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -40,9 +31,9 @@ import java.util.Map;
  * </ol>
  */
 class AudienceState {
-	private static final String CLASS_NAME = "AudienceState";
 
-	private final HitQueuing hitQueue;
+	private static final String LOG_SOURCE = "AudienceState";
+
 	private final NamedCollection localStorage;
 
 	// configuration settings
@@ -52,18 +43,20 @@ class AudienceState {
 	private Map<String, String> visitorProfile = null;
 	private MobilePrivacyStatus privacyStatus = AudienceConstants.DEFAULT_PRIVACY_STATUS;
 
-	//TODO: implement handlePrivacyStatusChange which calls the default core hitQueue.handlePrivacyChange(status:privacyStatus)
-
 	/**
 	 * Constructor.
 	 */
 	AudienceState() {
-		this(ServiceProvider.getInstance().getDataStoreService().getNamedCollection(AudienceConstants.AUDIENCE_MANAGER_SHARED_PREFS_DATA_STORE));
+		this(
+			ServiceProvider
+				.getInstance()
+				.getDataStoreService()
+				.getNamedCollection(AudienceConstants.AUDIENCE_MANAGER_SHARED_PREFS_DATA_STORE)
+		);
 	}
 
 	@VisibleForTesting
-	AudienceState(final HitQueuing hitQueue, final NamedCollection namedCollection) {
-		this.hitQueue = hitQueue;
+	AudienceState(final NamedCollection namedCollection) {
 		this.localStorage = namedCollection;
 	}
 
@@ -119,7 +112,11 @@ class AudienceState {
 				localStorage.setString(AudienceConstants.AUDIENCE_MANAGER_SHARED_PREFS_USER_ID_KEY, uuid);
 			}
 		} else {
-			Log.warning(LOG_PREFIX, CLASS_NAME, "Unable to update uuid in persistence - persistence collection could not be retrieved.");
+			Log.warning(
+				LOG_TAG,
+				LOG_SOURCE,
+				"Unable to update uuid in persistence - persistence collection could not be retrieved."
+			);
 		}
 	}
 
@@ -146,7 +143,11 @@ class AudienceState {
 				localStorage.setMap(AudienceConstants.AUDIENCE_MANAGER_SHARED_PREFS_PROFILE_KEY, visitorProfile);
 			}
 		} else {
-			Log.warning(LOG_PREFIX, CLASS_NAME, "Unable to update visitor profile in persistence - persistence collection could not be retrieved.");
+			Log.warning(
+				LOG_TAG,
+				LOG_SOURCE,
+				"Unable to update visitor profile in persistence - persistence collection could not be retrieved."
+			);
 		}
 	}
 
@@ -192,7 +193,11 @@ class AudienceState {
 			if (localStorage != null) {
 				uuid = localStorage.getString(AudienceConstants.AUDIENCE_MANAGER_SHARED_PREFS_USER_ID_KEY, uuid);
 			} else {
-				Log.warning(LOG_PREFIX, CLASS_NAME, "Unable to retrieve uuid from persistence - persistence could not be accessed.");
+				Log.warning(
+					LOG_TAG,
+					LOG_SOURCE,
+					"Unable to retrieve uuid from persistence - persistence could not be accessed."
+				);
 			}
 		}
 
@@ -210,7 +215,11 @@ class AudienceState {
 		if (visitorProfile == null || visitorProfile.isEmpty()) {
 			// load visitor profile from data store if we have one
 			if (localStorage == null) {
-				Log.warning(LOG_PREFIX, CLASS_NAME, "Unable to retrieve visitor profile from persistence - persistence could not be accessed.");
+				Log.warning(
+					LOG_TAG,
+					LOG_SOURCE,
+					"Unable to retrieve visitor profile from persistence - persistence could not be accessed."
+				);
 			} else if (localStorage.contains(AudienceConstants.AUDIENCE_MANAGER_SHARED_PREFS_PROFILE_KEY)) {
 				visitorProfile = localStorage.getMap(AudienceConstants.AUDIENCE_MANAGER_SHARED_PREFS_PROFILE_KEY);
 			}
