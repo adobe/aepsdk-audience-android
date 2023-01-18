@@ -17,12 +17,11 @@ import com.adobe.marketing.mobile.Event;
  * Callback for handling the network response from outside of the extension class.
  */
 interface AudienceNetworkResponseHandler {
-
-    /**
-     * This method is called after a network request has been processed and the connection was returned to the client.
-     *
-     * @param responsePayload {@link String} representation of the response from the AAM server
-     * @param requestEvent triggering {@link Event} that caused the AAM network request
-     */
-    void complete(final String responsePayload, final Event requestEvent);
+	/**
+	 * This method is called after a network request has been processed and the connection was returned to the client.
+	 *
+	 * @param responsePayload {@link String} representation of the response from the AAM server
+	 * @param requestEvent triggering {@link Event} that caused the AAM network request
+	 */
+	void complete(final String responsePayload, final Event requestEvent);
 }

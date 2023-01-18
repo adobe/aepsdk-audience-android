@@ -1,40 +1,32 @@
-/* ***********************************************************************
- * ADOBE CONFIDENTIAL
- * ___________________
- *
- * Copyright 2018 Adobe Systems Incorporated
- * All Rights Reserved.
- *
- * NOTICE:  All information contained herein is, and remains
- * the property of Adobe Systems Incorporated and its suppliers,
- * if any.  The intellectual and technical concepts contained
- * herein are proprietary to Adobe Systems Incorporated and its
- * suppliers and are protected by trade secret or copyright law.
- * Dissemination of this information or reproduction of this material
- * is strictly forbidden unless prior written permission is obtained
- * from Adobe Systems Incorporated.
- **************************************************************************/
+/*
+  Copyright 2018 Adobe. All rights reserved.
+  This file is licensed to you under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License. You may obtain a copy
+  of the License at http://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing, software distributed under
+  the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTATIONS
+  OF ANY KIND, either express or implied. See the License for the specific language
+  governing permissions and limitations under the License.
+*/
 
 package com.adobe.marketing.mobile.audience;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-
 import com.adobe.marketing.mobile.Event;
 import com.adobe.marketing.mobile.EventCoder;
 import com.adobe.marketing.mobile.services.DataEntity;
 import com.adobe.marketing.mobile.services.Log;
-
+import java.util.Date;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import java.util.Date;
 
 /**
  * Class that encapsulates the data to be queued persistently for the {@link AudienceExtension}
  */
 class AudienceDataEntity {
+
 	private static final String LOG_SOURCE = "AudienceDataEntity";
 
 	private static final String EVENT_KEY = "event";
@@ -53,7 +45,8 @@ class AudienceDataEntity {
 	 * @param timeoutSec indicates the number of seconds a network request should wait for server response
 	 * @throws IllegalArgumentException if the provided {@code event} is null
 	 */
-	AudienceDataEntity(@NonNull final Event event, final String url, final int timeoutSec) throws IllegalArgumentException {
+	AudienceDataEntity(@NonNull final Event event, final String url, final int timeoutSec)
+		throws IllegalArgumentException {
 		if (event == null) {
 			throw new IllegalArgumentException();
 		}
@@ -88,7 +81,8 @@ class AudienceDataEntity {
 	 * Serializes this to a {@code DataEntity}.
 	 * @return serialized {@code AudienceDataEntity} or null if it could not be serialized.
 	 */
-	@Nullable DataEntity toDataEntity() {
+	@Nullable
+	DataEntity toDataEntity() {
 		try {
 			JSONObject serializedEntity = new JSONObject();
 			serializedEntity.put(EVENT_KEY, new JSONObject(EventCoder.encode(this.event)));
@@ -96,15 +90,15 @@ class AudienceDataEntity {
 			serializedEntity.put(TIMEOUT_KEY, this.timeoutSec);
 
 			return new DataEntity(
-					event.getUniqueIdentifier(),
-					new Date(event.getTimestamp()),
-					serializedEntity.toString()
+				event.getUniqueIdentifier(),
+				new Date(event.getTimestamp()),
+				serializedEntity.toString()
 			);
 		} catch (JSONException e) {
 			Log.debug(
-					AudienceConstants.LOG_TAG,
-					LOG_SOURCE,
-					"Failed to serialize AudienceDataEntity to DataEntity: " + e.getLocalizedMessage()
+				AudienceConstants.LOG_TAG,
+				LOG_SOURCE,
+				"Failed to serialize AudienceDataEntity to DataEntity: " + e.getLocalizedMessage()
 			);
 		}
 
@@ -143,9 +137,9 @@ class AudienceDataEntity {
 			return new AudienceDataEntity(event, url, timeout);
 		} catch (JSONException | IllegalArgumentException e) {
 			Log.debug(
-					AudienceConstants.LOG_TAG,
-					LOG_SOURCE,
-					"Failed to deserialize DataEntity to AudienceDataEntity: " + e.getLocalizedMessage()
+				AudienceConstants.LOG_TAG,
+				LOG_SOURCE,
+				"Failed to deserialize DataEntity to AudienceDataEntity: " + e.getLocalizedMessage()
 			);
 		}
 
