@@ -1,24 +1,18 @@
-/* ***********************************************************************
- * ADOBE CONFIDENTIAL
- * ___________________
- *
- * Copyright 2018 Adobe Systems Incorporated
- * All Rights Reserved.
- *
- * NOTICE:  All information contained herein is, and remains
- * the property of Adobe Systems Incorporated and its suppliers,
- * if any.  The intellectual and technical concepts contained
- * herein are proprietary to Adobe Systems Incorporated and its
- * suppliers and are protected by trade secret or copyright law.
- * Dissemination of this information or reproduction of this material
- * is strictly forbidden unless prior written permission is obtained
- * from Adobe Systems Incorporated.
- **************************************************************************/
+/*
+  Copyright 2018 Adobe. All rights reserved.
+  This file is licensed to you under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License. You may obtain a copy
+  of the License at http://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing, software distributed under
+  the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTATIONS
+  OF ANY KIND, either express or implied. See the License for the specific language
+  governing permissions and limitations under the License.
+*/
 
 package com.adobe.marketing.mobile.audience;
 
-import com.adobe.marketing.mobile.MobilePrivacyStatus;
 import com.adobe.marketing.mobile.Event;
+import com.adobe.marketing.mobile.MobilePrivacyStatus;
 import java.io.File;
 import java.net.HttpURLConnection;
 import java.util.Map;
@@ -32,12 +26,13 @@ import java.util.concurrent.TimeUnit;
  *</ol>
  */
 class AudienceHitsDatabase implements HitQueue.IHitProcessor<AudienceHit> {
+
 	// class members
 	private static final String LOG_TAG = AudienceHitsDatabase.class.getSimpleName();
 
 	// database constants
-	private static final String AAM_DATABASE_FILENAME           = "ADBMobileAAM.sqlite";
-	private static final String TABLE_REQUESTS                  = "REQUESTS";
+	private static final String AAM_DATABASE_FILENAME = "ADBMobileAAM.sqlite";
+	private static final String TABLE_REQUESTS = "REQUESTS";
 
 	private final NetworkService networkService;
 	private final AudienceExtension parentModule;
@@ -51,19 +46,29 @@ class AudienceHitsDatabase implements HitQueue.IHitProcessor<AudienceHit> {
 	 * @param services {@link PlatformServices} instance needed to create a database instance
 	 * @param hitQueue used for unit test where a {@link HitQueue} will be passed in
 	 */
-	AudienceHitsDatabase(final AudienceExtension parent, final PlatformServices services,
-						 final HitQueue<AudienceHit, AudienceHitSchema> hitQueue) {
+	AudienceHitsDatabase(
+		final AudienceExtension parent,
+		final PlatformServices services,
+		final HitQueue<AudienceHit, AudienceHitSchema> hitQueue
+	) {
 		this.audienceHitSchema = new AudienceHitSchema();
 
-		final File directory = services.getSystemInfoService() != null ?
-							   services.getSystemInfoService().getApplicationCacheDir() : null;
+		final File directory = services.getSystemInfoService() != null
+			? services.getSystemInfoService().getApplicationCacheDir()
+			: null;
 		final File dbFilePath = new File(directory, AAM_DATABASE_FILENAME);
 
 		if (hitQueue != null) {
 			this.hitQueue = hitQueue;
 		} else {
-			this.hitQueue = new HitQueue<AudienceHit, AudienceHitSchema>(services, dbFilePath,
-					TABLE_REQUESTS, audienceHitSchema, this);
+			this.hitQueue =
+				new HitQueue<AudienceHit, AudienceHitSchema>(
+					services,
+					dbFilePath,
+					TABLE_REQUESTS,
+					audienceHitSchema,
+					this
+				);
 		}
 
 		this.parentModule = parent;
@@ -95,22 +100,34 @@ class AudienceHitsDatabase implements HitQueue.IHitProcessor<AudienceHit> {
 
 		final Event aamEvent = hit.getEvent();
 
-		parentModule.getExecutor().execute(new Runnable() {
-			@Override
-			public void run() {
-				// prepare shared state for this asynchronous processing of this event
-				parentModule.createSharedState(aamEvent.getEventNumber(), EventHub.SHARED_STATE_PENDING);
-			}
-		});
-
+		parentModule
+			.getExecutor()
+			.execute(
+				new Runnable() {
+					@Override
+					public void run() {
+						// prepare shared state for this asynchronous processing of this event
+						parentModule.createSharedState(aamEvent.getEventNumber(), EventHub.SHARED_STATE_PENDING);
+					}
+				}
+			);
 
 		// make the request synchronously
-		final NetworkService.HttpConnection connection = networkService.connectUrl(hit.url,
-				NetworkService.HttpCommand.GET, null, null, hit.timeout, hit.timeout);
+		final NetworkService.HttpConnection connection = networkService.connectUrl(
+			hit.url,
+			NetworkService.HttpCommand.GET,
+			null,
+			null,
+			hit.timeout,
+			hit.timeout
+		);
 
 		// a null connection represents an invalid request
 		if (connection == null) {
-			Log.warning(LOG_TAG, "process -  Discarding request. AAM could not process a request because it was invalid.");
+			Log.warning(
+				LOG_TAG,
+				"process -  Discarding request. AAM could not process a request because it was invalid."
+			);
 
 			// make sure the parent updates shared state and notifies one-time listeners accordingly
 			parentModule.handleNetworkResponse(null, aamEvent);
@@ -126,7 +143,10 @@ class AudienceHitsDatabase implements HitQueue.IHitProcessor<AudienceHit> {
 			return HitQueue.RetryType.NO;
 		} else if (!NetworkConnectionUtil.recoverableNetworkErrorCodes.contains(connection.getResponseCode())) {
 			// unrecoverable error. delete the hit from the database and continue
-			Log.warning(LOG_TAG, "process - Discarding request. Un-recoverable network error while processing AAM requests.");
+			Log.warning(
+				LOG_TAG,
+				"process - Discarding request. Un-recoverable network error while processing AAM requests."
+			);
 
 			// make sure the parent updates shared state and notifies one-time listeners accordingly
 			parentModule.handleNetworkResponse(null, aamEvent);
@@ -189,16 +209,17 @@ class AudienceHitsDatabase implements HitQueue.IHitProcessor<AudienceHit> {
 	void updatePrivacyStatus(final MobilePrivacyStatus privacyStatus) {
 		switch (privacyStatus) {
 			case OPT_IN:
-				Log.debug(LOG_TAG, "updatePrivacyStatus - Privacy opted-in: Attempting to send AAM queued hits from database");
+				Log.debug(
+					LOG_TAG,
+					"updatePrivacyStatus - Privacy opted-in: Attempting to send AAM queued hits from database"
+				);
 				this.hitQueue.bringOnline();
 				break;
-
 			case OPT_OUT:
 				this.hitQueue.suspend();
 				Log.debug(LOG_TAG, "updatePrivacyStatus - Privacy opted-out: Clearing AAM queued hits from database");
 				this.hitQueue.deleteAllHits();
 				break;
-
 			case UNKNOWN:
 				this.hitQueue.suspend();
 				Log.debug(LOG_TAG, "updatePrivacyStatus - Privacy opt-unknown: Suspend Audience database");
@@ -219,8 +240,7 @@ class AudienceHitsDatabase implements HitQueue.IHitProcessor<AudienceHit> {
 	 * response event or update shared state for this request.
 	 */
 	private void resetEventNumberAndPairIdForExistingRequests() {
-		Map<String, Object>  updateValues = this.audienceHitSchema.generateUpdateValuesForResetEventNumberAndPairId();
+		Map<String, Object> updateValues = this.audienceHitSchema.generateUpdateValuesForResetEventNumberAndPairId();
 		this.hitQueue.updateAllHits(updateValues);
 	}
-
 }

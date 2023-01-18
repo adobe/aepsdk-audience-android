@@ -1,31 +1,23 @@
-/* ***********************************************************************
- * ADOBE CONFIDENTIAL
- * ___________________
- *
- * Copyright 2018 Adobe Systems Incorporated
- * All Rights Reserved.
- *
- * NOTICE:  All information contained herein is, and remains
- * the property of Adobe Systems Incorporated and its suppliers,
- * if any.  The intellectual and technical concepts contained
- * herein are proprietary to Adobe Systems Incorporated and its
- * suppliers and are protected by trade secret or copyright law.
- * Dissemination of this information or reproduction of this material
- * is strictly forbidden unless prior written permission is obtained
- * from Adobe Systems Incorporated.
- **************************************************************************/
+/*
+  Copyright 2018 Adobe. All rights reserved.
+  This file is licensed to you under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License. You may obtain a copy
+  of the License at http://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing, software distributed under
+  the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTATIONS
+  OF ANY KIND, either express or implied. See the License for the specific language
+  governing permissions and limitations under the License.
+*/
 
 package com.adobe.marketing.mobile.audience;
 
+import com.adobe.marketing.mobile.DatabaseService.Database.ColumnConstraint;
+import com.adobe.marketing.mobile.DatabaseService.Database.ColumnDataType;
+import com.adobe.marketing.mobile.DatabaseService.QueryResult;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import com.adobe.marketing.mobile.DatabaseService.QueryResult;
-import com.adobe.marketing.mobile.DatabaseService.Database.ColumnDataType;
-import com.adobe.marketing.mobile.DatabaseService.Database.ColumnConstraint;
-
 
 /**
  * AudienceHitSchema class takes on the following role:
@@ -45,7 +37,6 @@ class AudienceHitSchema extends AbstractHitSchema<AudienceHit> {
 	private static final int COL_INDEX_REQUESTS_PAIR_ID = 4;
 	private static final int COL_INDEX_REQUESTS_EVENT_NUMBER = 5;
 
-
 	private static final String COL_REQUESTS_ID = "ID";
 	private static final String COL_REQUESTS_URL = "URL";
 	private static final String COL_REQUESTS_TIMEOUT = "TIMEOUT";
@@ -61,30 +52,32 @@ class AudienceHitSchema extends AbstractHitSchema<AudienceHit> {
 		List<ColumnConstraint> idColumnConstraints = new ArrayList<DatabaseService.Database.ColumnConstraint>();
 		idColumnConstraints.add(ColumnConstraint.PRIMARY_KEY);
 		idColumnConstraints.add(ColumnConstraint.AUTOINCREMENT);
-		columnConstraints.add(idColumnConstraints);                  // id
-		columnConstraints.add(new ArrayList<ColumnConstraint>());    // url
-		columnConstraints.add(new ArrayList<ColumnConstraint>());    // timeout
-		columnConstraints.add(new ArrayList<ColumnConstraint>());    // timestamp
-		columnConstraints.add(new ArrayList<ColumnConstraint>());    // pair id
-		columnConstraints.add(new ArrayList<ColumnConstraint>());    // event number
+		columnConstraints.add(idColumnConstraints); // id
+		columnConstraints.add(new ArrayList<ColumnConstraint>()); // url
+		columnConstraints.add(new ArrayList<ColumnConstraint>()); // timeout
+		columnConstraints.add(new ArrayList<ColumnConstraint>()); // timestamp
+		columnConstraints.add(new ArrayList<ColumnConstraint>()); // pair id
+		columnConstraints.add(new ArrayList<ColumnConstraint>()); // event number
 
-		this.columnNames = new String[] {
-			COL_REQUESTS_ID,
-			COL_REQUESTS_URL,
-			COL_REQUESTS_TIMEOUT,
-			COL_REQUESTS_TIMESTAMP,
-			COL_REQUESTS_PAIR_ID,
-			COL_REQUESTS_EVENT_NUMBER
-		};
+		this.columnNames =
+			new String[] {
+				COL_REQUESTS_ID,
+				COL_REQUESTS_URL,
+				COL_REQUESTS_TIMEOUT,
+				COL_REQUESTS_TIMESTAMP,
+				COL_REQUESTS_PAIR_ID,
+				COL_REQUESTS_EVENT_NUMBER,
+			};
 
-		this.columnDataTypes = new ColumnDataType[] {
-			ColumnDataType.INTEGER,    // id
-			ColumnDataType.TEXT,       // url
-			ColumnDataType.INTEGER,    // timeout
-			ColumnDataType.INTEGER,    // timestamp
-			ColumnDataType.TEXT,       // pair id
-			ColumnDataType.INTEGER     // event number
-		};
+		this.columnDataTypes =
+			new ColumnDataType[] {
+				ColumnDataType.INTEGER, // id
+				ColumnDataType.TEXT, // url
+				ColumnDataType.INTEGER, // timeout
+				ColumnDataType.INTEGER, // timestamp
+				ColumnDataType.TEXT, // pair id
+				ColumnDataType.INTEGER, // event number
+			};
 	}
 
 	/**
@@ -164,5 +157,4 @@ class AudienceHitSchema extends AbstractHitSchema<AudienceHit> {
 		updateValues.put(COL_REQUESTS_EVENT_NUMBER, -1);
 		return updateValues;
 	}
-
 }
