@@ -13,15 +13,26 @@ package com.adobe.marketing.mobile.audience;
 
 import static com.adobe.marketing.mobile.audience.AudienceConstants.EXTENSION_NAME;
 import static com.adobe.marketing.mobile.audience.AudienceConstants.FRIENDLY_EXTENSION_NAME;
-import static com.adobe.marketing.mobile.audience.AudienceConstants.LOG_PREFIX;
+import static com.adobe.marketing.mobile.audience.AudienceConstants.LOG_TAG;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
-import com.adobe.marketing.mobile.*;
+import com.adobe.marketing.mobile.Audience;
+import com.adobe.marketing.mobile.Event;
+import com.adobe.marketing.mobile.EventSource;
+import com.adobe.marketing.mobile.EventType;
+import com.adobe.marketing.mobile.Extension;
+import com.adobe.marketing.mobile.ExtensionApi;
+import com.adobe.marketing.mobile.MobilePrivacyStatus;
+import com.adobe.marketing.mobile.SharedStateResolution;
+import com.adobe.marketing.mobile.SharedStateResult;
+import com.adobe.marketing.mobile.SharedStateStatus;
 import com.adobe.marketing.mobile.VisitorID;
+import com.adobe.marketing.mobile.services.DataQueue;
 import com.adobe.marketing.mobile.services.HttpMethod;
 import com.adobe.marketing.mobile.services.Log;
 import com.adobe.marketing.mobile.services.NetworkRequest;
+import com.adobe.marketing.mobile.services.PersistentHitQueue;
 import com.adobe.marketing.mobile.services.ServiceProvider;
 import com.adobe.marketing.mobile.util.DataReader;
 import com.adobe.marketing.mobile.util.StringUtils;
@@ -49,25 +60,25 @@ import org.json.JSONObject;
  * <ol>
  *   <li>{@link EventType#ANALYTICS} - {@link EventSource#RESPONSE_CONTENT}</li>
  *   <li>{@link EventType#AUDIENCEMANAGER} - {@link EventSource#REQUEST_CONTENT}</li>
- *   <li>{@code EventType.AUDIENCEMANAGER} - {@link EventSource#REQUEST_IDENTITY}</li>
- *   <li>{@code EventType.AUDIENCEMANAGER} - {@link EventSource#REQUEST_RESET}</li>
- *   <li>{@link EventType#CONFIGURATION} - {@code EventSource.RESPONSE_CONTENT}</li>
- *   <li>{@link EventType#GENERIC_IDENTITY} - {@code EventSource.REQUEST_RESET}</li>
- *   <li>{@link EventType#LIFECYCLE} - {@code EventSource.RESPONSE_CONTENT}</li>
+ *   <li>{@link EventType#AUDIENCEMANAGER} - {@link EventSource#REQUEST_IDENTITY}</li>
+ *   <li>{@link EventType#AUDIENCEMANAGER} - {@link EventSource#REQUEST_RESET}</li>
+ *   <li>{@link EventType#CONFIGURATION} - {@link EventSource#RESPONSE_CONTENT}</li>
+ *   <li>{@link EventType#GENERIC_IDENTITY} - {@link EventSource#REQUEST_RESET}</li>
+ *   <li>{@link EventType#LIFECYCLE} - {@link EventSource#RESPONSE_CONTENT}</li>
  *</ol>
  *
  * The AudienceExtension dispatches the following {@code Event}s:
  * <ol>
- *   <li>{@code EventType.AUDIENCEMANAGER} - {@code EventSource.RESPONSE_CONTENT}</li>
- *   <li>{@code EventType.AUDIENCEMANAGER} - {@link EventSource#RESPONSE_IDENTITY}</li>
+ *   <li>{@link EventType#AUDIENCEMANAGER} - {@link EventSource#RESPONSE_CONTENT}</li>
+ *   <li>{@link EventType#AUDIENCEMANAGER} - {@link EventSource#RESPONSE_IDENTITY}</li>
  * </ol>
  */
 public final class AudienceExtension extends Extension {
 
-	private static final String CLASS_NAME = "AudienceExtension";
+	private static final String LOG_SOURCE = "AudienceExtension";
 
 	private final AudienceState internalState;
-	private final AudienceHitsDatabase internalDatabase;
+	private final PersistentHitQueue hitQueue;
 
 	AudienceExtension(final ExtensionApi extensionApi) {
 		this(extensionApi, null, null);
@@ -77,12 +88,52 @@ public final class AudienceExtension extends Extension {
 	AudienceExtension(
 		final ExtensionApi extensionApi,
 		final AudienceState audienceState,
-		final AudienceHitsDatabase audienceHitsDatabase
+		final AudienceHitProcessor audienceHitProcessor
 	) {
 		super(extensionApi);
 		this.internalState = audienceState != null ? audienceState : new AudienceState();
-		// TODO: fix when db is migrated
-		this.internalDatabase = audienceHitsDatabase != null ? audienceHitsDatabase : null; // new AudienceHitsDatabase(this, services);
+		final DataQueue dataQueue = ServiceProvider.getInstance().getDataQueueService().getDataQueue(getName());
+		if (audienceHitProcessor == null) {
+			final AudienceNetworkResponseHandler networkResponseHandler = (responsePayload, requestEvent) -> {
+				final String LOG_SOURCE = "AudienceNetworkResponseHandler";
+				if (requestEvent == null) {
+					Log.warning(LOG_TAG, LOG_SOURCE, "Unable to process network response, invalid request event.");
+					return;
+				}
+
+				if (requestEvent.getTimestamp() < internalState.getLastResetTimestampMillis()) {
+					Log.debug(
+						LOG_TAG,
+						LOG_SOURCE,
+						"Not dispatching Audience hit response since resetIdentities API was called after queuing this hit."
+					);
+					return;
+				}
+
+				Map<String, String> profile = new HashMap<>();
+
+				if (StringUtils.isNullOrEmpty(responsePayload)) {
+					Log.warning(LOG_TAG, LOG_SOURCE, "Null/empty response from server, nothing to process.");
+					shareStateForEvent(requestEvent);
+					dispatchAudienceResponseContent(profile, requestEvent);
+					return;
+				}
+
+				// process the response from the AAM server and share the shared state
+				profile = processResponse(responsePayload, requestEvent);
+
+				// if profile is empty, there was a json error in the response, don't dispatch a generic event
+				if (profile != null && !profile.isEmpty()) {
+					dispatchAudienceResponseContent(profile, null);
+				}
+
+				// dispatch paired event
+				dispatchAudienceResponseContent(profile, requestEvent);
+			};
+			this.hitQueue = new PersistentHitQueue(dataQueue, new AudienceHitProcessor(networkResponseHandler));
+		} else {
+			this.hitQueue = new PersistentHitQueue(dataQueue, audienceHitProcessor);
+		}
 	}
 
 	//region Extension interface methods
@@ -149,7 +200,7 @@ public final class AudienceExtension extends Extension {
 		getApi()
 			.registerEventListener(EventType.LIFECYCLE, EventSource.RESPONSE_CONTENT, this::handleLifecycleResponse);
 
-		Log.trace(LOG_PREFIX, CLASS_NAME, "Dispatching Audience shared state");
+		Log.trace(LOG_TAG, LOG_SOURCE, "Dispatching Audience shared state");
 		shareStateForEvent(null);
 	}
 
@@ -192,7 +243,7 @@ public final class AudienceExtension extends Extension {
 			DataReader.optString(eventData, AudienceConstants.EventDataKeys.Configuration.GLOBAL_CONFIG_PRIVACY, "")
 		);
 		internalState.setMobilePrivacyStatus(privacyStatus);
-		internalDatabase.updatePrivacyStatus(privacyStatus);
+		hitQueue.handlePrivacyChange(privacyStatus);
 
 		if (privacyStatus.equals(MobilePrivacyStatus.OPT_OUT)) {
 			sendOptOutHit(eventData);
@@ -208,16 +259,21 @@ public final class AudienceExtension extends Extension {
 	 * @param event {@link Event} containing instruction to reset identities
 	 */
 	private void handleResetIdentities(@NonNull final Event event) {
-		Log.debug(LOG_PREFIX, CLASS_NAME, "Resetting stored Audience Manager identities and visitor profile.");
+		Log.debug(LOG_TAG, LOG_SOURCE, "Resetting stored Audience Manager identities and visitor profile.");
+		if (EventType.GENERIC_IDENTITY.equals(event.getType())) {
+			hitQueue.clear();
+		}
+
 		internalState.clearIdentifiers();
+		internalState.setLastResetTimestamp(event.getTimestamp());
 		shareStateForEvent(event);
 	}
 
 	private void handleAnalyticsResponse(@NonNull final Event event) {
 		if (!serverSideForwardingToAam(event)) {
 			Log.trace(
-				LOG_PREFIX,
-				CLASS_NAME,
+				LOG_TAG,
+				LOG_SOURCE,
 				"Not processing Analytics response event - AAM forwarding is disabled in configuration."
 			);
 			return;
@@ -229,7 +285,7 @@ public final class AudienceExtension extends Extension {
 			""
 		);
 		if (StringUtils.isNullOrEmpty(response)) {
-			Log.trace(LOG_PREFIX, CLASS_NAME, "Ignoring Analytics response event - the response is null or empty.");
+			Log.trace(LOG_TAG, LOG_SOURCE, "Ignoring Analytics response event - the response is null or empty.");
 			return;
 		}
 
@@ -258,7 +314,7 @@ public final class AudienceExtension extends Extension {
 			internalState.setDpid(dpid);
 			internalState.setDpuuid(dpuuid);
 			shareStateForEvent(event);
-			Log.trace(LOG_PREFIX, CLASS_NAME, "Setting dpid (%s) and dpuuid (%s).", dpid, dpuuid);
+			Log.trace(LOG_TAG, LOG_SOURCE, "Setting dpid (%s) and dpuuid (%s).", dpid, dpuuid);
 		}
 		// else (if the dpid and dpuuid values are not present), call the getter and pass along the pairId
 		else {
@@ -293,8 +349,8 @@ public final class AudienceExtension extends Extension {
 		// if aam forwarding is enabled, we don't need to send anything
 		if (!serverSideForwardingToAam(event)) {
 			Log.trace(
-				LOG_PREFIX,
-				CLASS_NAME,
+				LOG_TAG,
+				LOG_SOURCE,
 				"Ignoring Lifecycle response event because AAM forwarding is enabled in configuration."
 			);
 			return;
@@ -302,7 +358,7 @@ public final class AudienceExtension extends Extension {
 
 		final Map<String, Object> eventData = event.getEventData();
 		if (eventData == null || eventData.isEmpty()) {
-			Log.trace(LOG_PREFIX, CLASS_NAME, "Ignoring Lifecycle response event with absent or empty event data.");
+			Log.trace(LOG_TAG, LOG_SOURCE, "Ignoring Lifecycle response event with absent or empty event data.");
 			return;
 		}
 
@@ -349,8 +405,8 @@ public final class AudienceExtension extends Extension {
 	private Map<String, String> processResponse(final String response, final Event event) {
 		if (StringUtils.isNullOrEmpty(response)) {
 			Log.trace(
-				LOG_PREFIX,
-				CLASS_NAME,
+				LOG_TAG,
+				LOG_SOURCE,
 				"Unable to process Audience Manager server response - response was null or empty."
 			);
 			return null;
@@ -363,8 +419,8 @@ public final class AudienceExtension extends Extension {
 		);
 		if (configSharedState.getStatus() == SharedStateStatus.PENDING) {
 			Log.trace(
-				LOG_PREFIX,
-				CLASS_NAME,
+				LOG_TAG,
+				LOG_SOURCE,
 				"Unable to process Audience Manager server response - configuration shared state is pending."
 			);
 			return null;
@@ -376,13 +432,13 @@ public final class AudienceExtension extends Extension {
 			AudienceConstants.DEFAULT_AAM_TIMEOUT
 		);
 
-		JSONObject jsonResponse = null;
+		JSONObject jsonResponse;
 		try {
 			jsonResponse = new JSONObject(response);
 		} catch (JSONException ex) {
 			Log.warning(
-				LOG_PREFIX,
-				CLASS_NAME,
+				LOG_TAG,
+				LOG_SOURCE,
 				"Failed to parse response from Audience Manager server - %s",
 				ex.getLocalizedMessage()
 			);
@@ -398,8 +454,8 @@ public final class AudienceExtension extends Extension {
 			internalState.setUuid(jsonResponse.getString(AudienceConstants.AUDIENCE_MANAGER_JSON_USER_ID_KEY));
 		} catch (final JSONException ex) {
 			Log.debug(
-				LOG_PREFIX,
-				CLASS_NAME,
+				LOG_TAG,
+				LOG_SOURCE,
 				"Unable to retrieve UUID from Audience Manager response - %s",
 				ex.getLocalizedMessage()
 			);
@@ -409,9 +465,9 @@ public final class AudienceExtension extends Extension {
 		final Map<String, String> returnedMap = processStuffArray(jsonResponse);
 
 		if (returnedMap.size() > 0) {
-			Log.trace(LOG_PREFIX, CLASS_NAME, "Response received from Audience Manager server - %s", returnedMap);
+			Log.trace(LOG_TAG, LOG_SOURCE, "Response received from Audience Manager server - %s", returnedMap);
 		} else {
-			Log.trace(LOG_PREFIX, CLASS_NAME, "Response received from Audience Manager server was empty.");
+			Log.trace(LOG_TAG, LOG_SOURCE, "Response received from Audience Manager server was empty.");
 		}
 
 		// save profile in defaults
@@ -439,8 +495,8 @@ public final class AudienceExtension extends Extension {
 		);
 		if (configSharedState.getStatus() != SharedStateStatus.SET) {
 			Log.trace(
-				LOG_PREFIX,
-				CLASS_NAME,
+				LOG_TAG,
+				LOG_SOURCE,
 				"Attempted to retrieve AAM configuration for server-side forwarding but shared state was not set."
 			);
 			return false;
@@ -496,53 +552,67 @@ public final class AudienceExtension extends Extension {
 			// create an empty valid shared state if privacy is opt-out.
 			// if not configured, dispatch an empty event for the pairId (if necessary)
 			Log.debug(
-				LOG_PREFIX,
-				CLASS_NAME,
+				LOG_TAG,
+				LOG_SOURCE,
 				"Dispatching an empty profile - AAM server configuration is unavailable or privacy status is opted-out."
 			);
-			dispatchPairedIdResponseIfNecessary(null, event);
+			dispatchAudienceResponseContent(null, event);
+			return;
+		}
+
+		if (event.getTimestamp() < internalState.getLastResetTimestampMillis()) {
+			Log.debug(LOG_TAG, LOG_SOURCE, "Dropping Audience hit, resetIdentities API was called after this request.");
+			dispatchAudienceResponseContent(null, event);
 			return;
 		}
 
 		if (privacyStatus == MobilePrivacyStatus.UNKNOWN) {
 			// when privacy is opt-unknown, callback should be immediately called with empty data.
-			Log.debug(LOG_PREFIX, CLASS_NAME, "Dispatching an empty profile - privacy status is unknown.");
-			dispatchPairedIdResponseIfNecessary(null, event);
+			Log.debug(LOG_TAG, LOG_SOURCE, "Dispatching an empty profile - privacy status is unknown.");
+			dispatchAudienceResponseContent(null, event);
 		}
 
-		if (internalDatabase == null) {
-			Log.warning(LOG_PREFIX, CLASS_NAME, "Unable to queue AAM request as Audience Database not initialized.");
+		if (hitQueue == null) {
+			Log.warning(LOG_TAG, LOG_SOURCE, "Unable to queue AAM request as Audience Database not initialized.");
 			return;
 		}
 
 		// generate the url to send
 		final String requestUrl = buildSignalUrl(server, event);
-		Log.debug(LOG_PREFIX, CLASS_NAME, "Queuing request - %s", requestUrl);
-		internalDatabase.queue(requestUrl, timeout, privacyStatus, event);
+		Log.debug(LOG_TAG, LOG_SOURCE, "Queuing request - %s", requestUrl);
+		AudienceDataEntity entity = new AudienceDataEntity(event, requestUrl, timeout);
+		hitQueue.queue(entity.toDataEntity());
 	}
 
 	/**
 	 * Invokes the dispatcher passing the current visitor {@code profile} and {@code event} to dispatch {@code AUDIENCEMANAGER},
-	 * {@code RESPONSE_CONTENT} event to paired id listener if the {@code event} has one.
+	 * {@code RESPONSE_CONTENT} event.
 	 *
 	 * @param profile {@code Map<String, String>} containing the user's profile
-	 * @param event {@link Event} object that may or may not contain a {@code pairId}
+	 * @param event request {@link Event} object to be used for dispatching the paired response event;
+	 *              if null is provided the response will be generic, not tied to a request id
 	 */
-	private void dispatchPairedIdResponseIfNecessary(final Map<String, String> profile, final Event event) {
+	private void dispatchAudienceResponseContent(final Map<String, String> profile, final Event event) {
 		final Map<String, Object> eventData = new HashMap<String, Object>() {
 			{
 				put(AudienceConstants.EventDataKeys.Audience.VISITOR_PROFILE, profile);
 			}
 		};
 
-		final Event responseEvent = new Event.Builder(
-			"Audience Manager Profile",
-			EventType.AUDIENCEMANAGER,
-			EventSource.RESPONSE_CONTENT
-		)
-			.setEventData(eventData)
-			.inResponseToEvent(event)
-			.build();
+		Event responseEvent;
+		if (event != null) {
+			// dispatch paired response if there is a request event
+			responseEvent =
+				new Event.Builder("Audience Manager Profile", EventType.AUDIENCEMANAGER, EventSource.RESPONSE_CONTENT)
+					.setEventData(eventData)
+					.inResponseToEvent(event)
+					.build();
+		} else {
+			responseEvent =
+				new Event.Builder("Audience Manager Profile", EventType.AUDIENCEMANAGER, EventSource.RESPONSE_CONTENT)
+					.setEventData(eventData)
+					.build();
+		}
 
 		getApi().dispatch(responseEvent);
 	}
@@ -556,10 +626,10 @@ public final class AudienceExtension extends Extension {
 	 * <br>
 	 * The result of whether the hit was sent out or not is then dispatched as a {@link EventSource#RESPONSE_CONTENT} event.
 	 *
-	 * @param configuration The configuration {@link Map<String,Object>} object
+	 * @param configuration The configuration {@code Map<String,Object>} object
 	 */
 	private void sendOptOutHit(final Map<String, Object> configuration) {
-		// If opt-out, and we have a UUID, then send an optout hit, and dispatch an event
+		// If opt-out, and we have a UUID, then send an opt-out hit, and dispatch an event
 		final String aamServer = DataReader.optString(
 			configuration,
 			AudienceConstants.EventDataKeys.Configuration.AAM_CONFIG_SERVER,
@@ -599,11 +669,11 @@ public final class AudienceExtension extends Extension {
 						}
 
 						if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
-							Log.trace(LOG_PREFIX, CLASS_NAME, "Successfully sent the optOut hit.");
+							Log.trace(LOG_TAG, LOG_SOURCE, "Successfully sent the optOut hit.");
 						} else {
 							Log.trace(
-								LOG_PREFIX,
-								CLASS_NAME,
+								LOG_TAG,
+								LOG_SOURCE,
 								"Failed to send the optOut hit with connection status (%s).",
 								connection.getResponseCode()
 							);
@@ -655,18 +725,18 @@ public final class AudienceExtension extends Extension {
 	/**
 	 * Converts data from a lifecycle event into its form desired by Audience Manager.
 	 *
-	 * @param lifecycleData map containing event data ({@link Map<String, Object>}) from a {@code Lifecycle} {@link Event}
+	 * @param lifecycleData map containing event data ({@code Map<String, Object>}) from a {@code Lifecycle} {@link Event}
 	 * @return {@code HashMap<String, String>} containing Lifecycle data transformed for Audience Manager
 	 */
 	private HashMap<String, String> getLifecycleDataForAudience(final Map<String, String> lifecycleData) {
-		final HashMap<String, String> lifecycleContextData = new HashMap<String, String>();
+		final HashMap<String, String> lifecycleContextData = new HashMap<>();
 
 		if (lifecycleData == null || lifecycleData.isEmpty()) {
 			return lifecycleContextData;
 		}
 
 		// copy the event's data so we don't accidentally overwrite it for someone else consuming this event
-		final Map<String, String> tempLifecycleContextData = new HashMap<String, String>(lifecycleData);
+		final Map<String, String> tempLifecycleContextData = new HashMap<>(lifecycleData);
 
 		for (Map.Entry<String, String> kvp : AudienceConstants.MAP_TO_CONTEXT_DATA_KEYS.entrySet()) {
 			final String value = tempLifecycleContextData.get(kvp.getKey());
@@ -720,7 +790,7 @@ public final class AudienceExtension extends Extension {
 	 */
 	private String getCustomUrlVariables(final Map<String, String> data) {
 		if (data == null || data.size() == 0) {
-			Log.debug(LOG_PREFIX, CLASS_NAME, "No data found converting customer data for URL parameters.");
+			Log.debug(LOG_TAG, LOG_SOURCE, "No data found converting customer data for URL parameters.");
 			return "";
 		}
 
@@ -955,11 +1025,11 @@ public final class AudienceExtension extends Extension {
 								}
 
 								if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
-									Log.trace(LOG_PREFIX, CLASS_NAME, "Successfully forwarded 'dest'.");
+									Log.trace(LOG_TAG, LOG_SOURCE, "Successfully forwarded 'dest'.");
 								} else {
 									Log.trace(
-										LOG_PREFIX,
-										CLASS_NAME,
+										LOG_TAG,
+										LOG_SOURCE,
 										"Failed to process dest - connection status \"%s\".",
 										connection.getResponseCode()
 									);
@@ -971,7 +1041,7 @@ public final class AudienceExtension extends Extension {
 				}
 			}
 		} catch (final JSONException ex) {
-			Log.trace(LOG_PREFIX, CLASS_NAME, "No destinations ('dests') in response.");
+			Log.trace(LOG_TAG, LOG_SOURCE, "No destinations ('dests') in response.");
 		}
 	}
 
@@ -982,7 +1052,7 @@ public final class AudienceExtension extends Extension {
 	 * @return a {@code Map<String, String>} representing the segments for the user
 	 */
 	private @NonNull Map<String, String> processStuffArray(final JSONObject jsonResponse) {
-		final Map<String, String> returnedMap = new HashMap<String, String>();
+		final Map<String, String> returnedMap = new HashMap<>();
 
 		try {
 			final JSONArray stuffArray = jsonResponse.getJSONArray(AudienceConstants.AUDIENCE_MANAGER_JSON_STUFF_KEY);
@@ -1007,7 +1077,7 @@ public final class AudienceExtension extends Extension {
 				}
 			}
 		} catch (final JSONException ex) {
-			Log.trace(LOG_PREFIX, CLASS_NAME, "No 'stuff' array in response.");
+			Log.trace(LOG_TAG, LOG_SOURCE, "No 'stuff' array in response.");
 		}
 
 		return returnedMap;
@@ -1029,44 +1099,4 @@ public final class AudienceExtension extends Extension {
 
 		return "&" + key + "=" + value;
 	}
-	// TODO: this still need to be called from database?
-	//	/**
-	//	 * This method is called by the {@code AudienceHitsDatabase} after a network request has been processed.
-	//	 *
-	//	 * @param response {@link String} representation of the response from the AAM server
-	//	 * @param event triggering {@link Event} that caused the AAM request
-	//	 */
-	//	void handleNetworkResponse(final String response, final Event event) {
-	//		getExecutor().execute(new Runnable() {
-	//			@Override
-	//			public void run() {
-	//				if (event == null) {
-	//					Log.warning(LOG_TAG, "handleNetworkResponse - Unable to process network response, invalid event.");
-	//					return;
-	//				}
-	//
-	//				Map<String, String> profile = new HashMap<String, String>();
-	//
-	//				if (StringUtils.isNullOrEmpty(response)) {
-	//					Log.warning(LOG_TAG, "handleNetworkResponse - No response from server.");
-	//					dispatchPairedIdResponseIfNecessary(profile, event);
-	//					saveAamStateForVersion(event.getEventNumber());
-	//					return;
-	//				}
-	//
-	//				// process the response from the AAM server
-	//				profile = processResponse(response, event);
-	//
-	//				// if profile is empty, there was a json error in the response, don't dispatch a generic event
-	//				if (profile != null && !profile.isEmpty()) {
-	//					dispatcherAudienceResponseContent.dispatch(profile, null);
-	//				}
-	//
-	//				// dispatch to one-time listener if we have one
-	//				dispatchPairedIdResponseIfNecessary(profile, event);
-	//			}
-	//		});
-	//
-	//	}
-
 }

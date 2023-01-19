@@ -11,7 +11,7 @@
 
 package com.adobe.marketing.mobile.audience;
 
-import static com.adobe.marketing.mobile.audience.AudienceConstants.LOG_PREFIX;
+import static com.adobe.marketing.mobile.audience.AudienceConstants.LOG_TAG;
 
 import androidx.annotation.VisibleForTesting;
 import com.adobe.marketing.mobile.MobilePrivacyStatus;
@@ -32,15 +32,18 @@ import java.util.Map;
  */
 class AudienceState {
 
-	private static final String CLASS_NAME = "AudienceState";
+	private static final String LOG_SOURCE = "AudienceState";
+
+	private final NamedCollection localStorage;
 
 	// configuration settings
-	private final NamedCollection localStorage;
 	private String uuid = null;
 	private String dpid = null;
 	private String dpuuid = null;
 	private Map<String, String> visitorProfile = null;
 	private MobilePrivacyStatus privacyStatus = AudienceConstants.DEFAULT_PRIVACY_STATUS;
+
+	private long lastResetTimestampMillis; // Stores the timestamp for most recent resetIdentities API call
 
 	/**
 	 * Constructor.
@@ -112,8 +115,8 @@ class AudienceState {
 			}
 		} else {
 			Log.warning(
-				LOG_PREFIX,
-				CLASS_NAME,
+				LOG_TAG,
+				LOG_SOURCE,
 				"Unable to update uuid in persistence - persistence collection could not be retrieved."
 			);
 		}
@@ -143,8 +146,8 @@ class AudienceState {
 			}
 		} else {
 			Log.warning(
-				LOG_PREFIX,
-				CLASS_NAME,
+				LOG_TAG,
+				LOG_SOURCE,
 				"Unable to update visitor profile in persistence - persistence collection could not be retrieved."
 			);
 		}
@@ -193,8 +196,8 @@ class AudienceState {
 				uuid = localStorage.getString(AudienceConstants.AUDIENCE_MANAGER_SHARED_PREFS_USER_ID_KEY, uuid);
 			} else {
 				Log.warning(
-					LOG_PREFIX,
-					CLASS_NAME,
+					LOG_TAG,
+					LOG_SOURCE,
 					"Unable to retrieve uuid from persistence - persistence could not be accessed."
 				);
 			}
@@ -215,8 +218,8 @@ class AudienceState {
 			// load visitor profile from data store if we have one
 			if (localStorage == null) {
 				Log.warning(
-					LOG_PREFIX,
-					CLASS_NAME,
+					LOG_TAG,
+					LOG_SOURCE,
 					"Unable to retrieve visitor profile from persistence - persistence could not be accessed."
 				);
 			} else if (localStorage.contains(AudienceConstants.AUDIENCE_MANAGER_SHARED_PREFS_PROFILE_KEY)) {
@@ -233,6 +236,21 @@ class AudienceState {
 	 */
 	MobilePrivacyStatus getMobilePrivacyStatus() {
 		return privacyStatus;
+	}
+
+	/**
+	 * Updates the last reset timestamp in memory
+	 * @param timestampMillis the timestamp of the reset event, in milliseconds
+	 */
+	void setLastResetTimestamp(final long timestampMillis) {
+		this.lastResetTimestampMillis = timestampMillis;
+	}
+
+	/**
+	 * @return last reset timestamp, in milliseconds
+	 */
+	long getLastResetTimestampMillis() {
+		return this.lastResetTimestampMillis;
 	}
 
 	/**

@@ -19,23 +19,23 @@ import org.junit.Test;
 
 public class AudienceHitsDatabaseTest extends BaseTest {
 
-	private AudienceHitsDatabase audienceHitsDatabase;
+	private AudienceHitProcessor audienceHitsDatabase;
 	private MockAudienceExtension parentModule;
 	private MockNetworkService networkService;
-	private MockHitQueue<AudienceHit, AudienceHitSchema> hitQueue;
+	private MockHitQueue<AudienceDataEntity, AudienceHitSchema> hitQueue;
 
 	@Before
 	public void setup() {
 		super.beforeEach();
-		hitQueue = new MockHitQueue<AudienceHit, AudienceHitSchema>(platformServices);
+		hitQueue = new MockHitQueue<AudienceDataEntity, AudienceHitSchema>(platformServices);
 		parentModule = new MockAudienceExtension(eventHub, platformServices);
 		networkService = platformServices.getMockNetworkService();
-		audienceHitsDatabase = new AudienceHitsDatabase(parentModule, platformServices, hitQueue);
+		audienceHitsDatabase = new AudienceHitProcessor(parentModule, platformServices, hitQueue);
 	}
 
 	@Test
 	public void testProcess_NotRetry_When_ConnectionIsNull() throws Exception {
-		AudienceHit audienceHit = createHit("id", 3000, "serverName2.com", "pairId", 3, 5);
+		AudienceDataEntity audienceHit = createHit("id", 3000, "serverName2.com", "pairId", 3, 5);
 		networkService.connectUrlReturnValue = null;
 
 		HitQueue.RetryType retryType = audienceHitsDatabase.process(audienceHit);
@@ -51,7 +51,7 @@ public class AudienceHitsDatabaseTest extends BaseTest {
 
 	@Test
 	public void testProcess_NotRetry_When_ResponseIsValid() throws Exception {
-		AudienceHit audienceHit = createHit("id", 3000, "serverName2.com", "pairId", 3, 5);
+		AudienceDataEntity audienceHit = createHit("id", 3000, "serverName2.com", "pairId", 3, 5);
 		MockConnection mockConnection = new MockConnection("", 200, null, null);
 		networkService.connectUrlReturnValue = mockConnection;
 
@@ -68,7 +68,7 @@ public class AudienceHitsDatabaseTest extends BaseTest {
 
 	@Test
 	public void testProcess_Retry_When_ConnectionTimeOout() throws Exception {
-		AudienceHit audienceHit = createHit("id", 3000, "serverName2.com", "pairId", 3, 5);
+		AudienceDataEntity audienceHit = createHit("id", 3000, "serverName2.com", "pairId", 3, 5);
 		MockConnection mockConnection = new MockConnection("", HttpURLConnection.HTTP_CLIENT_TIMEOUT, null, null);
 		networkService.connectUrlReturnValue = mockConnection;
 
@@ -79,7 +79,7 @@ public class AudienceHitsDatabaseTest extends BaseTest {
 
 	@Test
 	public void testProcess_Retry_When_GateWayOout() throws Exception {
-		AudienceHit audienceHit = createHit("id", 3000, "serverName2.com", "pairId", 3, 5);
+		AudienceDataEntity audienceHit = createHit("id", 3000, "serverName2.com", "pairId", 3, 5);
 		MockConnection mockConnection = new MockConnection("", HttpURLConnection.HTTP_GATEWAY_TIMEOUT, null, null);
 		networkService.connectUrlReturnValue = mockConnection;
 
@@ -90,7 +90,7 @@ public class AudienceHitsDatabaseTest extends BaseTest {
 
 	@Test
 	public void testProcess_Retry_When_HttpUnavailable() throws Exception {
-		AudienceHit audienceHit = createHit("id", 3000, "serverName2.com", "pairId", 3, 5);
+		AudienceDataEntity audienceHit = createHit("id", 3000, "serverName2.com", "pairId", 3, 5);
 		MockConnection mockConnection = new MockConnection("", HttpURLConnection.HTTP_UNAVAILABLE, null, null);
 		networkService.connectUrlReturnValue = mockConnection;
 
@@ -101,7 +101,7 @@ public class AudienceHitsDatabaseTest extends BaseTest {
 
 	@Test
 	public void testProcess_NotRetry_When_OtherRepsonseCode() throws Exception {
-		AudienceHit audienceHit = createHit("id", 3000, "serverName2.com", "pairId", 3, 5);
+		AudienceDataEntity audienceHit = createHit("id", 3000, "serverName2.com", "pairId", 3, 5);
 		MockConnection mockConnection = new MockConnection("", 301, null, null);
 		networkService.connectUrlReturnValue = mockConnection;
 
@@ -121,7 +121,7 @@ public class AudienceHitsDatabaseTest extends BaseTest {
 		event.setEventNumber(20);
 
 		audienceHitsDatabase.queue("url", 5, MobilePrivacyStatus.OPT_IN, event);
-		AudienceHit audienceHit = hitQueue.queueParametersHit;
+		AudienceDataEntity audienceHit = hitQueue.queueParametersHit;
 		assertEquals("url", audienceHit.url);
 		assertEquals(5, audienceHit.timeout);
 		assertEquals(123456, audienceHit.timestamp);
@@ -140,7 +140,7 @@ public class AudienceHitsDatabaseTest extends BaseTest {
 		event.setEventNumber(20);
 
 		audienceHitsDatabase.queue("url", 5, MobilePrivacyStatus.OPT_OUT, event);
-		AudienceHit audienceHit = hitQueue.queueParametersHit;
+		AudienceDataEntity audienceHit = hitQueue.queueParametersHit;
 		assertEquals("url", audienceHit.url);
 		assertEquals(5, audienceHit.timeout);
 		assertEquals(123456, audienceHit.timestamp);
@@ -159,7 +159,7 @@ public class AudienceHitsDatabaseTest extends BaseTest {
 		event.setEventNumber(20);
 
 		audienceHitsDatabase.queue("url", 5, MobilePrivacyStatus.UNKNOWN, event);
-		AudienceHit audienceHit = hitQueue.queueParametersHit;
+		AudienceDataEntity audienceHit = hitQueue.queueParametersHit;
 		assertEquals("url", audienceHit.url);
 		assertEquals(5, audienceHit.timeout);
 		assertEquals(123456, audienceHit.timestamp);
@@ -193,7 +193,7 @@ public class AudienceHitsDatabaseTest extends BaseTest {
 		assertFalse(hitQueue.deleteAllHitsWasCalled);
 	}
 
-	private AudienceHit createHit(
+	private AudienceDataEntity createHit(
 		String identifier,
 		long timeStamp,
 		String url,
@@ -201,7 +201,7 @@ public class AudienceHitsDatabaseTest extends BaseTest {
 		int eventNumber,
 		int timeout
 	) {
-		AudienceHit newHit = new AudienceHit();
+		AudienceDataEntity newHit = new AudienceDataEntity();
 		newHit.identifier = identifier;
 		newHit.eventNumber = eventNumber;
 		newHit.pairId = pairId;

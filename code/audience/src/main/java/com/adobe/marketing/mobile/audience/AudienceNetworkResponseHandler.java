@@ -1,5 +1,5 @@
 /*
-  Copyright 2020 Adobe. All rights reserved.
+  Copyright 2023 Adobe. All rights reserved.
   This file is licensed to you under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License. You may obtain a copy
   of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -11,22 +11,17 @@
 
 package com.adobe.marketing.mobile.audience;
 
-import java.util.HashMap;
-import java.util.Map;
+import com.adobe.marketing.mobile.Event;
 
-final class AudienceModuleDetails implements ModuleDetails {
-
-	private final String FRIENDLY_NAME = "Audience";
-
-	public String getName() {
-		return FRIENDLY_NAME;
-	}
-
-	public String getVersion() {
-		return Audience.extensionVersion();
-	}
-
-	public Map<String, String> getAdditionalInfo() {
-		return new HashMap<>();
-	}
+/**
+ * Callback for handling the network response from outside of the extension class.
+ */
+interface AudienceNetworkResponseHandler {
+	/**
+	 * This method is called after a network request has been processed and the connection was returned to the client.
+	 *
+	 * @param responsePayload {@link String} representation of the response from the AAM server
+	 * @param requestEvent triggering {@link Event} that caused the AAM network request
+	 */
+	void complete(final String responsePayload, final Event requestEvent);
 }
