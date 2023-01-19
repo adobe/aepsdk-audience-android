@@ -82,9 +82,7 @@ class AudienceHitProcessor implements HitProcessing {
 
 		networkService.connectAsync(
 			networkRequest,
-			connection -> {
-				handleNetworkResponse(connection, entity.getEvent(), processingResult);
-			}
+			connection -> handleNetworkResponse(connection, entity.getEvent(), processingResult)
 		);
 	}
 

@@ -17,7 +17,16 @@ import static com.adobe.marketing.mobile.audience.AudienceConstants.LOG_TAG;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
-import com.adobe.marketing.mobile.*;
+import com.adobe.marketing.mobile.Audience;
+import com.adobe.marketing.mobile.Event;
+import com.adobe.marketing.mobile.EventSource;
+import com.adobe.marketing.mobile.EventType;
+import com.adobe.marketing.mobile.Extension;
+import com.adobe.marketing.mobile.ExtensionApi;
+import com.adobe.marketing.mobile.MobilePrivacyStatus;
+import com.adobe.marketing.mobile.SharedStateResolution;
+import com.adobe.marketing.mobile.SharedStateResult;
+import com.adobe.marketing.mobile.SharedStateStatus;
 import com.adobe.marketing.mobile.VisitorID;
 import com.adobe.marketing.mobile.services.DataQueue;
 import com.adobe.marketing.mobile.services.HttpMethod;
@@ -51,17 +60,17 @@ import org.json.JSONObject;
  * <ol>
  *   <li>{@link EventType#ANALYTICS} - {@link EventSource#RESPONSE_CONTENT}</li>
  *   <li>{@link EventType#AUDIENCEMANAGER} - {@link EventSource#REQUEST_CONTENT}</li>
- *   <li>{@code EventType.AUDIENCEMANAGER} - {@link EventSource#REQUEST_IDENTITY}</li>
- *   <li>{@code EventType.AUDIENCEMANAGER} - {@link EventSource#REQUEST_RESET}</li>
- *   <li>{@link EventType#CONFIGURATION} - {@code EventSource.RESPONSE_CONTENT}</li>
- *   <li>{@link EventType#GENERIC_IDENTITY} - {@code EventSource.REQUEST_RESET}</li>
- *   <li>{@link EventType#LIFECYCLE} - {@code EventSource.RESPONSE_CONTENT}</li>
+ *   <li>{@link EventType#AUDIENCEMANAGER} - {@link EventSource#REQUEST_IDENTITY}</li>
+ *   <li>{@link EventType#AUDIENCEMANAGER} - {@link EventSource#REQUEST_RESET}</li>
+ *   <li>{@link EventType#CONFIGURATION} - {@link EventSource#RESPONSE_CONTENT}</li>
+ *   <li>{@link EventType#GENERIC_IDENTITY} - {@link EventSource#REQUEST_RESET}</li>
+ *   <li>{@link EventType#LIFECYCLE} - {@link EventSource#RESPONSE_CONTENT}</li>
  *</ol>
  *
  * The AudienceExtension dispatches the following {@code Event}s:
  * <ol>
- *   <li>{@code EventType.AUDIENCEMANAGER} - {@code EventSource.RESPONSE_CONTENT}</li>
- *   <li>{@code EventType.AUDIENCEMANAGER} - {@link EventSource#RESPONSE_IDENTITY}</li>
+ *   <li>{@link EventType#AUDIENCEMANAGER} - {@link EventSource#RESPONSE_CONTENT}</li>
+ *   <li>{@link EventType#AUDIENCEMANAGER} - {@link EventSource#RESPONSE_IDENTITY}</li>
  * </ol>
  */
 public final class AudienceExtension extends Extension {
@@ -423,7 +432,7 @@ public final class AudienceExtension extends Extension {
 			AudienceConstants.DEFAULT_AAM_TIMEOUT
 		);
 
-		JSONObject jsonResponse = null;
+		JSONObject jsonResponse;
 		try {
 			jsonResponse = new JSONObject(response);
 		} catch (JSONException ex) {
@@ -617,10 +626,10 @@ public final class AudienceExtension extends Extension {
 	 * <br>
 	 * The result of whether the hit was sent out or not is then dispatched as a {@link EventSource#RESPONSE_CONTENT} event.
 	 *
-	 * @param configuration The configuration {@link Map<String,Object>} object
+	 * @param configuration The configuration {@code Map<String,Object>} object
 	 */
 	private void sendOptOutHit(final Map<String, Object> configuration) {
-		// If opt-out, and we have a UUID, then send an optout hit, and dispatch an event
+		// If opt-out, and we have a UUID, then send an opt-out hit, and dispatch an event
 		final String aamServer = DataReader.optString(
 			configuration,
 			AudienceConstants.EventDataKeys.Configuration.AAM_CONFIG_SERVER,
@@ -716,18 +725,18 @@ public final class AudienceExtension extends Extension {
 	/**
 	 * Converts data from a lifecycle event into its form desired by Audience Manager.
 	 *
-	 * @param lifecycleData map containing event data ({@link Map<String, Object>}) from a {@code Lifecycle} {@link Event}
+	 * @param lifecycleData map containing event data ({@code Map<String, Object>}) from a {@code Lifecycle} {@link Event}
 	 * @return {@code HashMap<String, String>} containing Lifecycle data transformed for Audience Manager
 	 */
 	private HashMap<String, String> getLifecycleDataForAudience(final Map<String, String> lifecycleData) {
-		final HashMap<String, String> lifecycleContextData = new HashMap<String, String>();
+		final HashMap<String, String> lifecycleContextData = new HashMap<>();
 
 		if (lifecycleData == null || lifecycleData.isEmpty()) {
 			return lifecycleContextData;
 		}
 
 		// copy the event's data so we don't accidentally overwrite it for someone else consuming this event
-		final Map<String, String> tempLifecycleContextData = new HashMap<String, String>(lifecycleData);
+		final Map<String, String> tempLifecycleContextData = new HashMap<>(lifecycleData);
 
 		for (Map.Entry<String, String> kvp : AudienceConstants.MAP_TO_CONTEXT_DATA_KEYS.entrySet()) {
 			final String value = tempLifecycleContextData.get(kvp.getKey());
@@ -1043,7 +1052,7 @@ public final class AudienceExtension extends Extension {
 	 * @return a {@code Map<String, String>} representing the segments for the user
 	 */
 	private @NonNull Map<String, String> processStuffArray(final JSONObject jsonResponse) {
-		final Map<String, String> returnedMap = new HashMap<String, String>();
+		final Map<String, String> returnedMap = new HashMap<>();
 
 		try {
 			final JSONArray stuffArray = jsonResponse.getJSONArray(AudienceConstants.AUDIENCE_MANAGER_JSON_STUFF_KEY);
