@@ -25,5 +25,5 @@ dependencyResolutionManagement {
         maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
     }
 }
-include ':audience'
+include ':audience', ':app'
 rootProject.name='audience-sdk'
