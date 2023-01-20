@@ -36,11 +36,11 @@ create-ci: clean
 
 format:
 	(./code/gradlew -p code/$(EXTENSION-LIBRARY-FOLDER-NAME) spotlessApply)
-#	(./code/gradlew -p code/$(TEST-APP-FOLDER-NAME) spotlessApply)
+	(./code/gradlew -p code/$(TEST-APP-FOLDER-NAME) spotlessApply)
 
 format-check:
 	(./code/gradlew -p code/$(EXTENSION-LIBRARY-FOLDER-NAME) spotlessCheck)
-#	(./code/gradlew -p code/$(TEST-APP-FOLDER-NAME) spotlessCheck)
+	(./code/gradlew -p code/$(TEST-APP-FOLDER-NAME) spotlessCheck)
 
 format-license:
 	(./code/gradlew -p code licenseFormat)
