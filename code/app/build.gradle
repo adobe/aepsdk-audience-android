@@ -44,4 +44,7 @@ dependencies {
     implementation ('com.adobe.marketing.mobile:analytics:2.0.0-SNAPSHOT') {
         transitive = false
     }
+    implementation ('com.adobe.marketing.mobile:assurance:2.0.0-SNAPSHOT') {
+        transitive = false
+    }
 }

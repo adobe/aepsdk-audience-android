@@ -14,6 +14,7 @@ package com.adobe.audiencetestapp;
 import android.app.Application;
 import android.util.Log;
 import com.adobe.marketing.mobile.Analytics;
+import com.adobe.marketing.mobile.Assurance;
 import com.adobe.marketing.mobile.Audience;
 import com.adobe.marketing.mobile.Identity;
 import com.adobe.marketing.mobile.LoggingMode;
@@ -34,7 +35,7 @@ public class AudienceTestApp extends Application {
 		MobileCore.configureWithAppID(ENVIRONMENT_FILE_ID);
 
 		MobileCore.registerExtensions(
-			Arrays.asList(Identity.EXTENSION, Analytics.EXTENSION, Audience.EXTENSION),
+			Arrays.asList(Identity.EXTENSION, Analytics.EXTENSION, Audience.EXTENSION, Assurance.EXTENSION),
 			o -> Log.d(LOG_TAG, "Mobile SDK was initialized")
 		);
 	}

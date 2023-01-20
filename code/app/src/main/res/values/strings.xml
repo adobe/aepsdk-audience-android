@@ -18,4 +18,8 @@
     <string name="btn_reset">reset</string>
     <string name="btn_getvisitorprofile">getVisitorProfile</string>
     <string name="btn_submit_signal">submitSignal</string>
+    <string name="btn_connect_assurance_session">Connect</string>
+    <string name="btn_connect_to_assurance">Connect to Assurance</string>
+    <string name="title_enter_assurance_session_url">Enter the Assurance Session URL:</string>
+    <string name="et_hint_assurance_id">Paste your Assurance session ID here</string>
 </resources>
