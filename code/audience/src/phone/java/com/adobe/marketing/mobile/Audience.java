@@ -16,18 +16,16 @@ import androidx.annotation.Nullable;
 import com.adobe.marketing.mobile.audience.AudienceExtension;
 import com.adobe.marketing.mobile.services.Log;
 import com.adobe.marketing.mobile.util.DataReader;
-import com.adobe.marketing.mobile.util.StringUtils;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public final class Audience {
 
-	private static final String EXTENSION_VERSION = "2.0.0";
 	private static final String LOG_TAG = "Audience";
-	private static final String CLASS_NAME = "Audience";
+	private static final String LOG_SOURCE = "Audience";
 
-	// config defaults
+	private static final String EXTENSION_VERSION = "2.0.0";
 	private static final int CALLBACK_TIMEOUT_MILLIS = 5000;
 
 	@NonNull
@@ -51,6 +49,7 @@ public final class Audience {
 	 *
 	 * @deprecated as of 2.0.0, use {@link com.adobe.marketing.mobile.MobileCore#registerExtensions(List, AdobeCallback)} with {@link Audience#EXTENSION} instead.
 	 */
+	@SuppressWarnings("deprecation")
 	@Deprecated
 	public static void registerExtension() {
 		MobileCore.registerExtension(
@@ -59,8 +58,8 @@ public final class Audience {
 				if (extensionError != null) {
 					Log.error(
 						LOG_TAG,
-						CLASS_NAME,
-						"There was an error registering the Audience Extension: %s",
+						LOG_SOURCE,
+						"There was an error registering the Audience extension: %s",
 						extensionError.getErrorName()
 					);
 				}
@@ -71,7 +70,7 @@ public final class Audience {
 	/**
 	 * Returns the visitor profile that was most recently obtained.
 	 * <p>
-	 * Visitor profile is saved in {@link android.content.SharedPreferences} for easy access across multiple launches of your app.
+	 * Visitor profile is saved persistently for easy access across multiple launches of your app.
 	 * If no audience signal has been submitted yet, null is returned.
 	 *
 	 * @param adobeCallback {@link AdobeCallback} instance which is invoked with the visitor's profile as a parameter;
@@ -80,33 +79,63 @@ public final class Audience {
 	 * @see #signalWithData(Map, AdobeCallback)
 	 */
 	public static void getVisitorProfile(@NonNull final AdobeCallback<Map<String, String>> adobeCallback) {
-		identityRequest(EventDataKeys.AAM.VISITOR_PROFILE, adobeCallback);
-	}
+		if (adobeCallback == null) {
+			Log.debug(
+				LOG_TAG,
+				LOG_SOURCE,
+				"Unexpected null callback, provide a callback to retrieve current visitorProfile."
+			);
+			return;
+		}
 
-	/**
-	 * Resets the Audience Manager UUID and purges the current visitor profile from {@link android.content.SharedPreferences}.
-	 * <p>
-	 * Audience reset also clears the current in-memory DPID and DPUUID variables.
-	 */
-	public static void reset() {
 		final Event event = new Event.Builder(
-			"AudienceRequestReset",
+			"AudienceRequestIdentity",
 			EventType.AUDIENCEMANAGER,
-			EventSource.REQUEST_RESET
+			EventSource.REQUEST_IDENTITY
 		)
 			.build();
-		MobileCore.dispatchEvent(event);
-		Log.debug(LOG_TAG, CLASS_NAME, "Request to reset Audience Manager values for this device has been dispatched.");
+
+		Log.debug(LOG_TAG, LOG_SOURCE, "Dispatching Audience IdentityRequest event: %s", event);
+		MobileCore.dispatchEventWithResponseCallback(
+			event,
+			CALLBACK_TIMEOUT_MILLIS,
+			new AdobeCallbackWithError<Event>() {
+				@Override
+				public void fail(final AdobeError adobeError) {
+					Log.warning(
+						LOG_TAG,
+						LOG_SOURCE,
+						"An error occurred retrieving Audience Profile data: %s",
+						adobeError.getErrorName()
+					);
+					final AdobeCallbackWithError<?> adobeCallbackWithError = adobeCallback instanceof AdobeCallbackWithError
+						? (AdobeCallbackWithError<?>) adobeCallback
+						: null;
+					if (adobeCallbackWithError != null) {
+						adobeCallbackWithError.fail(adobeError);
+					}
+				}
+
+				@Override
+				public void call(final Event event) {
+					final Map<String, String> value = DataReader.optStringMap(
+						event.getEventData(),
+						EventDataKeys.VISITOR_PROFILE,
+						null
+					);
+					adobeCallback.call(value);
+				}
+			}
+		);
 	}
 
 	/**
 	 * Sends Audience Manager a signal with traits and gets the matching segments for the visitor.
 	 * <p>
-	 * Audience manager sends UUID in response to initial signal call. The UUID is persisted in
-	 * {@link android.content.SharedPreferences} and sent by SDK in all subsequent signal requests. If you are using
+	 * Audience manager sends UUID in response to initial signal call. The UUID is persisted
+	 * and sent by SDK in all subsequent signal requests. If you are using
 	 * Experience Cloud ID Service, then Experience Cloud ID (MID) and other customerIDs for the same visitor are also sent
-	 * in each signal request along with DPID and DPUUID. The visitor profile that Audience Manager returns is saved in
-	 * {@code SharedPreferences} and updated with every signal call.
+	 * in each signal request.
 	 *
 	 * @param data          traits data for the current visitor
 	 * @param adobeCallback {@link AdobeCallback} instance which is invoked with the visitor's profile as a parameter;
@@ -119,7 +148,7 @@ public final class Audience {
 	) {
 		final Map<String, Object> eventData = new HashMap<String, Object>() {
 			{
-				put(EventDataKeys.AAM.VISITOR_TRAITS, data);
+				put(EventDataKeys.VISITOR_TRAITS, data);
 			}
 		};
 		final Event event = new Event.Builder(
@@ -130,34 +159,43 @@ public final class Audience {
 			.setEventData(eventData)
 			.build();
 
-		Log.debug(LOG_TAG, CLASS_NAME, "Audience Profile data was submitted: %s", data.toString());
+		Log.debug(
+			LOG_TAG,
+			LOG_SOURCE,
+			"Audience Profile data was submitted: %s",
+			data != null ? data.toString() : "no data"
+		);
+		if (adobeCallback == null) {
+			MobileCore.dispatchEvent(event);
+			return;
+		}
+
 		MobileCore.dispatchEventWithResponseCallback(
 			event,
 			CALLBACK_TIMEOUT_MILLIS,
 			new AdobeCallbackWithError<Event>() {
 				@Override
-				public void fail(AdobeError adobeError) {
+				public void fail(final AdobeError adobeError) {
 					Log.warning(
 						LOG_TAG,
-						CLASS_NAME,
+						LOG_SOURCE,
 						"An error occurred dispatching Audience Profile data: %s",
 						adobeError.getErrorName()
 					);
-					if (adobeCallback != null) {
-						adobeCallback.call(null);
+
+					final AdobeCallbackWithError<?> adobeCallbackWithError = adobeCallback instanceof AdobeCallbackWithError
+						? (AdobeCallbackWithError<?>) adobeCallback
+						: null;
+					if (adobeCallbackWithError != null) {
+						adobeCallbackWithError.fail(adobeError);
 					}
 				}
 
 				@Override
-				public void call(Event event) {
-					if (adobeCallback == null) {
-						return;
-					}
-
-					final Map<String, Object> eventData = event.getEventData();
+				public void call(final Event event) {
 					final Map<String, String> profileMap = DataReader.optStringMap(
-						eventData,
-						EventDataKeys.AAM.VISITOR_PROFILE,
+						event.getEventData(),
+						EventDataKeys.VISITOR_PROFILE,
 						null
 					);
 					adobeCallback.call(profileMap);
@@ -167,99 +205,27 @@ public final class Audience {
 	}
 
 	/**
-	 * Initiates an Audience Manager Identity Request event.
-	 * Currently used to get dpid, dpuuid, and user profiles from aam module
-	 *
-	 * @param keyName  		(required) key in which this method will search the resulting event's
-	 *                      eventdata for to provide in the callback
-	 * @param callback 		(required) {@link AdobeCallback} method which will be called with the appropriate value depending on the keyName param
-	 *
-	 * @see EventDataKeys.AAM
+	 * Resets the Audience Manager UUID and purges the current visitor profile from persistence.
 	 */
-	private static void identityRequest(
-		@NonNull final String keyName,
-		@NonNull final AdobeCallback<Map<String, String>> callback
-	) {
-		// both parameters are required
-		if (StringUtils.isNullOrEmpty(keyName)) {
-			Log.debug(
-				LOG_TAG,
-				CLASS_NAME,
-				"Failed to send Identity request due to missing parameters in the call; keyName is empty or Callback is null"
-			);
-			return;
-		}
-
+	public static void reset() {
 		final Event event = new Event.Builder(
-			"AudienceRequestIdentity",
+			"AudienceRequestReset",
 			EventType.AUDIENCEMANAGER,
-			EventSource.REQUEST_IDENTITY
+			EventSource.REQUEST_RESET
 		)
 			.build();
-
-		Log.debug(LOG_TAG, CLASS_NAME, "Dispatching Identity request event: %s", event);
-		MobileCore.dispatchEventWithResponseCallback(
-			event,
-			CALLBACK_TIMEOUT_MILLIS,
-			new AdobeCallbackWithError<Event>() {
-				@Override
-				public void fail(AdobeError adobeError) {
-					Log.warning(
-						LOG_TAG,
-						CLASS_NAME,
-						"An error occurred dispatching Audience Profile data: %s",
-						adobeError.getErrorName()
-					);
-					callback.call(null);
-				}
-
-				@Override
-				public void call(Event event) {
-					final Map<String, Object> eventData = event.getEventData();
-
-					if (keyName.equals(EventDataKeys.AAM.AUDIENCE_IDS)) {
-						final String dpid = (String) eventData.get(EventDataKeys.AAM.DPID);
-						final String dpuuid = (String) eventData.get(EventDataKeys.AAM.DPUUID);
-						final Map<String, String> value = new HashMap<String, String>() {
-							{
-								put(EventDataKeys.AAM.DPID, dpid);
-								put(EventDataKeys.AAM.DPUUID, dpuuid);
-							}
-						};
-						callback.call(value);
-					} else if (keyName.equals(EventDataKeys.AAM.VISITOR_PROFILE)) {
-						final Map<String, String> value = DataReader.optStringMap(eventData, keyName, new HashMap<>());
-						callback.call(value);
-					} else {
-						Log.debug(
-							LOG_TAG,
-							CLASS_NAME,
-							"Attempting to process the response from an identityRequest but the requested value (%s) was not found.",
-							keyName
-						);
-						callback.call(null);
-					}
-				}
-			}
-		);
+		MobileCore.dispatchEvent(event);
+		Log.debug(LOG_TAG, LOG_SOURCE, "Request to reset Audience Manager values for this device has been dispatched.");
 	}
 
 	private static final class EventDataKeys {
 
 		private EventDataKeys() {}
 
-		static final class AAM {
+		// request keys
+		static final String VISITOR_TRAITS = "aamtraits";
 
-			// request keys
-			static final String VISITOR_TRAITS = "aamtraits";
-
-			// response keys
-			static final String AUDIENCE_IDS = "audienceids";
-			static final String DPID = "dpid";
-			static final String DPUUID = "dpuuid";
-			static final String VISITOR_PROFILE = "aamprofile";
-
-			private AAM() {}
-		}
+		// response keys
+		static final String VISITOR_PROFILE = "aamprofile";
 	}
 }
