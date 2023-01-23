@@ -123,14 +123,14 @@ public class AudienceStateTests {
 	// ============================================================
 
 	@Test
-	public void getVisitorProfileInMemory() {
+	public void testGetVisitorProfile_returnsInMemoryValue() {
 		audienceState.setVisitorProfile(VISITOR_PROFILE);
 		Map<String, String> profile = audienceState.getVisitorProfile();
 		assertEquals(VISITOR_PROFILE, profile);
 	}
 
 	@Test
-	public void getVisitorProfileInPersistence() {
+	public void testGetVisitorProfile_whenSetValid_returnsValueFromPersistence() {
 		when(mockNamedCollection.getMap(AudienceTestConstants.AUDIENCE_MANAGER_SHARED_PREFS_PROFILE_KEY))
 			.thenReturn(VISITOR_PROFILE);
 		when(mockNamedCollection.contains(AudienceTestConstants.AUDIENCE_MANAGER_SHARED_PREFS_PROFILE_KEY))
@@ -143,14 +143,14 @@ public class AudienceStateTests {
 	}
 
 	@Test
-	public void getVisitorProfileEmptyInMemory() {
+	public void testGetVisitorProfile_whenSetEmpty_returnsEmpty() {
 		audienceState.setVisitorProfile(Collections.emptyMap());
 		Map<String, String> profile = audienceState.getVisitorProfile();
 		assertTrue(profile.isEmpty());
 	}
 
 	@Test
-	public void getVisitorProfileNullInMemory() {
+	public void getVisitorProfile_whenSetNull_returnsNull() {
 		audienceState.setVisitorProfile(null);
 		Map<String, String> profile = audienceState.getVisitorProfile();
 		assertNull(profile);
