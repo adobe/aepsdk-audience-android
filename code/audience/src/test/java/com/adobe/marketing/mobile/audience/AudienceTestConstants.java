@@ -11,6 +11,7 @@
 
 package com.adobe.marketing.mobile.audience;
 
+import com.adobe.marketing.mobile.MobilePrivacyStatus;
 import java.util.HashMap;
 
 /**
