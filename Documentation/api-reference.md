@@ -1,6 +1,6 @@
 # Audience Manager API reference
 
-## Extension version
+## extensionVersion
 
 The `extensionVersion()` API returns the version of the Audience extension that is registered with the Mobile Core extension.
 
@@ -18,7 +18,7 @@ String audienceExtensionVersion = Audience.extensionVersion();
 val audienceExtensionVersion: String = Audience.extensionVersion()
 ```
 
-## Get the visitor profile
+## getVisitorProfile
 
 This API returns the most recently obtained visitor profile. For easy access across multiple launches of your app, the visitor profile is saved in `SharedPreferences`. If no signal has been submitted, null is returned.
 
@@ -44,7 +44,7 @@ Audience.getVisitorProfile { visitorProfile ->
 
 ```
 
-## Registering the extension
+## registerExtensions
 
 `Audience.EXTENSION` represents a reference to the AudienceExtension class that can be registered with `MobileCore` via its `registerExtensions` API.
 
