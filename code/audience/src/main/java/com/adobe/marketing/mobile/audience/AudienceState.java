@@ -38,8 +38,6 @@ class AudienceState {
 
 	// configuration settings
 	private String uuid = null;
-	private String dpid = null;
-	private String dpuuid = null;
 	private Map<String, String> visitorProfile = null;
 	private MobilePrivacyStatus privacyStatus = AudienceConstants.DEFAULT_PRIVACY_STATUS;
 
@@ -66,32 +64,6 @@ class AudienceState {
 	// package-protected methods
 	// ========================================================
 	/**
-	 * Sets the value of this {@link #dpid} property.
-	 * <p>
-	 * Setting the identifier is ignored if the global privacy is set to {@link MobilePrivacyStatus#OPT_OUT}.
-	 *
-	 * @param dpid {@link String} containing the new value for {@code dpid}
-	 */
-	void setDpid(final String dpid) {
-		if (StringUtils.isNullOrEmpty(dpid) || privacyStatus != MobilePrivacyStatus.OPT_OUT) {
-			this.dpid = dpid;
-		}
-	}
-
-	/**
-	 * Sets the value of this {@link #dpuuid} property.
-	 * <p>
-	 * Setting the identifier is ignored if the global privacy is set to {@link MobilePrivacyStatus#OPT_OUT}.
-	 *
-	 * @param dpuuid {@link String} containing the new value for {@code dpuuid}
-	 */
-	void setDpuuid(final String dpuuid) {
-		if (StringUtils.isNullOrEmpty(dpuuid) || privacyStatus != MobilePrivacyStatus.OPT_OUT) {
-			this.dpuuid = dpuuid;
-		}
-	}
-
-	/**
 	 * Sets the value of this {@link #uuid} property.
 	 * <p>
 	 * Persists the new value to the data store returned by {@link ServiceProvider#getDataStoreService()}.
@@ -107,18 +79,19 @@ class AudienceState {
 		}
 
 		// update uuid in data store
-		if (localStorage != null) {
-			if (StringUtils.isNullOrEmpty(uuid)) {
-				localStorage.remove(AudienceConstants.AUDIENCE_MANAGER_SHARED_PREFS_USER_ID_KEY);
-			} else if (privacyStatus != MobilePrivacyStatus.OPT_OUT) {
-				localStorage.setString(AudienceConstants.AUDIENCE_MANAGER_SHARED_PREFS_USER_ID_KEY, uuid);
-			}
-		} else {
+		if (localStorage == null) {
 			Log.warning(
 				LOG_TAG,
 				LOG_SOURCE,
 				"Unable to update uuid in persistence - persistence collection could not be retrieved."
 			);
+			return;
+		}
+
+		if (StringUtils.isNullOrEmpty(uuid)) {
+			localStorage.remove(AudienceConstants.AUDIENCE_MANAGER_SHARED_PREFS_USER_ID_KEY);
+		} else if (privacyStatus != MobilePrivacyStatus.OPT_OUT) {
+			localStorage.setString(AudienceConstants.AUDIENCE_MANAGER_SHARED_PREFS_USER_ID_KEY, uuid);
 		}
 	}
 
@@ -138,18 +111,19 @@ class AudienceState {
 		}
 
 		// update the visitor profile in the data store
-		if (localStorage != null) {
-			if (visitorProfile == null || visitorProfile.isEmpty()) {
-				localStorage.remove(AudienceConstants.AUDIENCE_MANAGER_SHARED_PREFS_PROFILE_KEY);
-			} else if (privacyStatus != MobilePrivacyStatus.OPT_OUT) {
-				localStorage.setMap(AudienceConstants.AUDIENCE_MANAGER_SHARED_PREFS_PROFILE_KEY, visitorProfile);
-			}
-		} else {
+		if (localStorage == null) {
 			Log.warning(
 				LOG_TAG,
 				LOG_SOURCE,
 				"Unable to update visitor profile in persistence - persistence collection could not be retrieved."
 			);
+			return;
+		}
+
+		if (visitorProfile == null || visitorProfile.isEmpty()) {
+			localStorage.remove(AudienceConstants.AUDIENCE_MANAGER_SHARED_PREFS_PROFILE_KEY);
+		} else if (privacyStatus != MobilePrivacyStatus.OPT_OUT) {
+			localStorage.setMap(AudienceConstants.AUDIENCE_MANAGER_SHARED_PREFS_PROFILE_KEY, visitorProfile);
 		}
 	}
 
@@ -165,24 +139,6 @@ class AudienceState {
 	}
 
 	/**
-	 * Returns this {@link #dpid}.
-	 *
-	 * @return {@link String} containing {@code dpid} value
-	 */
-	String getDpid() {
-		return dpid;
-	}
-
-	/**
-	 * Returns this {@link #dpuuid}.
-	 *
-	 * @return {@link String} containing {@code dpuuid} value
-	 */
-	String getDpuuid() {
-		return dpuuid;
-	}
-
-	/**
 	 * Returns this {@link #uuid}.
 	 * <p>
 	 * If there is no {@code uuid} value in memory, this method attempts to find one from the {@link NamedCollection}.
@@ -192,15 +148,16 @@ class AudienceState {
 	String getUuid() {
 		if (StringUtils.isNullOrEmpty(uuid)) {
 			// load uuid from data store if we have one
-			if (localStorage != null) {
-				uuid = localStorage.getString(AudienceConstants.AUDIENCE_MANAGER_SHARED_PREFS_USER_ID_KEY, uuid);
-			} else {
+			if (localStorage == null) {
 				Log.warning(
 					LOG_TAG,
 					LOG_SOURCE,
 					"Unable to retrieve uuid from persistence - persistence could not be accessed."
 				);
+				return uuid;
 			}
+
+			uuid = localStorage.getString(AudienceConstants.AUDIENCE_MANAGER_SHARED_PREFS_USER_ID_KEY, uuid);
 		}
 
 		return uuid;
@@ -222,7 +179,10 @@ class AudienceState {
 					LOG_SOURCE,
 					"Unable to retrieve visitor profile from persistence - persistence could not be accessed."
 				);
-			} else if (localStorage.contains(AudienceConstants.AUDIENCE_MANAGER_SHARED_PREFS_PROFILE_KEY)) {
+				return visitorProfile;
+			}
+
+			if (localStorage.contains(AudienceConstants.AUDIENCE_MANAGER_SHARED_PREFS_PROFILE_KEY)) {
 				visitorProfile = localStorage.getMap(AudienceConstants.AUDIENCE_MANAGER_SHARED_PREFS_PROFILE_KEY);
 			}
 		}
@@ -243,7 +203,9 @@ class AudienceState {
 	 * @param timestampMillis the timestamp of the reset event, in milliseconds
 	 */
 	void setLastResetTimestamp(final long timestampMillis) {
-		this.lastResetTimestampMillis = timestampMillis;
+		if (timestampMillis >= 0) {
+			this.lastResetTimestampMillis = timestampMillis;
+		}
 	}
 
 	/**
@@ -267,18 +229,6 @@ class AudienceState {
 			return stateData;
 		}
 
-		String dpid = getDpid();
-
-		if (!StringUtils.isNullOrEmpty(dpid)) {
-			stateData.put(AudienceConstants.EventDataKeys.Audience.DPID, dpid);
-		}
-
-		String dpuuid = getDpuuid();
-
-		if (!StringUtils.isNullOrEmpty(dpuuid)) {
-			stateData.put(AudienceConstants.EventDataKeys.Audience.DPUUID, dpuuid);
-		}
-
 		String uuid = getUuid();
 
 		if (!StringUtils.isNullOrEmpty(uuid)) {
@@ -299,15 +249,11 @@ class AudienceState {
 	 * The cleared identifiers are:
 	 * <ul>
 	 *     <li>UUID</li>
-	 *     <li>DPID</li>
-	 *     <li>DPUUID</li>
 	 *     <li>Visitor Profiles</li>
 	 * </ul>
 	 */
 	void clearIdentifiers() {
 		setUuid(null);
-		setDpid(null);
-		setDpuuid(null);
 		setVisitorProfile(null);
 	}
 }

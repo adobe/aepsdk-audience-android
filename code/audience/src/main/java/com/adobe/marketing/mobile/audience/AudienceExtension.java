@@ -303,39 +303,28 @@ public final class AudienceExtension extends Extension {
 		submitSignal(event);
 	}
 
-	// audience request identity
+	/**
+	 * Handles the getVisitorProfile API by dispatching a response content event containing the visitor profile stored in the {@link AudienceState}.
+	 *
+	 * @param event the event coming from the getVisitorProfile API invocation
+	 */
 	private void handleAudienceRequestIdentity(@NonNull final Event event) {
-		final Map<String, Object> eventData = event.getEventData();
-		final String dpid = DataReader.optString(eventData, AudienceConstants.EventDataKeys.Audience.DPID, null);
-		final String dpuuid = DataReader.optString(eventData, AudienceConstants.EventDataKeys.Audience.DPUUID, null);
+		final Map<String, Object> responseEventData = new HashMap<>();
+		responseEventData.put(
+			AudienceConstants.EventDataKeys.Audience.VISITOR_PROFILE,
+			internalState.getVisitorProfile()
+		);
 
-		// if the event data for the request contains dpid and dpuuid, call the setter
-		if (dpid != null && dpuuid != null) {
-			internalState.setDpid(dpid);
-			internalState.setDpuuid(dpuuid);
-			shareStateForEvent(event);
-			Log.trace(LOG_TAG, LOG_SOURCE, "Setting dpid (%s) and dpuuid (%s).", dpid, dpuuid);
-		}
-		// else (if the dpid and dpuuid values are not present), call the getter and pass along the pairId
-		else {
-			final Map<String, Object> responseEventData = new HashMap<String, Object>() {
-				{
-					put(AudienceConstants.EventDataKeys.Audience.VISITOR_PROFILE, internalState.getVisitorProfile());
-					put(AudienceConstants.EventDataKeys.Audience.DPID, internalState.getDpid());
-					put(AudienceConstants.EventDataKeys.Audience.DPUUID, internalState.getDpuuid());
-				}
-			};
-			final Event responseEvent = new Event.Builder(
-				"Audience Manager Identities",
-				EventType.AUDIENCEMANAGER,
-				EventSource.RESPONSE_IDENTITY
-			)
-				.setEventData(responseEventData)
-				.inResponseToEvent(event)
-				.build();
+		final Event responseEvent = new Event.Builder(
+			"Audience Manager Identities",
+			EventType.AUDIENCEMANAGER,
+			EventSource.RESPONSE_IDENTITY
+		)
+			.setEventData(responseEventData)
+			.inResponseToEvent(event)
+			.build();
 
-			getApi().dispatch(responseEvent);
-		}
+		getApi().dispatch(responseEvent);
 	}
 
 	/**
@@ -907,17 +896,6 @@ public final class AudienceExtension extends Extension {
 
 			if (!StringUtils.isNullOrEmpty(uuid)) {
 				urlVars.append(serializeKeyValuePair(AudienceConstants.AUDIENCE_MANAGER_USER_ID_KEY, uuid));
-			}
-
-			// append dpid and dpuuid IFF both are available
-			final String dpid = internalState.getDpid();
-			final String dpuuid = internalState.getDpuuid();
-
-			if (!StringUtils.isNullOrEmpty(dpid) && !StringUtils.isNullOrEmpty(dpuuid)) {
-				urlVars.append(serializeKeyValuePair(AudienceConstants.AUDIENCE_MANAGER_DATA_PROVIDER_ID_KEY, dpid));
-				urlVars.append(
-					serializeKeyValuePair(AudienceConstants.AUDIENCE_MANAGER_DATA_PROVIDER_USER_ID_KEY, dpuuid)
-				);
 			}
 		}
 

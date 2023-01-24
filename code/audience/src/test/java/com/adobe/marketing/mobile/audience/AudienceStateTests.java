@@ -11,95 +11,54 @@
 
 package com.adobe.marketing.mobile.audience;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
+import com.adobe.marketing.mobile.Event;
+import com.adobe.marketing.mobile.MobilePrivacyStatus;
+import com.adobe.marketing.mobile.services.NamedCollection;
+import com.adobe.marketing.mobile.util.DataReader;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
 
-public class AudienceStateTests extends BaseTest {
+@RunWith(MockitoJUnitRunner.class)
+public class AudienceStateTests {
 
 	// event data keys
 	private static final String EVENT_DATA_VISITOR_PROFILE = "aamprofile";
-	private static final String EVENT_DATA_DPID = "dpid";
-	private static final String EVENT_DATA_DPUUID = "dpuuid";
 	private static final String EVENT_DATA_UUID = "uuid";
-
-	private LocalStorageService localStorageService;
-	private LocalStorageService.DataStore audienceDataStore;
 	private AudienceState audienceState;
 
-	private static String DPID = "dpid";
-	private static String DPUUID = "dpuuid";
-	private static String UUID = "uuid";
-	private static Map<String, String> VISITOR_PROFILE;
+	private static final String UUID = "uuid";
+	private static final Map<String, String> VISITOR_PROFILE;
 
 	static {
-		VISITOR_PROFILE = new HashMap<String, String>();
+		VISITOR_PROFILE = new HashMap<>();
 		VISITOR_PROFILE.put("trait", "value");
 	}
 
+	@Mock
+	NamedCollection mockNamedCollection;
+
 	@Before
 	public void setup() {
-		super.beforeEach();
-
-		localStorageService = platformServices.getLocalStorageService();
-		audienceDataStore =
-			localStorageService.getDataStore(AudienceTestConstants.AUDIENCE_MANAGER_SHARED_PREFS_DATA_STORE);
-		audienceState = new AudienceState(localStorageService);
+		audienceState = new AudienceState(mockNamedCollection);
 		audienceState.setMobilePrivacyStatus(MobilePrivacyStatus.OPT_IN);
-	}
-
-	// ============================================================
-	// GetDpid()
-	// ============================================================
-
-	@Test
-	public void getDpidInMemory() {
-		audienceState.setDpid(DPID);
-		String dpid = audienceState.getDpid();
-		assertEquals(DPID, dpid);
-	}
-
-	@Test
-	public void getDpidEmptyInMemory() {
-		audienceState.setDpid("");
-		String dpid = audienceState.getDpid();
-		assertEquals("", dpid);
-	}
-
-	@Test
-	public void getDpidNullInMemory() {
-		audienceState.setDpid(null);
-		String dpid = audienceState.getDpid();
-		assertEquals(null, dpid);
-	}
-
-	// ============================================================
-	// GetDpuuid()
-	// ============================================================
-
-	@Test
-	public void getDpuuidInMemory() {
-		audienceState.setDpuuid(DPUUID);
-		String dpuuid = audienceState.getDpuuid();
-		assertEquals(DPUUID, dpuuid);
-	}
-
-	@Test
-	public void getDpuuidEmptyInMemory() {
-		audienceState.setDpuuid("");
-		String dpuuid = audienceState.getDpuuid();
-		assertEquals("", dpuuid);
-	}
-
-	@Test
-	public void getDpuuidNullInMemory() {
-		audienceState.setDpuuid(null);
-		String dpuuid = audienceState.getDpuuid();
-		assertEquals(null, dpuuid);
 	}
 
 	// ============================================================
@@ -107,31 +66,56 @@ public class AudienceStateTests extends BaseTest {
 	// ============================================================
 
 	@Test
-	public void getUuidInMemory() {
+	public void testGetUuid_returnsInMemoryValue() {
 		audienceState.setUuid(UUID);
 		String uuid = audienceState.getUuid();
 		assertEquals(UUID, uuid);
 	}
 
 	@Test
-	public void getUuidInPersistence() {
-		audienceDataStore.setString(AudienceTestConstants.AUDIENCE_MANAGER_SHARED_PREFS_USER_ID_KEY, UUID);
+	public void testGetUuid_whenSetValid_returnsValueFromPersistence() {
+		when(mockNamedCollection.getString(eq(AudienceTestConstants.AUDIENCE_MANAGER_SHARED_PREFS_USER_ID_KEY), any()))
+			.thenReturn(UUID);
 		String uuid = audienceState.getUuid();
 		assertEquals(UUID, uuid);
+
+		verify(mockNamedCollection)
+			.getString(eq(AudienceTestConstants.AUDIENCE_MANAGER_SHARED_PREFS_USER_ID_KEY), any());
 	}
 
 	@Test
-	public void getUuidEmptyInMemory() {
+	public void testGetUuid_whenSetToEmpty_returnsNull() {
+		when(mockNamedCollection.getString(eq(AudienceTestConstants.AUDIENCE_MANAGER_SHARED_PREFS_USER_ID_KEY), any()))
+			.thenReturn(null);
 		audienceState.setUuid("");
 		String uuid = audienceState.getUuid();
-		assertEquals("", uuid);
+		assertNull(uuid);
+
+		verify(mockNamedCollection)
+			.getString(eq(AudienceTestConstants.AUDIENCE_MANAGER_SHARED_PREFS_USER_ID_KEY), any());
 	}
 
 	@Test
-	public void getUuidNullInMemory() {
+	public void getUuid_whenSetToNull_returnsNull() {
+		when(mockNamedCollection.getString(eq(AudienceTestConstants.AUDIENCE_MANAGER_SHARED_PREFS_USER_ID_KEY), any()))
+			.thenReturn(null);
 		audienceState.setUuid(null);
 		String uuid = audienceState.getUuid();
-		assertEquals(null, uuid);
+		assertNull(uuid);
+
+		verify(mockNamedCollection)
+			.getString(eq(AudienceTestConstants.AUDIENCE_MANAGER_SHARED_PREFS_USER_ID_KEY), any());
+	}
+
+	@Test
+	public void testGetSetUuid_whenNullNamedCollection_doNotCrash() {
+		audienceState = new AudienceState(null);
+		try {
+			audienceState.getUuid();
+			audienceState.setUuid(UUID);
+		} catch (Exception e) {
+			fail("Unexpected exception thrown when null NamedCollection");
+		}
 	}
 
 	// ============================================================
@@ -139,87 +123,48 @@ public class AudienceStateTests extends BaseTest {
 	// ============================================================
 
 	@Test
-	public void getVisitorProfileInMemory() {
+	public void testGetVisitorProfile_returnsInMemoryValue() {
 		audienceState.setVisitorProfile(VISITOR_PROFILE);
 		Map<String, String> profile = audienceState.getVisitorProfile();
 		assertEquals(VISITOR_PROFILE, profile);
 	}
 
 	@Test
-	public void getVisitorProfileInPersistence() {
-		audienceDataStore.setMap(AudienceTestConstants.AUDIENCE_MANAGER_SHARED_PREFS_PROFILE_KEY, VISITOR_PROFILE);
+	public void testGetVisitorProfile_whenSetValid_returnsValueFromPersistence() {
+		when(mockNamedCollection.getMap(AudienceTestConstants.AUDIENCE_MANAGER_SHARED_PREFS_PROFILE_KEY))
+			.thenReturn(VISITOR_PROFILE);
+		when(mockNamedCollection.contains(AudienceTestConstants.AUDIENCE_MANAGER_SHARED_PREFS_PROFILE_KEY))
+			.thenReturn(true);
+
 		Map<String, String> profile = audienceState.getVisitorProfile();
 		assertEquals(VISITOR_PROFILE, profile);
+
+		verify(mockNamedCollection).getMap(eq(AudienceTestConstants.AUDIENCE_MANAGER_SHARED_PREFS_PROFILE_KEY));
 	}
 
 	@Test
-	public void getVisitorProfileEmptyInMemory() {
-		audienceState.setVisitorProfile(Collections.<String, String>emptyMap());
+	public void testGetVisitorProfile_whenSetEmpty_returnsEmpty() {
+		audienceState.setVisitorProfile(Collections.emptyMap());
 		Map<String, String> profile = audienceState.getVisitorProfile();
 		assertTrue(profile.isEmpty());
 	}
 
 	@Test
-	public void getVisitorProfileNullInMemory() {
+	public void getVisitorProfile_whenSetNull_returnsNull() {
 		audienceState.setVisitorProfile(null);
 		Map<String, String> profile = audienceState.getVisitorProfile();
-		assertEquals(null, profile);
-	}
-
-	// ============================================================
-	// SetDpid()
-	// ============================================================
-
-	@Test
-	public void setDpidPrivacyOptIn() {
-		audienceState.setMobilePrivacyStatus(MobilePrivacyStatus.OPT_IN);
-		audienceState.setDpid(DPID);
-		String dpid = audienceState.getDpid();
-		assertEquals(DPID, dpid);
+		assertNull(profile);
 	}
 
 	@Test
-	public void setDpidPrivacyOptOut() {
-		audienceState.setMobilePrivacyStatus(MobilePrivacyStatus.OPT_OUT);
-		audienceState.setDpid(DPID);
-		String dpid = audienceState.getDpid();
-		assertEquals(null, dpid);
-	}
-
-	@Test
-	public void setDpidPrivacyUnknown() {
-		audienceState.setMobilePrivacyStatus(MobilePrivacyStatus.UNKNOWN);
-		audienceState.setDpid(DPID);
-		String dpid = audienceState.getDpid();
-		assertEquals(DPID, dpid);
-	}
-
-	// ============================================================
-	// SetDpuuid()
-	// ============================================================
-
-	@Test
-	public void setDpuuidPrivacyOptIn() {
-		audienceState.setMobilePrivacyStatus(MobilePrivacyStatus.OPT_IN);
-		audienceState.setDpuuid(DPUUID);
-		String dpuuid = audienceState.getDpuuid();
-		assertEquals(DPUUID, dpuuid);
-	}
-
-	@Test
-	public void setDpuuidPrivacyOptOut() {
-		audienceState.setMobilePrivacyStatus(MobilePrivacyStatus.OPT_OUT);
-		audienceState.setDpuuid(DPUUID);
-		String dpuuid = audienceState.getDpuuid();
-		assertEquals(null, dpuuid);
-	}
-
-	@Test
-	public void setDpuuidPrivacyUnknown() {
-		audienceState.setMobilePrivacyStatus(MobilePrivacyStatus.UNKNOWN);
-		audienceState.setDpuuid(DPUUID);
-		String dpuuid = audienceState.getDpuuid();
-		assertEquals(DPUUID, dpuuid);
+	public void testGetSetVisitorProfile_whenNullNamedCollection_doNotCrash() {
+		audienceState = new AudienceState(null);
+		try {
+			audienceState.getVisitorProfile();
+			audienceState.setVisitorProfile(VISITOR_PROFILE);
+		} catch (Exception e) {
+			fail("Unexpected exception thrown when null NamedCollection");
+		}
 	}
 
 	// ============================================================
@@ -227,35 +172,37 @@ public class AudienceStateTests extends BaseTest {
 	// ============================================================
 
 	@Test
-	public void setUuidPrivacyOptIn() {
+	public void testSetUuid_whenPrivacyOptIn_updatesPersistedValue() {
 		audienceState.setMobilePrivacyStatus(MobilePrivacyStatus.OPT_IN);
 		audienceState.setUuid(UUID);
-		String uuid = audienceState.getUuid();
-		assertEquals(UUID, uuid);
+		assertEquals(UUID, audienceState.getUuid());
 
-		uuid = audienceDataStore.getString(AudienceTestConstants.AUDIENCE_MANAGER_SHARED_PREFS_USER_ID_KEY, "default");
-		assertEquals(UUID, uuid);
+		ArgumentCaptor<String> uuidCaptor = ArgumentCaptor.forClass(String.class);
+		verify(mockNamedCollection)
+			.setString(eq(AudienceTestConstants.AUDIENCE_MANAGER_SHARED_PREFS_USER_ID_KEY), uuidCaptor.capture());
+		assertEquals(UUID, uuidCaptor.getValue());
 	}
 
 	@Test
-	public void setUuidPrivacyOptOut() {
+	public void testSetUuid_whenPrivacyOptOut_ignoresCommand() {
 		audienceState.setMobilePrivacyStatus(MobilePrivacyStatus.OPT_OUT);
 		audienceState.setUuid(UUID);
-		String uuid = audienceState.getDpuuid();
-		assertEquals(null, uuid);
+		assertNull(audienceState.getUuid());
 
-		assertFalse(audienceDataStore.contains(AudienceTestConstants.AUDIENCE_MANAGER_SHARED_PREFS_USER_ID_KEY));
+		verify(mockNamedCollection, never())
+			.setString(eq(AudienceTestConstants.AUDIENCE_MANAGER_SHARED_PREFS_USER_ID_KEY), any());
 	}
 
 	@Test
-	public void setUuidPrivacyUnknown() {
+	public void testSetUuid_whenPrivacyUnknown_updatesPersistedValue() {
 		audienceState.setMobilePrivacyStatus(MobilePrivacyStatus.UNKNOWN);
 		audienceState.setUuid(UUID);
-		String uuid = audienceState.getUuid();
-		assertEquals(UUID, uuid);
+		assertEquals(UUID, audienceState.getUuid());
 
-		uuid = audienceDataStore.getString(AudienceTestConstants.AUDIENCE_MANAGER_SHARED_PREFS_USER_ID_KEY, "default");
-		assertEquals(UUID, uuid);
+		ArgumentCaptor<String> uuidCaptor = ArgumentCaptor.forClass(String.class);
+		verify(mockNamedCollection)
+			.setString(eq(AudienceTestConstants.AUDIENCE_MANAGER_SHARED_PREFS_USER_ID_KEY), uuidCaptor.capture());
+		assertEquals(UUID, uuidCaptor.getValue());
 	}
 
 	// ============================================================
@@ -263,35 +210,40 @@ public class AudienceStateTests extends BaseTest {
 	// ============================================================
 
 	@Test
-	public void setVisitorProfilePrivacyOptIn() {
+	public void testSetVisitorProfile_whenPrivacyOptIn_updatesPersistedValue() {
 		audienceState.setMobilePrivacyStatus(MobilePrivacyStatus.OPT_IN);
 		audienceState.setVisitorProfile(VISITOR_PROFILE);
 		Map<String, String> profile = audienceState.getVisitorProfile();
 		assertEquals(VISITOR_PROFILE, profile);
 
-		profile = audienceDataStore.getMap(AudienceTestConstants.AUDIENCE_MANAGER_SHARED_PREFS_PROFILE_KEY);
-		assertEquals(VISITOR_PROFILE, profile);
+		ArgumentCaptor<Map<String, String>> profileCaptor = ArgumentCaptor.forClass(Map.class);
+		verify(mockNamedCollection)
+			.setMap(eq(AudienceTestConstants.AUDIENCE_MANAGER_SHARED_PREFS_PROFILE_KEY), profileCaptor.capture());
+		assertEquals(VISITOR_PROFILE, profileCaptor.getValue());
 	}
 
 	@Test
-	public void setVisitorProfilePrivacyOptOut() {
+	public void testSetVisitorProfile_whenPrivacyOptOut_ignoresCommand() {
 		audienceState.setMobilePrivacyStatus(MobilePrivacyStatus.OPT_OUT);
 		audienceState.setVisitorProfile(VISITOR_PROFILE);
 		Map<String, String> profile = audienceState.getVisitorProfile();
 		assertNull(profile);
 
-		assertFalse(audienceDataStore.contains(AudienceTestConstants.AUDIENCE_MANAGER_SHARED_PREFS_PROFILE_KEY));
+		verify(mockNamedCollection, never())
+			.setMap(eq(AudienceTestConstants.AUDIENCE_MANAGER_SHARED_PREFS_PROFILE_KEY), any());
 	}
 
 	@Test
-	public void setVisitorProfilePrivacyUnknown() {
+	public void testSetVisitorProfile_whenPrivacyUnknown_updatesPersistedValue() {
 		audienceState.setMobilePrivacyStatus(MobilePrivacyStatus.UNKNOWN);
 		audienceState.setVisitorProfile(VISITOR_PROFILE);
 		Map<String, String> profile = audienceState.getVisitorProfile();
 		assertEquals(VISITOR_PROFILE, profile);
 
-		profile = audienceDataStore.getMap(AudienceTestConstants.AUDIENCE_MANAGER_SHARED_PREFS_PROFILE_KEY);
-		assertEquals(VISITOR_PROFILE, profile);
+		ArgumentCaptor<Map<String, String>> profileCaptor = ArgumentCaptor.forClass(Map.class);
+		verify(mockNamedCollection)
+			.setMap(eq(AudienceTestConstants.AUDIENCE_MANAGER_SHARED_PREFS_PROFILE_KEY), profileCaptor.capture());
+		assertEquals(VISITOR_PROFILE, profileCaptor.getValue());
 	}
 
 	// ============================================================
@@ -299,22 +251,77 @@ public class AudienceStateTests extends BaseTest {
 	// ============================================================
 
 	@Test
-	public void clearIdentifiers() {
+	public void testClearIdentifiers_clearsPersistedUUIDAndVisitorProfile() {
 		audienceState.setMobilePrivacyStatus(MobilePrivacyStatus.OPT_IN);
-		audienceState.setDpid(DPID);
-		audienceState.setDpuuid(DPUUID);
 		audienceState.setUuid(UUID);
 		audienceState.setVisitorProfile(VISITOR_PROFILE);
 
 		audienceState.clearIdentifiers();
 
-		assertNull(audienceState.getDpid());
-		assertNull(audienceState.getDpuuid());
 		assertNull(audienceState.getUuid());
 		assertNull(audienceState.getVisitorProfile());
 
-		assertFalse(audienceDataStore.contains(AudienceTestConstants.AUDIENCE_MANAGER_SHARED_PREFS_USER_ID_KEY));
-		assertFalse(audienceDataStore.contains(AudienceTestConstants.AUDIENCE_MANAGER_SHARED_PREFS_PROFILE_KEY));
+		verify(mockNamedCollection).remove(eq(AudienceTestConstants.AUDIENCE_MANAGER_SHARED_PREFS_USER_ID_KEY));
+		verify(mockNamedCollection).remove(eq(AudienceTestConstants.AUDIENCE_MANAGER_SHARED_PREFS_PROFILE_KEY));
+	}
+
+	// ============================================================
+	// setMobilePrivacyStatus()
+	// ============================================================
+
+	@Test
+	public void testSetMobilePrivacyStatus_whenOptIn_doesNotClearPersistedUUIDAndVisitorProfile() {
+		// setup
+		audienceState.setMobilePrivacyStatus(MobilePrivacyStatus.OPT_IN);
+		audienceState.setUuid(UUID);
+		audienceState.setVisitorProfile(VISITOR_PROFILE);
+
+		// test
+		audienceState.setMobilePrivacyStatus(MobilePrivacyStatus.OPT_IN);
+
+		assertEquals(UUID, audienceState.getUuid());
+		assertEquals(VISITOR_PROFILE, audienceState.getVisitorProfile());
+
+		verify(mockNamedCollection, never())
+			.remove(eq(AudienceTestConstants.AUDIENCE_MANAGER_SHARED_PREFS_USER_ID_KEY));
+		verify(mockNamedCollection, never())
+			.remove(eq(AudienceTestConstants.AUDIENCE_MANAGER_SHARED_PREFS_PROFILE_KEY));
+	}
+
+	@Test
+	public void testSetMobilePrivacyStatus_whenOptUnknown_doesNotClearPersistedUUIDAndVisitorProfile() {
+		// setup
+		audienceState.setMobilePrivacyStatus(MobilePrivacyStatus.OPT_IN);
+		audienceState.setUuid(UUID);
+		audienceState.setVisitorProfile(VISITOR_PROFILE);
+
+		// test
+		audienceState.setMobilePrivacyStatus(MobilePrivacyStatus.UNKNOWN);
+
+		assertEquals(UUID, audienceState.getUuid());
+		assertEquals(VISITOR_PROFILE, audienceState.getVisitorProfile());
+
+		verify(mockNamedCollection, never())
+			.remove(eq(AudienceTestConstants.AUDIENCE_MANAGER_SHARED_PREFS_USER_ID_KEY));
+		verify(mockNamedCollection, never())
+			.remove(eq(AudienceTestConstants.AUDIENCE_MANAGER_SHARED_PREFS_PROFILE_KEY));
+	}
+
+	@Test
+	public void testSetMobilePrivacyStatus_whenOptedOut_clearsPersistedUUIDAndVisitorProfile() {
+		// setup
+		audienceState.setMobilePrivacyStatus(MobilePrivacyStatus.OPT_IN);
+		audienceState.setUuid(UUID);
+		audienceState.setVisitorProfile(VISITOR_PROFILE);
+
+		// test
+		audienceState.setMobilePrivacyStatus(MobilePrivacyStatus.OPT_OUT);
+
+		assertNull(audienceState.getUuid());
+		assertNull(audienceState.getVisitorProfile());
+
+		verify(mockNamedCollection).remove(eq(AudienceTestConstants.AUDIENCE_MANAGER_SHARED_PREFS_USER_ID_KEY));
+		verify(mockNamedCollection).remove(eq(AudienceTestConstants.AUDIENCE_MANAGER_SHARED_PREFS_PROFILE_KEY));
 	}
 
 	// ============================================================
@@ -322,34 +329,49 @@ public class AudienceStateTests extends BaseTest {
 	// ============================================================
 
 	@Test
-	public void getStateData() throws Exception {
+	public void testGetStateData_returnsUUIDAndVisitorProfile() {
 		audienceState.setMobilePrivacyStatus(MobilePrivacyStatus.OPT_IN);
-		audienceState.setDpid(DPID);
-		audienceState.setDpuuid(DPUUID);
 		audienceState.setUuid(UUID);
 		audienceState.setVisitorProfile(VISITOR_PROFILE);
 
-		EventData data = audienceState.getStateData();
+		Map<String, Object> data = audienceState.getStateData();
 
-		assertEquals(DPID, data.optString(EVENT_DATA_DPID, "default"));
-		assertEquals(DPUUID, data.optString(EVENT_DATA_DPUUID, "default"));
-		assertEquals(UUID, data.optString(EVENT_DATA_UUID, "default"));
-		assertEquals(VISITOR_PROFILE, data.getStringMap(EVENT_DATA_VISITOR_PROFILE));
+		assertEquals(UUID, DataReader.optString(data, EVENT_DATA_UUID, "default"));
+		assertEquals(VISITOR_PROFILE, DataReader.optStringMap(data, EVENT_DATA_VISITOR_PROFILE, null));
 	}
 
 	@Test
-	public void getStateDataEmptyOnOptOut() {
+	public void testGetStateData_whenPrivacyOptOut_returnsEmpty() {
 		audienceState.setMobilePrivacyStatus(MobilePrivacyStatus.OPT_OUT);
-		audienceState.setDpid(DPID);
-		audienceState.setDpuuid(DPUUID);
 		audienceState.setUuid(UUID);
 		audienceState.setVisitorProfile(VISITOR_PROFILE);
 
-		EventData data = audienceState.getStateData();
+		Map<String, Object> data = audienceState.getStateData();
 
-		assertFalse(data.containsKey(EVENT_DATA_DPID));
-		assertFalse(data.containsKey(EVENT_DATA_DPUUID));
 		assertFalse(data.containsKey(EVENT_DATA_UUID));
 		assertFalse(data.containsKey(EVENT_DATA_VISITOR_PROFILE));
+	}
+
+	// ============================================================
+	// Set / GetLastResetTimestamp()
+	// ============================================================
+	@Test
+	public void testSetLastResetTimestamp_whenValidValue_updates() {
+		Event testEvent = new Event.Builder("test", "testtype", "testsource").build();
+		audienceState.setLastResetTimestamp(testEvent.getTimestamp());
+
+		assertEquals(testEvent.getTimestamp(), audienceState.getLastResetTimestampMillis());
+	}
+
+	@Test
+	public void testSetLastResetTimestamp_whenNegativeValue_ignores() {
+		audienceState.setLastResetTimestamp(-1);
+
+		assertEquals(0, audienceState.getLastResetTimestampMillis());
+	}
+
+	@Test
+	public void testGetLastResetTimestamp_whenBootedUp_returnZero() {
+		assertEquals(0, audienceState.getLastResetTimestampMillis());
 	}
 }
