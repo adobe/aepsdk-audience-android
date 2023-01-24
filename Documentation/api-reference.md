@@ -1,5 +1,3 @@
-import Tabs from './tabs/api-reference.md'
-
 # Audience Manager API reference
 
 ## Extension version
@@ -17,7 +15,7 @@ String audienceExtensionVersion = Audience.extensionVersion();
 #### Kotlin
 
 ```kotlin
-val audienceExtensionVersion: String = Lifecycle.extensionVersion()
+val audienceExtensionVersion: String = Audience.extensionVersion()
 ```
 
 ## Get the visitor profile
@@ -53,7 +51,8 @@ Audience.getVisitorProfile { visitorProfile ->
 #### Java
 
 ```java
-import com.adobe.marketing.mobile.Lifecycle;
+import com.adobe.marketing.mobile.MobileCore;
+import com.adobe.marketing.mobile.Audience;
 
 MobileCore.registerExtensions(Arrays.asList(Audience.EXTENSION, ...), new AdobeCallback<Object>() {
     // handle callback
@@ -63,7 +62,8 @@ MobileCore.registerExtensions(Arrays.asList(Audience.EXTENSION, ...), new AdobeC
 #### Kotlin
 
 ```kotlin
-import com.adobe.marketing.mobile.Lifecycle
+import com.adobe.marketing.mobile.MobileCore;
+import com.adobe.marketing.mobile.Audience;
 
 MobileCore.registerExtensions(Arrays.asList(Audience.EXTENSION, ...)){
     // handle callback

@@ -15,19 +15,19 @@ Adobe Audience Manager is a versatile audience data management platform. With th
 
 ## Add Audience Manager to your app
 
-#### Java
-
 Audience Manager depends on the Identity extension.
 
 1. Add the Mobile Core, Identity, and Audience extensions to your project using the app's Gradle file:
 
-```java
-implementation 'com.adobe.marketing.mobile:core:2.+'
+```
+implementation 'com.adobe.marketing.mobile:core:2.x.x'
 implementation 'com.adobe.marketing.mobile:identity:2.x.x'
-implementation 'com.adobe.marketing.mobile:audience:2.+'
+implementation 'com.adobe.marketing.mobile:audience:2.x.x'
 ```
 
 2. Import the libraries:
+
+#### Java
 
 ```java
 import com.adobe.marketing.mobile.MobileCore;
@@ -35,13 +35,21 @@ import com.adobe.marketing.mobile.Identity;
 import com.adobe.marketing.mobile.Audience;
 ```
 
-## Register Audience Manager with Mobile Core
+#### Kotlin
 
-#### Java
+```kotlin
+import com.adobe.marketing.mobile.MobileCore
+import com.adobe.marketing.mobile.Identity
+import com.adobe.marketing.mobile.Audience
+```
+
+## Register Audience Manager with Mobile Core
 
 Call the `setApplication()` method once in the `onCreate()` method of your main activity.
 
 For example, your code might look like the following:
+
+#### Java
 
 ```java
 public class MainApp extends Application {
@@ -62,8 +70,28 @@ public class MainApp extends Application {
             Log.d(LOG_TAG, "AEP Mobile SDK is initialized");
         });
     }
-}
 
+}
+```
+
+#### Kotlin
+
+```kotlin
+class MyApp : Application() {
+
+    override fun onCreate() {
+        super.onCreate()
+        MobileCore.setApplication(this)
+        MobileCore.setLogLevel(LoggingMode.VERBOSE)
+        MobileCore.configureWithAppID("YOUR_APP_ID")
+
+        val extensions = listOf(Audience.EXTENSION, Identity.EXTENSION)
+        MobileCore.registerExtensions(extensions) {
+            Log.d(LOG_TAG, "AEP Mobile SDK is initialized")
+        }
+    }
+
+}
 ```
 
 ## Implement Audience Manager APIs
