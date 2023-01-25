@@ -62,7 +62,6 @@ public class MainApp extends Application {
         super.onCreate();
 
         MobileCore.setApplication(this);
-        MobileCore.setLogLevel(LoggingMode.VERBOSE);
         MobileCore.configureWithAppID(APP_ID);
 
         List<Class<? extends Extension>> extensions = new ArrayList<>();
@@ -84,7 +83,6 @@ class MyApp : Application() {
     override fun onCreate() {
         super.onCreate()
         MobileCore.setApplication(this)
-        MobileCore.setLogLevel(LoggingMode.VERBOSE)
         MobileCore.configureWithAppID("YOUR_APP_ID")
 
         val extensions = listOf(Audience.EXTENSION, Identity.EXTENSION)

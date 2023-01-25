@@ -6,7 +6,7 @@ Adobe Audience Manager is a versatile audience data management platform. With th
 
 The Audience Manager mobile extension is an extension for the Android 2.x [Adobe Experience Platform SDK](https://developer.adobe.com/client-sdks/documentation/current-sdk-versions/) and requires the `Core` and `Identity` extensions for event handling.
 
-To learn more about the Mobile Core, read the [Mobile Core](https://developer.adobe.com/client-sdks/documentation/mobile-core/) documentation.
+To learn more, read the [Mobile Core](https://developer.adobe.com/client-sdks/documentation/mobile-core/) documentation.
 
 ### Installation
 
@@ -26,10 +26,11 @@ To open and run the project, open the `code/settings.gradle` file in Android Stu
 
 **Data Collection mobile property prerequisites**
 
-The test app needs to be configured with the following edge extensions before it can be used:
+The test app needs to be configured with the following extensions before it can be used:
+
 - Mobile Core (installed by default)
-- [Identity](https://developer.adobe.com/client-sdks/documentation/identity-for-edge-network/)
-- [Assurance](https://developer.adobe.com/client-sdks/documentation/platform-assurance/)
+- [Identity](https://developer.adobe.com/client-sdks/documentation/mobile-core/identity/)
+- [Assurance](https://developer.adobe.com/client-sdks/documentation/platform-assurance-sdk/)
 
 **Run test application**
 
@@ -50,9 +51,9 @@ $ adb shell am start -W -a  android.intent.action.VIEW -d "audiencetestapp://mai
 
 | Project                                                                              | Description                                                  |
 | ------------------------------------------------------------------------------------ | ------------------------------------------------------------ |
-| [Core Extensions](https://github.com/adobe/aepsdk-core-android)                      | The Core extension represents the foundation of the Adobe Experience Platform SDK. |
-| [Assurance Extension](https://github.com/adobe/aepsdk-assurance-android)             | The Assurance extension enables validation workflows for your SDK implementation. |
-| [AEP SDK Sample App for Android](https://github.com/adobe/aepsdk-sample-app-android) | Contains Android sample app for the AEP SDK.                 |
+| [Core extensions](https://github.com/adobe/aepsdk-core-android)                      | The Core extension represents the foundation of the Adobe Experience Platform SDK. |
+| [Assurance extension](https://github.com/adobe/aepsdk-assurance-android)             | The Assurance extension enables validation workflows for your SDK implementation. |
+| [AEP SDK sample app for Android](https://github.com/adobe/aepsdk-sample-app-android) | Contains Android sample app for the AEP SDK.                 |
 
 ## Documentation
 
