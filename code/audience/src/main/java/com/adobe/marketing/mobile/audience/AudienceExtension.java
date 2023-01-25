@@ -235,8 +235,8 @@ public final class AudienceExtension extends Extension {
 	//endregion
 
 	//region Event listeners
-
-	private void handleConfigurationResponse(@NonNull final Event event) {
+	@VisibleForTesting
+	void handleConfigurationResponse(@NonNull final Event event) {
 		// check privacy status. if not found, .UNKNOWN privacy status will be used
 		final Map<String, Object> eventData = event.getEventData();
 		final MobilePrivacyStatus privacyStatus = MobilePrivacyStatus.fromString(
@@ -300,7 +300,8 @@ public final class AudienceExtension extends Extension {
 	 *
 	 * @param event The event coming from the signalWithData API invocation
 	 */
-	private void handleAudienceRequestContent(@NonNull final Event event) {
+	@VisibleForTesting
+	void handleAudienceRequestContent(@NonNull final Event event) {
 		submitSignal(event);
 	}
 

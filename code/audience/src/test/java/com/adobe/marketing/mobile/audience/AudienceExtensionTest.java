@@ -12,11 +12,14 @@
 package com.adobe.marketing.mobile.audience;
 
 import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 //
@@ -27,8 +30,12 @@ import com.adobe.marketing.mobile.EventSource;
 import com.adobe.marketing.mobile.EventType;
 import com.adobe.marketing.mobile.ExtensionApi;
 import com.adobe.marketing.mobile.ExtensionEventListener;
+import com.adobe.marketing.mobile.MobilePrivacyStatus;
 import com.adobe.marketing.mobile.services.DataQueue;
 import com.adobe.marketing.mobile.services.DataQueuing;
+import com.adobe.marketing.mobile.services.HttpMethod;
+import com.adobe.marketing.mobile.services.NetworkRequest;
+import com.adobe.marketing.mobile.services.Networking;
 import com.adobe.marketing.mobile.services.ServiceProvider;
 import com.adobe.marketing.mobile.util.DataReader;
 import com.adobe.marketing.mobile.util.DataReaderException;
@@ -76,6 +83,9 @@ public class AudienceExtensionTest {
 	private DataQueue mockDataQueue;
 
 	@Mock
+	private Networking mockNetworkService;
+
+	@Mock
 	private ServiceProvider mockServiceProvider;
 
 	private MockedStatic<ServiceProvider> mockedStaticServiceProvider = Mockito.mockStatic(ServiceProvider.class);
@@ -85,6 +95,7 @@ public class AudienceExtensionTest {
 		mockedStaticServiceProvider.when(ServiceProvider::getInstance).thenReturn(mockServiceProvider);
 		when(mockServiceProvider.getDataQueueService()).thenReturn(mockDataQueueService);
 		when(mockDataQueueService.getDataQueue("com.adobe.module.audience")).thenReturn(mockDataQueue);
+		when(mockServiceProvider.getNetworkService()).thenReturn(mockNetworkService);
 		audience = new AudienceExtension(mockExtensionApi, mockState, mockHitProcessor);
 	}
 
@@ -273,7 +284,7 @@ public class AudienceExtensionTest {
 
 		verify(mockState).clearIdentifiers();
 		verify(mockState).setLastResetTimestamp(eq(testEvent.getTimestamp()));
-		verify(mockDataQueue, never()).clear();
+		verifyNoInteractions(mockDataQueue);
 
 		//verify
 		ArgumentCaptor<Map<String, Object>> sharedStateCaptor = ArgumentCaptor.forClass(Map.class);
@@ -300,7 +311,7 @@ public class AudienceExtensionTest {
 
 		verify(mockState).clearIdentifiers();
 		verify(mockState).setLastResetTimestamp(eq(testEvent.getTimestamp()));
-		verify(mockDataQueue).clear();
+		verifyNoInteractions(mockDataQueue);
 
 		//verify
 		ArgumentCaptor<Map<String, Object>> sharedStateCaptor = ArgumentCaptor.forClass(Map.class);
@@ -312,204 +323,135 @@ public class AudienceExtensionTest {
 		assertEquals(testEvent.getUniqueIdentifier(), eventCaptor.getValue().getUniqueIdentifier());
 	}
 
-	//
-	//	// =================================================================================================================
-	//	// void void processConfiguration(Event event)
-	//	// =================================================================================================================
-	//	@Test
-	//	public void testProcessConfiguration_When_OptIn() throws Exception {
-	//		EventData configuration = new EventData();
-	//		configuration.putString("global.privacy", "optedin");
-	//		Event testEvent = new Event.Builder("TEST", EventType.CONFIGURATION, EventSource.RESPONSE_CONTENT)
-	//			.setData(configuration)
-	//			.build();
-	//		audience.processConfiguration(testEvent);
-	//		waitForExecutor(audience.getExecutor(), 1);
-	//		assertFalse(mockDispatcherAudienceResponseContent.dispatchOptOutResultCalled);
-	//		assertTrue(audience.processQueuedEventsCalled);
-	//		assertTrue(mockAudienceRequestsDatabase.updatePrivacyStatusWasCalled);
-	//		assertEquals(
-	//			MobilePrivacyStatus.OPT_IN,
-	//			mockAudienceRequestsDatabase.updatePrivacyStatusParameterPrivacyStatus
-	//		);
-	//		assertFalse(audience.resetWasCalled);
-	//	}
-	//
-	//	@Test
-	//	public void testProcessConfiguration_When_OptOutWithValidUUIDAndAAMServer() throws Exception {
-	//		// setup
-	//		EventData configuration = new EventData();
-	//		configuration.putString("global.privacy", "optedout");
-	//		configuration.putString("audience.server", "server");
-	//		Event testEvent = new Event.Builder("TEST", EventType.CONFIGURATION, EventSource.RESPONSE_CONTENT)
-	//			.setData(configuration)
-	//			.build();
-	//		final Event aamEvent1 = getSubmitSignalEvent(getFakeAamTraitsEventData(), null);
-	//		final Event aamEvent2 = getSubmitSignalEvent(getFakeAamTraitsEventData(), null);
-	//		audience.waitingEvents.add(aamEvent1);
-	//		audience.waitingEvents.add(aamEvent2);
-	//		audience.internalState.setUuid("testuuid");
-	//
-	//		audience.processConfiguration(testEvent);
-	//
-	//		waitForExecutor(audience.getExecutor(), 1);
-	//
-	//		assertTrue(mockDispatcherAudienceResponseContent.dispatchOptOutResultCalled);
-	//		assertTrue(mockDispatcherAudienceResponseContent.dispatchOptOutResultParameterOptedOut);
-	//		assertTrue(audience.processQueuedEventsCalled);
-	//		assertTrue(mockAudienceRequestsDatabase.updatePrivacyStatusWasCalled);
-	//		assertEquals(
-	//			MobilePrivacyStatus.OPT_OUT,
-	//			mockAudienceRequestsDatabase.updatePrivacyStatusParameterPrivacyStatus
-	//		);
-	//		assertTrue(audience.resetWasCalled);
-	//		assertEquals(testEvent, audience.resetParameterEvent);
-	//		assertEquals(0, audience.waitingEvents.size());
-	//	}
-	//
-	//	@Test
-	//	public void testProcessConfiguration_When_OptOutWithValidUUIDAndNoAAMServer() throws Exception {
-	//		// setup
-	//		EventData configuration = new EventData();
-	//		configuration.putString("global.privacy", "optedout");
-	//		Event testEvent = new Event.Builder("TEST", EventType.CONFIGURATION, EventSource.RESPONSE_CONTENT)
-	//			.setData(configuration)
-	//			.build();
-	//		final Event aamEvent1 = getSubmitSignalEvent(getFakeAamTraitsEventData(), null);
-	//		final Event aamEvent2 = getSubmitSignalEvent(getFakeAamTraitsEventData(), null);
-	//		audience.waitingEvents.add(aamEvent1);
-	//		audience.waitingEvents.add(aamEvent2);
-	//		audience.internalState.setUuid("testuuid");
-	//
-	//		audience.processConfiguration(testEvent);
-	//
-	//		waitForExecutor(audience.getExecutor(), 1);
-	//
-	//		assertTrue(mockDispatcherAudienceResponseContent.dispatchOptOutResultCalled);
-	//		assertFalse(mockDispatcherAudienceResponseContent.dispatchOptOutResultParameterOptedOut);
-	//		assertTrue(audience.processQueuedEventsCalled);
-	//		assertTrue(mockAudienceRequestsDatabase.updatePrivacyStatusWasCalled);
-	//		assertEquals(
-	//			MobilePrivacyStatus.OPT_OUT,
-	//			mockAudienceRequestsDatabase.updatePrivacyStatusParameterPrivacyStatus
-	//		);
-	//		assertTrue(audience.resetWasCalled);
-	//		assertEquals(testEvent, audience.resetParameterEvent);
-	//		assertEquals(0, audience.waitingEvents.size());
-	//	}
-	//
-	//	@Test
-	//	public void testProcessConfiguration_When_OptOutWithNoUUIDAndValidAAMServer() throws Exception {
-	//		// setup
-	//		EventData configuration = new EventData();
-	//		configuration.putString("global.privacy", "optedout");
-	//		configuration.putString("audience.server", "server");
-	//		Event testEvent = new Event.Builder("TEST", EventType.CONFIGURATION, EventSource.RESPONSE_CONTENT)
-	//			.setData(configuration)
-	//			.build();
-	//		final Event aamEvent1 = getSubmitSignalEvent(getFakeAamTraitsEventData(), null);
-	//		final Event aamEvent2 = getSubmitSignalEvent(getFakeAamTraitsEventData(), null);
-	//		audience.waitingEvents.add(aamEvent1);
-	//		audience.waitingEvents.add(aamEvent2);
-	//
-	//		audience.processConfiguration(testEvent);
-	//
-	//		waitForExecutor(audience.getExecutor(), 1);
-	//
-	//		assertTrue(mockDispatcherAudienceResponseContent.dispatchOptOutResultCalled);
-	//		assertFalse(mockDispatcherAudienceResponseContent.dispatchOptOutResultParameterOptedOut);
-	//		assertTrue(audience.processQueuedEventsCalled);
-	//		assertTrue(mockAudienceRequestsDatabase.updatePrivacyStatusWasCalled);
-	//		assertEquals(
-	//			MobilePrivacyStatus.OPT_OUT,
-	//			mockAudienceRequestsDatabase.updatePrivacyStatusParameterPrivacyStatus
-	//		);
-	//		assertTrue(audience.resetWasCalled);
-	//		assertEquals(testEvent, audience.resetParameterEvent);
-	//		assertEquals(0, audience.waitingEvents.size());
-	//	}
-	//
-	//	@Test
-	//	public void testProcessConfiguration_When_Unknown() throws Exception {
-	//		EventData configuration = new EventData();
-	//		configuration.putString("global.privacy", "optunknown");
-	//		Event testEvent = new Event.Builder("TEST", EventType.CONFIGURATION, EventSource.RESPONSE_CONTENT)
-	//			.setData(configuration)
-	//			.build();
-	//		audience.processConfiguration(testEvent);
-	//
-	//		waitForExecutor(audience.getExecutor(), 1);
-	//
-	//		assertFalse(mockDispatcherAudienceResponseContent.dispatchOptOutResultCalled);
-	//		assertTrue(audience.processQueuedEventsCalled);
-	//		assertTrue(mockAudienceRequestsDatabase.updatePrivacyStatusWasCalled);
-	//		assertEquals(
-	//			MobilePrivacyStatus.UNKNOWN,
-	//			mockAudienceRequestsDatabase.updatePrivacyStatusParameterPrivacyStatus
-	//		);
-	//		assertFalse(audience.resetWasCalled);
-	//	}
-	//
-	//	// =================================================================================================================
-	//	// void setDpidAndDpuuid(final String dpid, final String dpuuid)
-	//	// =================================================================================================================
-	//	@Test
-	//	public void testSetDpidAndDpuuid_when_happy_then_shouldUpdateStateAndSharedState() throws Exception {
-	//		// setup
-	//		setAudienceManagerStateProperties();
-	//		final Event testEvent = getSubmitSignalEvent(getFakeAamTraitsEventData(), null);
-	//		final String testDpid = "newDpid";
-	//		final String testDpuuid = "newDpuuid";
-	//
-	//		// test
-	//		audience.setDpidAndDpuuid(testDpid, testDpuuid, testEvent);
-	//		waitForExecutor(audience.getExecutor(), 1);
-	//		// verify
-	//		assertEquals("state should have correct value for dpid", testDpid, state.getDpid());
-	//		assertEquals("state should have correct value for dpuuid", testDpuuid, state.getDpuuid());
-	//
-	//		final EventData aamSharedState = audience.getSharedAAMStateFromEventHub(testEvent);
-	//		assertEquals(4, aamSharedState.size());
-	//		assertEquals(
-	//			"dpid from shared state should be updated",
-	//			testDpid,
-	//			aamSharedState.getString2(AudienceTestConstants.EventDataKeys.Audience.DPID)
-	//		);
-	//		assertEquals(
-	//			"dpuuid from shared state should be updated",
-	//			testDpuuid,
-	//			aamSharedState.getString2(AudienceTestConstants.EventDataKeys.Audience.DPUUID)
-	//		);
-	//		assertEquals(
-	//			"uuid from shared state should be set",
-	//			"testuuid",
-	//			aamSharedState.getString2(AudienceTestConstants.EventDataKeys.Audience.UUID)
-	//		);
-	//		assertEquals(
-	//			"visitor profile from shared state should be set",
-	//			1,
-	//			aamSharedState.getStringMap(AudienceTestConstants.EventDataKeys.Audience.VISITOR_PROFILE).size()
-	//		);
-	//	}
-	//
-	//	@Test
-	//	public void testSetDpidAndDpuuid_when_nullEventParam_then_shouldReturn() throws Exception {
-	//		// setup
-	//		final Event testEvent = null;
-	//		final String testDpid = "newDpid";
-	//		final String testDpuuid = "newDpuuid";
-	//
-	//		// test
-	//		audience.setDpidAndDpuuid(testDpid, testDpuuid, testEvent);
-	//
-	//		// verify
-	//		assertNotEquals("state should have correct value for dpid", testDpid, state.getDpid());
-	//		assertNotEquals("state should have correct value for dpuuid", testDpuuid, state.getDpuuid());
-	//
-	//		final EventData aamSharedState = audience.getSharedAAMStateFromEventHub(testEvent);
-	//		assertNull("shared state object should not be created for this version", aamSharedState);
-	//	}
-	//
+	@Test
+	public void testHandleConfigurationResponse_whenPrivacyOptedIn_updatesInternalState() {
+		Map<String, Object> configuration = new HashMap<>();
+		configuration.put("global.privacy", "optedin");
+		Event testEvent = new Event.Builder("TestConfig", EventType.CONFIGURATION, EventSource.RESPONSE_CONTENT)
+			.setEventData(configuration)
+			.build();
+
+		// test
+		audience.handleConfigurationResponse(testEvent);
+
+		//
+		verify(mockState).setMobilePrivacyStatus(eq(MobilePrivacyStatus.OPT_IN));
+		// todo: verify(mockDataQueue).handlePrivacyChange
+		verify(mockExtensionApi, never()).dispatch(any(Event.class));
+		verify(mockExtensionApi).createSharedState(any(), any(Event.class));
+	}
+
+	@Test
+	public void testHandleConfigurationResponse_whenPrivacyUnknown_updatesInternalState() {
+		when(mockState.getUuid()).thenReturn("testuuid");
+		Map<String, Object> configuration = new HashMap<>();
+		configuration.put("global.privacy", "optunknown");
+		configuration.put("audience.server", "server.com");
+		Event testEvent = new Event.Builder("TestConfig", EventType.CONFIGURATION, EventSource.RESPONSE_CONTENT)
+			.setEventData(configuration)
+			.build();
+
+		// test
+		audience.handleConfigurationResponse(testEvent);
+
+		//
+		verify(mockState).setMobilePrivacyStatus(eq(MobilePrivacyStatus.UNKNOWN));
+		// todo: verify(mockDataQueue).handlePrivacyChange
+		verify(mockExtensionApi, never()).dispatch(any(Event.class));
+		verify(mockExtensionApi).createSharedState(any(), any(Event.class));
+		verifyNoInteractions(mockNetworkService);
+	}
+
+	@Test
+	public void testHandleConfigurationResponse_whenPrivacyOptedOutNoUUIDAndNoAAMServer_updatesInternalStateAndDispatchesOptoutEvent() {
+		Map<String, Object> configuration = new HashMap<>();
+		configuration.put("global.privacy", "optedout");
+		Event testEvent = new Event.Builder("TestConfig", EventType.CONFIGURATION, EventSource.RESPONSE_CONTENT)
+			.setEventData(configuration)
+			.build();
+
+		// test
+		audience.handleConfigurationResponse(testEvent);
+
+		// verify
+		verify(mockState).setMobilePrivacyStatus(eq(MobilePrivacyStatus.OPT_OUT));
+		// todo: verify(mockDataQueue).handlePrivacyChange
+		verifyNoInteractions(mockNetworkService);
+		verify(mockExtensionApi).createSharedState(any(), any(Event.class));
+		ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+		verify(mockExtensionApi, times(1)).dispatch(eventCaptor.capture());
+		assertOptOutEvent(eventCaptor.getValue(), false);
+	}
+
+	@Test
+	public void testHandleConfigurationResponse_whenPrivacyOptedOutAndAAMServer_sendsOptoutNetworkRequestAndDispatchesEvent() {
+		// setup
+		when(mockState.getUuid()).thenReturn("testuuid");
+		Map<String, Object> configuration = new HashMap<>();
+		configuration.put("global.privacy", "optedout");
+		configuration.put("audience.server", "server.com");
+		Event testEvent = new Event.Builder("TestConfig", EventType.CONFIGURATION, EventSource.RESPONSE_CONTENT)
+			.setEventData(configuration)
+			.build();
+
+		// test
+		audience.handleConfigurationResponse(testEvent);
+
+		// verify
+		verify(mockState).setMobilePrivacyStatus(eq(MobilePrivacyStatus.OPT_OUT));
+		// todo: verify(mockDataQueue).handlePrivacyChange
+		ArgumentCaptor<NetworkRequest> networkRequestCaptor = ArgumentCaptor.forClass(NetworkRequest.class);
+		verify(mockNetworkService).connectAsync(networkRequestCaptor.capture(), notNull());
+		assertEquals("https://server.com/demoptout.jpg?d_uuid=testuuid", networkRequestCaptor.getValue().getUrl());
+		assertEquals(HttpMethod.GET, networkRequestCaptor.getValue().getMethod());
+
+		verify(mockExtensionApi).createSharedState(any(), any(Event.class));
+		ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+		verify(mockExtensionApi, times(1)).dispatch(eventCaptor.capture());
+		assertOptOutEvent(eventCaptor.getValue(), true);
+	}
+
+	@Test
+	public void testHandleConfigurationResponse_whenPrivacyOptedOutValidUUIDAndNoAAMServer_noNetworkRequestAndDispatchesOptoutEvent() {
+		// setup
+		when(mockState.getUuid()).thenReturn("testuuid");
+		Map<String, Object> configuration = new HashMap<>();
+		configuration.put("global.privacy", "optedout");
+		Event testEvent = new Event.Builder("TestConfig", EventType.CONFIGURATION, EventSource.RESPONSE_CONTENT)
+			.setEventData(configuration)
+			.build();
+
+		// test
+		audience.handleConfigurationResponse(testEvent);
+
+		// verify
+		verifyNoInteractions(mockNetworkService);
+		ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+		verify(mockExtensionApi, times(1)).dispatch(eventCaptor.capture());
+		assertOptOutEvent(eventCaptor.getValue(), false);
+	}
+
+	@Test
+	public void testHandleConfigurationResponse_whenPrivacyOptedOutNoUUIDAndValidAAMServer_noNetworkRequestAndDispatchesOptoutEvent() {
+		// setup
+		when(mockState.getUuid()).thenReturn(null);
+		Map<String, Object> configuration = new HashMap<>();
+		configuration.put("global.privacy", "optedout");
+		configuration.put("audience.server", "server.com");
+		Event testEvent = new Event.Builder("TestConfig", EventType.CONFIGURATION, EventSource.RESPONSE_CONTENT)
+			.setEventData(configuration)
+			.build();
+
+		// test
+		audience.handleConfigurationResponse(testEvent);
+
+		// verify
+		verifyNoInteractions(mockNetworkService);
+		ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+		verify(mockExtensionApi, times(1)).dispatch(eventCaptor.capture());
+		assertOptOutEvent(eventCaptor.getValue(), false);
+	}
+
 	//	// =================================================================================================================
 	//	// protected void processQueuedEvents()
 	//	// =================================================================================================================
@@ -726,7 +668,7 @@ public class AudienceExtensionTest {
 	//	}
 	//
 	//	// =================================================================================================================
-	//	// protected void submitSignal(final Event event)
+	//	// protected void submitSignal(final Event event) // handleAudienceRequestContent
 	//	// =================================================================================================================
 	//	@Test
 	//	public void testSubmitSignal_when_AudienceNotConfigured() throws Exception {
@@ -1342,5 +1284,21 @@ public class AudienceExtensionTest {
 		lifecycleData.put("appid", "someAppID");
 		lifecycleData.put("launches", "2");
 		return lifecycleData;
+	}
+
+	private void assertOptOutEvent(final Event responseEvent, final boolean hitSent) {
+		assertNotNull(responseEvent);
+		assertEquals(EventType.AUDIENCEMANAGER, responseEvent.getType());
+		assertEquals(EventSource.RESPONSE_CONTENT, responseEvent.getSource());
+		assertNull(responseEvent.getResponseID()); // not a paired response
+		assertEquals(1, responseEvent.getEventData().size());
+		assertEquals(
+			new HashMap<String, Object>() {
+				{
+					put(AudienceConstants.EventDataKeys.Audience.OPTED_OUT_HIT_SENT, hitSent);
+				}
+			},
+			responseEvent.getEventData()
+		);
 	}
 }
