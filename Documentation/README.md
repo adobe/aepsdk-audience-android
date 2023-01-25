@@ -2,5 +2,5 @@
 
 ## Contents
 
-* [Getting started](./index.md)
+* [Getting started](./getting-started.md)
 * [API reference](./api-reference.md)

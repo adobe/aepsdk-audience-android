@@ -1,5 +1,19 @@
 # Audience Manager API reference
 
+## Prerequisites
+
+Refer to the [Getting Started Guide](./getting-started.md)
+
+## API reference
+
+- [extensionVersion](#extensionversion)
+- [getVisitorProfile](#getvisitorprofile)
+- [registerExtension](#registerextension)
+- [reset](#reset)
+- [signalWithData](#signalwithdata)
+
+------
+
 ## extensionVersion
 
 The `extensionVersion()` API returns the version of the Audience extension that is registered with the Mobile Core extension.
@@ -44,7 +58,7 @@ Audience.getVisitorProfile { visitorProfile ->
 
 ```
 
-## registerExtensions
+## registerExtension
 
 `Audience.EXTENSION` represents a reference to the AudienceExtension class that can be registered with `MobileCore` via its `registerExtensions` API.
 

@@ -15,7 +15,9 @@ Adobe Audience Manager is a versatile audience data management platform. With th
 
 ## Add Audience Manager to your app
 
-Audience Manager depends on the Identity extension.
+The Audience Manager extension depends on the Core and Identity extensions:
+* [Core](https://developer.adobe.com/client-sdks/documentation/mobile-core/)
+* [Identity](https://developer.adobe.com/client-sdks/documentation/mobile-core/identity/)
 
 1. Add the Mobile Core, Identity, and Audience extensions to your project using the app's Gradle file:
 
