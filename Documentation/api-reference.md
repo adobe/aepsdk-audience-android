@@ -60,28 +60,21 @@ Audience.getVisitorProfile { visitorProfile ->
 
 ## registerExtension
 
-`Audience.EXTENSION` represents a reference to the AudienceExtension class that can be registered with `MobileCore` via its `registerExtensions` API.
+> **Warning**
+> Deprecated as of 2.0.0. Use the [MobileCore.registerExtensions API](https://developer.adobe.com/client-sdks/documentation/mobile-core/api-reference) instead.
+
+Registers the Audience extension with `MobileCore`.
 
 #### Java
 
 ```java
-import com.adobe.marketing.mobile.MobileCore;
-import com.adobe.marketing.mobile.Audience;
-
-MobileCore.registerExtensions(Arrays.asList(Audience.EXTENSION, ...), new AdobeCallback<Object>() {
-    // handle callback
-});
+Audience.registerExtension();
 ```
 
 #### Kotlin
 
 ```kotlin
-import com.adobe.marketing.mobile.MobileCore;
-import com.adobe.marketing.mobile.Audience;
-
-MobileCore.registerExtensions(Arrays.asList(Audience.EXTENSION, ...)){
-    // handle callback
-}
+Audience.registerExtension()
 ```
 
 ## reset
