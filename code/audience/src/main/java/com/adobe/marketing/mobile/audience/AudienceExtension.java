@@ -252,13 +252,14 @@ public final class AudienceExtension extends Extension {
 	}
 
 	/**
-	 * Resets UUID, DPID, DPUUID, and the Audience Manager Visitor Profile from the {@code AudienceState} instance.
+	 * Resets UUID, and the Audience Manager Visitor Profile from the {@code AudienceState} instance.
 	 * <p>
 	 * This method also updates shared state for version provided by {@code event} param.
 	 *
 	 * @param event {@link Event} containing instruction to reset identities
 	 */
-	private void handleResetIdentities(@NonNull final Event event) {
+	@VisibleForTesting
+	void handleResetIdentities(@NonNull final Event event) {
 		Log.debug(LOG_TAG, LOG_SOURCE, "Resetting stored Audience Manager identities and visitor profile.");
 		if (EventType.GENERIC_IDENTITY.equals(event.getType())) {
 			hitQueue.clear();
@@ -308,7 +309,8 @@ public final class AudienceExtension extends Extension {
 	 *
 	 * @param event the event coming from the getVisitorProfile API invocation
 	 */
-	private void handleAudienceRequestIdentity(@NonNull final Event event) {
+	@VisibleForTesting
+	void handleAudienceRequestIdentity(@NonNull final Event event) {
 		final Map<String, Object> responseEventData = new HashMap<>();
 		responseEventData.put(
 			AudienceConstants.EventDataKeys.Audience.VISITOR_PROFILE,

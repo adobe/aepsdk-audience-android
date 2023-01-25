@@ -12,12 +12,43 @@
 package com.adobe.marketing.mobile.audience;
 
 import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 //
 //import com.adobe.marketing.mobile.JsonUtilityService.*;
 //import com.adobe.marketing.mobile.NetworkService.HttpCommand;
+import com.adobe.marketing.mobile.Event;
+import com.adobe.marketing.mobile.EventSource;
+import com.adobe.marketing.mobile.EventType;
+import com.adobe.marketing.mobile.ExtensionApi;
+import com.adobe.marketing.mobile.ExtensionEventListener;
+import com.adobe.marketing.mobile.services.DataQueue;
+import com.adobe.marketing.mobile.services.DataQueuing;
+import com.adobe.marketing.mobile.services.ServiceProvider;
+import com.adobe.marketing.mobile.util.DataReader;
+import com.adobe.marketing.mobile.util.DataReaderException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
 
+@RunWith(MockitoJUnitRunner.class)
 public class AudienceExtensionTest {
 
 	//
@@ -27,8 +58,36 @@ public class AudienceExtensionTest {
 	//	private MockDispatcherAudienceResponseContentAudienceManager mockDispatcherAudienceResponseContent;
 	//	private MockDispatcherAudienceResponseIdentityAudienceManager mockDispatcherAudienceResponseIdentity;
 	//	private MockAudienceRequestsDatabase mockAudienceRequestsDatabase;
-	//	private TestableAudience audience;
-	//	private AudienceState state;
+	private AudienceExtension audience;
+
+	@Mock
+	private AudienceState mockState;
+
+	@Mock
+	private ExtensionApi mockExtensionApi;
+
+	@Mock
+	private AudienceHitProcessor mockHitProcessor;
+
+	@Mock
+	private DataQueuing mockDataQueueService;
+
+	@Mock
+	private DataQueue mockDataQueue;
+
+	@Mock
+	private ServiceProvider mockServiceProvider;
+
+	private MockedStatic<ServiceProvider> mockedStaticServiceProvider = Mockito.mockStatic(ServiceProvider.class);
+
+	@Before
+	public void setup() {
+		mockedStaticServiceProvider.when(ServiceProvider::getInstance).thenReturn(mockServiceProvider);
+		when(mockServiceProvider.getDataQueueService()).thenReturn(mockDataQueueService);
+		when(mockDataQueueService.getDataQueue("com.adobe.module.audience")).thenReturn(mockDataQueue);
+		audience = new AudienceExtension(mockExtensionApi, mockState, mockHitProcessor);
+	}
+
 	//
 	//	@Before
 	//	public void setup() throws MissingPlatformServicesException {
@@ -55,243 +114,204 @@ public class AudienceExtensionTest {
 	//	// =================================================================================================================
 	//	// void bootup(final Event bootEvent)
 	//	// =================================================================================================================
-	//	@Test
-	//	public void testBootup_when_UUID_Available() throws Exception {
-	//		// setup
-	//		final HashMap<String, String> visitorProfile = new HashMap<String, String>();
-	//		visitorProfile.put("someKey", "someValue");
-	//		state.setDpid("mock-dpid");
-	//		state.setDpuuid("mock-dpuuid");
-	//		state.setUuid("mock-uuid");
-	//		state.setVisitorProfile(visitorProfile);
-	//
-	//		Event bootEvent = new Event.Builder("AudienceTest", EventType.HUB, EventSource.BOOTED)
-	//			.setEventNumber(0)
-	//			.build();
-	//
-	//		// test
-	//		audience.bootup(bootEvent);
-	//
-	//		waitForExecutor(audience.getExecutor(), 1);
-	//
-	//		// verify
-	//		final EventData aamSharedState = audience.getSharedAAMStateFromEventHub(bootEvent);
-	//		assertEquals(4, aamSharedState.size());
-	//		assertEquals("mock-uuid", aamSharedState.optString(AudienceTestConstants.EventDataKeys.Audience.UUID, ""));
-	//		assertEquals("mock-dpid", aamSharedState.optString(AudienceTestConstants.EventDataKeys.Audience.DPID, ""));
-	//		assertEquals("mock-dpuuid", aamSharedState.optString(AudienceTestConstants.EventDataKeys.Audience.DPUUID, ""));
-	//		assertEquals(
-	//			visitorProfile,
-	//			aamSharedState.optStringMap(AudienceTestConstants.EventDataKeys.Audience.VISITOR_PROFILE, null)
-	//		);
-	//	}
-	//
-	//	@Test
-	//	public void testBootup_when_UUID_NotAvailable() throws Exception {
-	//		// setup
-	//		Event bootEvent = new Event.Builder("AudienceTest", EventType.HUB, EventSource.BOOTED)
-	//			.setEventNumber(0)
-	//			.build();
-	//
-	//		// test
-	//		audience.bootup(bootEvent);
-	//
-	//		waitForExecutor(audience.getExecutor(), 1);
-	//
-	//		// verify
-	//		final EventData aamSharedState = audience.getSharedAAMStateFromEventHub(bootEvent);
-	//		assertEquals(0, aamSharedState.size());
-	//		assertNull(aamSharedState.optString(AudienceTestConstants.EventDataKeys.Audience.UUID, null));
-	//		assertNull(aamSharedState.optString(AudienceTestConstants.EventDataKeys.Audience.DPID, null));
-	//		assertNull(aamSharedState.optString(AudienceTestConstants.EventDataKeys.Audience.DPUUID, null));
-	//		assertNull(aamSharedState.optStringMap(AudienceTestConstants.EventDataKeys.Audience.VISITOR_PROFILE, null));
-	//	}
-	//
-	//	// =================================================================================================================
-	//	// void getIdentityVariables(final String pairId)
-	//	// =================================================================================================================
-	//	@Test
-	//	public void testGetIdentityVariables_when_validPairID() throws Exception {
-	//		// setup
-	//		final Event testEvent = getSubmitSignalEvent(getFakeAamTraitsEventData(), null);
-	//		HashMap<String, String> visitorProfile = new HashMap<String, String>();
-	//		visitorProfile.put("someKey", "someValue");
-	//
-	//		audience.setDpidAndDpuuid("dpid", "dpuuid", testEvent);
-	//		getAudienceDataStore().setMap(AudienceTestConstants.AUDIENCE_MANAGER_SHARED_PREFS_PROFILE_KEY, visitorProfile);
-	//
-	//		// test
-	//		audience.getIdentityVariables("pairId");
-	//
-	//		waitForExecutor(audience.getExecutor(), 1);
-	//
-	//		// verify
-	//		assertEquals(1, mockDispatcherAudienceResponseIdentity.dispatchCallCount);
-	//		assertEquals(visitorProfile, mockDispatcherAudienceResponseIdentity.dispatchParametersProfile);
-	//		assertEquals("dpid", mockDispatcherAudienceResponseIdentity.dispatchParametersDpid);
-	//		assertEquals("dpuuid", mockDispatcherAudienceResponseIdentity.dispatchParametersDpuuid);
-	//	}
-	//
-	//	@Test
-	//	public void testGetIdentityVariables_when_pairIdNull() throws Exception {
-	//		// setup
-	//		final Event testEvent = getSubmitSignalEvent(getFakeAamTraitsEventData(), null);
-	//		HashMap<String, String> visitorProfile = new HashMap<String, String>();
-	//		visitorProfile.put("someKey", "someValue");
-	//		getAudienceDataStore().setMap(AudienceTestConstants.AUDIENCE_MANAGER_SHARED_PREFS_PROFILE_KEY, visitorProfile);
-	//		audience.setDpidAndDpuuid("dpid", "dpuuid", testEvent);
-	//
-	//		// test
-	//		audience.getIdentityVariables(null);
-	//
-	//		// verify
-	//		assertFalse(mockDispatcherAudienceResponseIdentity.dispatchWasCalled);
-	//		assertNull(mockDispatcherAudienceResponseIdentity.dispatchParametersPairId);
-	//	}
-	//
-	//	@Test
-	//	public void testGetIdentityVariables_when_visitorProfileNotSet() throws Exception {
-	//		// test
-	//		audience.getIdentityVariables("pairId");
-	//
-	//		waitForExecutor(audience.getExecutor(), 1);
-	//		// verify
-	//		assertEquals(1, mockDispatcherAudienceResponseIdentity.dispatchCallCount);
-	//		assertNull(mockDispatcherAudienceResponseIdentity.dispatchParametersProfile);
-	//		assertNull(mockDispatcherAudienceResponseIdentity.dispatchParametersDpid);
-	//		assertNull(mockDispatcherAudienceResponseIdentity.dispatchParametersDpuuid);
-	//	}
-	//
-	//	// =================================================================================================================
-	//	// void processStateChange(final String stateName, final Event event)
-	//	// =================================================================================================================
-	//	@Test
-	//	public void testProcessChange_when_stateNameIsNull_then_shouldDoNothing() throws Exception {
-	//		// setup
-	//		final String testStateName = null;
-	//
-	//		// test
-	//		audience.processStateChange(testStateName);
-	//
-	//		// verify
-	//		assertFalse("Process Queued Events should not be called", audience.processQueuedEventsCalled);
-	//	}
-	//
-	//	@Test
-	//	public void testProcessChange_when_stateNameIsConfiguration_then_shouldProcessQueuedEvents() throws Exception {
-	//		// test
-	//		audience.processStateChange(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME);
-	//
-	//		waitForExecutor(audience.getExecutor(), 1);
-	//		// verify
-	//		assertTrue("Process Queued Events should be called", audience.processQueuedEventsCalled);
-	//	}
-	//
-	//	// =================================================================================================================
-	//	// void queueAamEvent(final Event event)
-	//	// =================================================================================================================
-	//	@Test
-	//	public void testQueueAamEvent_when_eventIsNull_then_shouldDoNothing() {
-	//		// setup
-	//		final Event testEvent = null;
-	//
-	//		// test
-	//		audience.queueAamEvent(testEvent);
-	//
-	//		// verify
-	//		assertEquals("Event should not be queued", 0, audience.waitingEvents.size());
-	//		assertFalse("Process Queued Events should not be called", audience.processQueuedEventsCalled);
-	//	}
-	//
-	//	@Test
-	//	public void testQueueAamEvent_when_validEvent_then_shouldQueueAndProcessEvents() throws Exception {
-	//		// setup
-	//		final Event testEvent = new Event.Builder("TestAAM", EventType.AUDIENCEMANAGER, EventSource.REQUEST_PROFILE)
-	//			.build();
-	//
-	//		// test
-	//		audience.queueAamEvent(testEvent);
-	//
-	//		waitForExecutor(audience.getExecutor(), 1);
-	//
-	//		// verify
-	//		assertEquals("Event should be queued", 1, audience.waitingEvents.size());
-	//		assertEquals("Event should be correct", testEvent, audience.waitingEvents.peek());
-	//		assertTrue("Process Queued Events should be called", audience.processQueuedEventsCalled);
-	//	}
-	//
-	//	// =================================================================================================================
-	//	// void reset(final Event event)
-	//	// =================================================================================================================
-	//	@Test
-	//	public void testReset_when_happy_then_shouldSetStatePropertiesToNullAndUpdateSharedState() throws Exception {
-	//		// setup
-	//		final Event testEvent = new Event.Builder("TestAAM", EventType.AUDIENCEMANAGER, EventSource.REQUEST_PROFILE)
-	//			.build();
-	//		final HashMap<String, String> visitorProfile = new HashMap<String, String>();
-	//		visitorProfile.put("someKey", "someValue");
-	//		state.setDpid("value");
-	//		state.setDpuuid("value");
-	//		state.setUuid("value");
-	//		getAudienceDataStore().setMap(AudienceTestConstants.AUDIENCE_MANAGER_SHARED_PREFS_PROFILE_KEY, visitorProfile);
-	//
-	//		// test
-	//		audience.reset(testEvent);
-	//
-	//		waitForExecutor(audience.getExecutor(), 1);
-	//
-	//		//verify
-	//		assertNull(state.getDpid());
-	//		assertNull(state.getDpuuid());
-	//		assertNull(state.getUuid());
-	//		assertNull(state.getVisitorProfile());
-	//
-	//		final EventData aamSharedState = audience.getSharedAAMStateFromEventHub(testEvent);
-	//		assertEquals(0, aamSharedState.size());
-	//		assertNull(
-	//			"dpid from shared state should be null",
-	//			aamSharedState.optString(AudienceTestConstants.EventDataKeys.Audience.DPID, null)
-	//		);
-	//		assertNull(
-	//			"dpuuid from shared state should be null",
-	//			aamSharedState.optString(AudienceTestConstants.EventDataKeys.Audience.DPUUID, null)
-	//		);
-	//		assertNull(
-	//			"uuid from shared state should be null",
-	//			aamSharedState.optString(AudienceTestConstants.EventDataKeys.Audience.UUID, null)
-	//		);
-	//		assertNull(
-	//			"visitorProfile from shared state should be null",
-	//			aamSharedState.optStringMap(AudienceTestConstants.EventDataKeys.Audience.VISITOR_PROFILE, null)
-	//		);
-	//	}
-	//
-	//	@Test
-	//	public void testReset_when_nullEvent_then_shouldReturn() throws Exception {
-	//		// setup
-	//		final Event testEvent = null;
-	//		final String testDpid = "theDpid";
-	//		final String testDpuuid = "theDpuuid";
-	//		final String testUuid = "theUuid";
-	//		final HashMap<String, String> visitorProfile = new HashMap<String, String>();
-	//		visitorProfile.put("someKey", "someValue");
-	//		state.setDpid(testDpid);
-	//		state.setDpuuid(testDpuuid);
-	//		state.setUuid(testUuid);
-	//		getAudienceDataStore().setMap(AudienceTestConstants.AUDIENCE_MANAGER_SHARED_PREFS_PROFILE_KEY, visitorProfile);
-	//
-	//		// test
-	//		audience.reset(testEvent);
-	//
-	//		//verify
-	//		assertEquals("dpid should be unchanged", testDpid, state.getDpid());
-	//		assertEquals("dpuuid should be unchanged", testDpuuid, state.getDpuuid());
-	//		assertEquals("uuid should be unchanged", testUuid, state.getUuid());
-	//		assertEquals("visitor profile should be unchanged", visitorProfile, state.getVisitorProfile());
-	//
-	//		final EventData aamSharedState = audience.getSharedAAMStateFromEventHub(testEvent);
-	//		assertNull("no shared state should be created for this event", aamSharedState);
-	//	}
+	@Test
+	public void testOnRegistered_sharesAudienceSharedState() {
+		// setup
+		final HashMap<String, String> visitorProfile = new HashMap<String, String>();
+		visitorProfile.put("someKey", "someValue");
+		when(mockState.getUuid()).thenReturn("mock-uuid");
+		when(mockState.getVisitorProfile()).thenReturn(visitorProfile);
+		when(mockState.getStateData()).thenCallRealMethod(); // allows calls to the mocked getters
+
+		// test
+		audience.onRegistered();
+
+		// verify
+		ArgumentCaptor<Map<String, Object>> sharedStateCaptor = ArgumentCaptor.forClass(Map.class);
+		verify(mockExtensionApi).createSharedState(sharedStateCaptor.capture(), isNull());
+		Map<String, Object> aamSharedState = sharedStateCaptor.getValue();
+		assertNotNull(aamSharedState);
+		assertEquals(2, aamSharedState.size());
+		assertEquals(
+			"mock-uuid",
+			DataReader.optString(aamSharedState, AudienceTestConstants.EventDataKeys.Audience.UUID, "")
+		);
+		assertEquals(
+			visitorProfile,
+			DataReader.optStringMap(aamSharedState, AudienceTestConstants.EventDataKeys.Audience.VISITOR_PROFILE, null)
+		);
+	}
+
+	@Test
+	public void testOnRegistered_whenUUIDNotAvailable_sharesEmptyAudienceSharedState() {
+		// setup
+		when(mockState.getUuid()).thenReturn(null);
+		when(mockState.getVisitorProfile()).thenReturn(null);
+		when(mockState.getStateData()).thenCallRealMethod(); // allows calls to the mocked getters
+
+		// test
+		audience.onRegistered();
+
+		// verify
+		ArgumentCaptor<Map<String, Object>> sharedStateCaptor = ArgumentCaptor.forClass(Map.class);
+		verify(mockExtensionApi).createSharedState(sharedStateCaptor.capture(), isNull());
+		Map<String, Object> aamSharedState = sharedStateCaptor.getValue();
+		assertNotNull(aamSharedState);
+		assertEquals(0, aamSharedState.size());
+	}
+
+	@Test
+	public void testOnRegistered_registersCorrectListeners() {
+		audience.onRegistered();
+
+		// verify
+		final ArgumentCaptor<String> eventTypeCaptor = ArgumentCaptor.forClass(String.class);
+		final ArgumentCaptor<String> eventSourceCaptor = ArgumentCaptor.forClass(String.class);
+		final ArgumentCaptor<ExtensionEventListener> listenerCaptor = ArgumentCaptor.forClass(
+			ExtensionEventListener.class
+		);
+		verify(mockExtensionApi, times(7))
+			.registerEventListener(eventTypeCaptor.capture(), eventSourceCaptor.capture(), listenerCaptor.capture());
+		assertEquals(EventType.ANALYTICS, eventTypeCaptor.getAllValues().get(0));
+		assertEquals(EventSource.RESPONSE_CONTENT, eventSourceCaptor.getAllValues().get(0));
+		assertEquals(EventType.AUDIENCEMANAGER, eventTypeCaptor.getAllValues().get(1));
+		assertEquals(EventSource.REQUEST_CONTENT, eventSourceCaptor.getAllValues().get(1));
+		assertEquals(EventType.AUDIENCEMANAGER, eventTypeCaptor.getAllValues().get(2));
+		assertEquals(EventSource.REQUEST_IDENTITY, eventSourceCaptor.getAllValues().get(2));
+		assertEquals(EventType.AUDIENCEMANAGER, eventTypeCaptor.getAllValues().get(3));
+		assertEquals(EventSource.REQUEST_RESET, eventSourceCaptor.getAllValues().get(3));
+		assertEquals(EventType.CONFIGURATION, eventTypeCaptor.getAllValues().get(4));
+		assertEquals(EventSource.RESPONSE_CONTENT, eventSourceCaptor.getAllValues().get(4));
+		assertEquals(EventType.GENERIC_IDENTITY, eventTypeCaptor.getAllValues().get(5));
+		assertEquals(EventSource.REQUEST_RESET, eventSourceCaptor.getAllValues().get(5));
+		assertEquals(EventType.LIFECYCLE, eventTypeCaptor.getAllValues().get(6));
+		assertEquals(EventSource.RESPONSE_CONTENT, eventSourceCaptor.getAllValues().get(6));
+	}
+
+	@Test
+	public void testGetName() {
+		assertEquals("com.adobe.module.audience", audience.getName());
+	}
+
+	@Test
+	public void testGetFriendlyName() {
+		assertEquals("Audience", audience.getFriendlyName());
+	}
+
+	@Test
+	public void testGetVersion_notNull() {
+		assertNotNull(audience.getVersion());
+	}
+
+	@Test
+	public void testHandleAudienceRequestIdentity_dispatchesResponseEventWithVisitorProfile() {
+		// setup
+		final Event testEvent = getSubmitSignalEvent(getFakeAamTraitsEventData());
+		HashMap<String, String> visitorProfile = new HashMap<>();
+		visitorProfile.put("someKey", "someValue");
+		when(mockState.getVisitorProfile()).thenReturn(visitorProfile);
+
+		// test
+		audience.handleAudienceRequestIdentity(testEvent);
+
+		// verify
+		final ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+
+		verify(mockExtensionApi, times(1)).dispatch(eventCaptor.capture());
+		final Event responseEvent = eventCaptor.getValue();
+		assertEquals(EventType.AUDIENCEMANAGER, responseEvent.getType());
+		assertEquals(EventSource.RESPONSE_IDENTITY, responseEvent.getSource());
+		assertEquals(testEvent.getUniqueIdentifier(), responseEvent.getResponseID()); // verifies in response to request event
+		assertEquals(1, responseEvent.getEventData().size());
+		assertEquals(
+			visitorProfile,
+			DataReader.optStringMap(
+				responseEvent.getEventData(),
+				AudienceTestConstants.EventDataKeys.Audience.VISITOR_PROFILE,
+				null
+			)
+		);
+	}
+
+	@Test
+	public void testHandleAudienceRequestIdentity_whenNoVisitorProfile_dispatchesResponseEvent()
+		throws DataReaderException {
+		final Event testEvent = getSubmitSignalEvent(getFakeAamTraitsEventData());
+		when(mockState.getVisitorProfile()).thenReturn(null);
+
+		// test
+		audience.handleAudienceRequestIdentity(testEvent);
+
+		// verify
+		final ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+
+		verify(mockExtensionApi, times(1)).dispatch(eventCaptor.capture());
+		final Event responseEvent = eventCaptor.getValue();
+		assertEquals(EventType.AUDIENCEMANAGER, responseEvent.getType());
+		assertEquals(EventSource.RESPONSE_IDENTITY, responseEvent.getSource());
+		assertEquals(testEvent.getUniqueIdentifier(), responseEvent.getResponseID()); // verifies in response to request event
+		assertEquals(1, responseEvent.getEventData().size());
+		assertTrue(
+			responseEvent.getEventData().containsKey(AudienceTestConstants.EventDataKeys.Audience.VISITOR_PROFILE)
+		);
+		assertNull(
+			DataReader.getStringMap(
+				responseEvent.getEventData(),
+				AudienceTestConstants.EventDataKeys.Audience.VISITOR_PROFILE
+			)
+		);
+	}
+
+	@Test
+	public void testHandleResetIdentities_whenAudienceReset_resetsInternalStateAndClearsSharedState() {
+		// setup
+		final Event testEvent = new Event.Builder("TestAAMReset", EventType.AUDIENCEMANAGER, EventSource.REQUEST_RESET)
+			.build();
+
+		// test
+		audience.handleResetIdentities(testEvent);
+
+		verify(mockState).clearIdentifiers();
+		verify(mockState).setLastResetTimestamp(eq(testEvent.getTimestamp()));
+		verify(mockDataQueue, never()).clear();
+
+		//verify
+		ArgumentCaptor<Map<String, Object>> sharedStateCaptor = ArgumentCaptor.forClass(Map.class);
+		ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+		verify(mockExtensionApi).createSharedState(sharedStateCaptor.capture(), eventCaptor.capture());
+		Map<String, Object> aamSharedState = sharedStateCaptor.getValue();
+		assertNotNull(aamSharedState);
+		assertEquals(0, aamSharedState.size());
+		assertEquals(testEvent.getUniqueIdentifier(), eventCaptor.getValue().getUniqueIdentifier());
+	}
+
+	@Test
+	public void testHandleResetIdentities_whenGenericIdentityReset_resetsInternalStateAndClearsSharedStateAndQueue() {
+		// setup
+		final Event testEvent = new Event.Builder(
+			"TestGenericReset",
+			EventType.GENERIC_IDENTITY,
+			EventSource.REQUEST_RESET
+		)
+			.build();
+
+		// test
+		audience.handleResetIdentities(testEvent);
+
+		verify(mockState).clearIdentifiers();
+		verify(mockState).setLastResetTimestamp(eq(testEvent.getTimestamp()));
+		verify(mockDataQueue).clear();
+
+		//verify
+		ArgumentCaptor<Map<String, Object>> sharedStateCaptor = ArgumentCaptor.forClass(Map.class);
+		ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+		verify(mockExtensionApi).createSharedState(sharedStateCaptor.capture(), eventCaptor.capture());
+		Map<String, Object> aamSharedState = sharedStateCaptor.getValue();
+		assertNotNull(aamSharedState);
+		assertEquals(0, aamSharedState.size());
+		assertEquals(testEvent.getUniqueIdentifier(), eventCaptor.getValue().getUniqueIdentifier());
+	}
+
 	//
 	//	// =================================================================================================================
 	//	// void void processConfiguration(Event event)
@@ -1179,127 +1199,143 @@ public class AudienceExtensionTest {
 	//	private LocalStorageService.DataStore getAudienceDataStore() {
 	//		return fakeLocalStorageService.getDataStore(AudienceTestConstants.AUDIENCE_MANAGER_SHARED_PREFS_DATA_STORE);
 	//	}
-	//
-	//	private EventData getFakeAamTraitsEventData() {
-	//		return getFakeAamTraitsEventData(null);
-	//	}
-	//
-	//	private EventData getFakeAamTraitsEventData(final Map<String, String> additionalTraits) {
-	//		final EventData eventData = new EventData();
-	//		eventData.putStringMap(AudienceTestConstants.EventDataKeys.Audience.VISITOR_TRAITS, traits(additionalTraits));
-	//
-	//		return eventData;
-	//	}
-	//
-	//	private EventData getFakeConfigEventData() {
-	//		final EventData fakeConfigData = new EventData();
-	//		fakeConfigData.putString(AudienceTestConstants.EventDataKeys.Configuration.GLOBAL_CONFIG_PRIVACY, "optedin");
-	//		fakeConfigData.putString(AudienceTestConstants.EventDataKeys.Configuration.AAM_CONFIG_SERVER, "server");
-	//		fakeConfigData.putInteger(AudienceTestConstants.EventDataKeys.Configuration.AAM_CONFIG_TIMEOUT, 4);
-	//		fakeConfigData.putBoolean(
-	//			AudienceTestConstants.EventDataKeys.Configuration.ANALYTICS_CONFIG_AAMFORWARDING,
-	//			false
-	//		);
-	//
-	//		return fakeConfigData;
-	//	}
-	//
-	//	private EventData getFakeIdentityEventData() {
-	//		final EventData fakeIdentityData = new EventData();
-	//		fakeIdentityData.putString(AudienceTestConstants.EventDataKeys.Identity.VISITOR_ID_MID, "testMarketingID");
-	//		fakeIdentityData.putString(AudienceTestConstants.EventDataKeys.Identity.VISITOR_ID_BLOB, "testBlob");
-	//		fakeIdentityData.putString(
-	//			AudienceTestConstants.EventDataKeys.Identity.VISITOR_ID_LOCATION_HINT,
-	//			"testLocationHint"
-	//		);
-	//
-	//		List<VisitorID> visitorIDList = new ArrayList<VisitorID>();
-	//		visitorIDList.add(new VisitorID("d_cid_ic", "id_type1", "id1", VisitorID.AuthenticationState.AUTHENTICATED));
-	//		visitorIDList.add(new VisitorID("d_cid_ic", "id_type2", "id2", VisitorID.AuthenticationState.LOGGED_OUT));
-	//		visitorIDList.add(new VisitorID("d_cid_ic", "id_type3", null, VisitorID.AuthenticationState.LOGGED_OUT));
-	//		visitorIDList.add(new VisitorID("d_cid_ic", "id_type4", "id4", VisitorID.AuthenticationState.UNKNOWN));
-	//		fakeIdentityData.putTypedList(
-	//			AudienceTestConstants.EventDataKeys.Identity.VISITOR_IDS_LIST,
-	//			visitorIDList,
-	//			VisitorID.VARIANT_SERIALIZER
-	//		);
-	//
-	//		return fakeIdentityData;
-	//	}
-	//
-	//	private EventData getFakeLifecycleEventData() {
-	//		final EventData fakeLifecycleData = new EventData();
-	//		fakeLifecycleData.putStringMap(
-	//			AudienceTestConstants.EventDataKeys.Lifecycle.LIFECYCLE_CONTEXT_DATA,
-	//			fakeLifeCycleData()
-	//		);
-	//		return fakeLifecycleData;
-	//	}
-	//
-	//	private Event getSubmitSignalEvent(final EventData eventData, final String pairId) {
-	//		return new Event.Builder("TEST", EventType.AUDIENCEMANAGER, EventSource.REQUEST_CONTENT)
-	//			.setPairID(pairId)
-	//			.setData(eventData)
-	//			.build();
-	//	}
-	//
-	//	private Event getSubmitSignalEventWithOutPairID(final EventData eventData, final String pairId) {
-	//		return new Event.Builder("TEST", EventType.AUDIENCEMANAGER, EventSource.REQUEST_CONTENT)
-	//			.setPairID(pairId)
-	//			.setData(eventData)
-	//			.setResponsePairID(null)
-	//			.build();
-	//	}
-	//
-	//	private Event getLifecycleEvent(final EventData eventData, final String pairId) {
-	//		return new Event.Builder("TEST", EventType.LIFECYCLE, EventSource.REQUEST_CONTENT)
-	//			.setPairID(pairId)
-	//			.setData(eventData)
-	//			.build();
-	//	}
-	//
-	//	private void setAudienceManagerStateProperties() {
-	//		state.setDpid("testdpid");
-	//		state.setDpuuid("testdpuuid");
-	//		state.setUuid("testuuid");
-	//		HashMap<String, String> visitorProfile = new HashMap<String, String>();
-	//		visitorProfile.put("someKey", "someValue");
-	//		getAudienceDataStore().setMap(AudienceTestConstants.AUDIENCE_MANAGER_SHARED_PREFS_PROFILE_KEY, visitorProfile);
-	//	}
-	//
-	//	private HashMap<String, String> traits(final Map<String, String> additionalTraits) {
-	//		HashMap<String, String> traits = new HashMap<String, String>();
-	//		traits.put("traitKey", "traitValue");
-	//
-	//		if (additionalTraits != null) {
-	//			traits.putAll(additionalTraits);
-	//		}
-	//
-	//		return traits;
-	//	}
-	//
-	//	private JSONArray prepareStuffArray() throws JsonException {
-	//		JSONArray stuffArray = fakeJsonUtilityService.createJSONArray("[]");
-	//		JSONObject stuffValid1 = fakeJsonUtilityService.createJSONObject("{}");
-	//		stuffValid1.put(AudienceTestConstants.AUDIENCE_MANAGER_JSON_COOKIE_NAME_KEY, "aud");
-	//		stuffValid1.put(AudienceTestConstants.AUDIENCE_MANAGER_JSON_COOKIE_VALUE_KEY, "seg=mobile_android");
-	//		stuffValid1.put("ttl", 0);
-	//		stuffValid1.put("dmn", "audidute.com");
-	//		JSONObject stuffValid2 = fakeJsonUtilityService.createJSONObject("{}");
-	//		stuffValid2.put(AudienceTestConstants.AUDIENCE_MANAGER_JSON_COOKIE_NAME_KEY, "cookieKey");
-	//		stuffValid2.put(AudienceTestConstants.AUDIENCE_MANAGER_JSON_COOKIE_VALUE_KEY, "cookieValue");
-	//		stuffArray.put(stuffValid1);
-	//		stuffArray.put(stuffValid2);
-	//		return stuffArray;
-	//	}
-	//
-	//	private JSONArray prepareDestArray() throws JsonException {
-	//		JSONArray destArray = fakeJsonUtilityService.createJSONArray("[]");
-	//		JSONObject destURL = fakeJsonUtilityService.createJSONObject("{}");
-	//		destURL.put(AudienceTestConstants.AUDIENCE_MANAGER_JSON_URL_KEY, "desturl");
-	//		destArray.put(destURL);
-	//		return destArray;
-	//	}
+
+	private Map<String, Object> getFakeAamTraitsEventData() {
+		return getFakeAamTraitsEventData(null);
+	}
+
+	private Map<String, Object> getFakeAamTraitsEventData(final Map<String, String> additionalTraits) {
+		final Map<String, Object> eventData = new HashMap<>();
+		eventData.put(AudienceTestConstants.EventDataKeys.Audience.VISITOR_TRAITS, traits(additionalTraits));
+
+		return eventData;
+	}
+
+	private Map<String, Object> getFakeConfigEventData() {
+		final Map<String, Object> fakeConfigData = new HashMap<>();
+		fakeConfigData.put(AudienceTestConstants.EventDataKeys.Configuration.GLOBAL_CONFIG_PRIVACY, "optedin");
+		fakeConfigData.put(AudienceTestConstants.EventDataKeys.Configuration.AAM_CONFIG_SERVER, "server");
+		fakeConfigData.put(AudienceTestConstants.EventDataKeys.Configuration.AAM_CONFIG_TIMEOUT, 4);
+		fakeConfigData.put(AudienceTestConstants.EventDataKeys.Configuration.ANALYTICS_CONFIG_AAMFORWARDING, false);
+
+		return fakeConfigData;
+	}
+
+	private Map<String, Object> getFakeIdentityEventData() {
+		final Map<String, Object> fakeIdentityData = new HashMap<>();
+		fakeIdentityData.put(AudienceTestConstants.EventDataKeys.Identity.VISITOR_ID_MID, "testMarketingID");
+		fakeIdentityData.put(AudienceTestConstants.EventDataKeys.Identity.VISITOR_ID_BLOB, "testBlob");
+		fakeIdentityData.put(AudienceTestConstants.EventDataKeys.Identity.VISITOR_ID_LOCATION_HINT, "testLocationHint");
+
+		List<Map<String, Object>> visitorIDList = new ArrayList<>();
+		visitorIDList.add(
+			new HashMap<String, Object>() {
+				{
+					put("ID", "id1");
+					put("ID_ORIGIN", "d_cid_ic");
+					put("ID_TYPE", "id_type1");
+					put("STATE", 1); // authenticated
+				}
+			}
+		);
+		visitorIDList.add(
+			new HashMap<String, Object>() {
+				{
+					put("ID", "id2");
+					put("ID_ORIGIN", "d_cid_ic");
+					put("ID_TYPE", "id_type2");
+					put("STATE", 2); // logged out
+				}
+			}
+		);
+		visitorIDList.add(
+			new HashMap<String, Object>() {
+				{
+					put("ID", null);
+					put("ID_ORIGIN", "d_cid_ic");
+					put("ID_TYPE", "id_type3");
+					put("STATE", 2); // logged out
+				}
+			}
+		);
+		visitorIDList.add(
+			new HashMap<String, Object>() {
+				{
+					put("ID", "id4");
+					put("ID_ORIGIN", "d_cid_ic");
+					put("ID_TYPE", "id_type4");
+					put("STATE", 0); // unknown
+				}
+			}
+		);
+
+		fakeIdentityData.put(AudienceTestConstants.EventDataKeys.Identity.VISITOR_IDS_LIST, visitorIDList);
+
+		return fakeIdentityData;
+	}
+
+	private Map<String, Object> getFakeLifecycleEventData() {
+		final Map<String, Object> fakeLifecycleData = new HashMap<>();
+		fakeLifecycleData.put(
+			AudienceTestConstants.EventDataKeys.Lifecycle.LIFECYCLE_CONTEXT_DATA,
+			fakeLifeCycleData()
+		);
+		return fakeLifecycleData;
+	}
+
+	private Event getSubmitSignalEvent(final Map<String, Object> eventData) {
+		return new Event.Builder("TEST", EventType.AUDIENCEMANAGER, EventSource.REQUEST_CONTENT)
+			.setEventData(eventData)
+			.build();
+	}
+
+	private Event getLifecycleEvent(final Map<String, Object> eventData) {
+		return new Event.Builder("TEST", EventType.LIFECYCLE, EventSource.REQUEST_CONTENT)
+			.setEventData(eventData)
+			.build();
+	}
+
+	private void setAudienceManagerStateProperties() {
+		when(mockState.getUuid()).thenReturn("testuuid");
+		HashMap<String, String> visitorProfile = new HashMap<>();
+		visitorProfile.put("someKey", "someValue");
+		when(mockState.getVisitorProfile()).thenReturn(visitorProfile);
+		when(mockState.getStateData()).thenCallRealMethod(); // allows for calls to mocked getters
+	}
+
+	private HashMap<String, String> traits(final Map<String, String> additionalTraits) {
+		HashMap<String, String> traits = new HashMap<>();
+		traits.put("traitKey", "traitValue");
+
+		if (additionalTraits != null) {
+			traits.putAll(additionalTraits);
+		}
+
+		return traits;
+	}
+
+	private JSONArray prepareStuffArray() throws JSONException {
+		JSONArray stuffArray = new JSONArray();
+		JSONObject stuffValid1 = new JSONObject();
+		stuffValid1.put(AudienceTestConstants.AUDIENCE_MANAGER_JSON_COOKIE_NAME_KEY, "aud");
+		stuffValid1.put(AudienceTestConstants.AUDIENCE_MANAGER_JSON_COOKIE_VALUE_KEY, "seg=mobile_android");
+		stuffValid1.put("ttl", 0);
+		stuffValid1.put("dmn", "audidute.com");
+		JSONObject stuffValid2 = new JSONObject();
+		stuffValid2.put(AudienceTestConstants.AUDIENCE_MANAGER_JSON_COOKIE_NAME_KEY, "cookieKey");
+		stuffValid2.put(AudienceTestConstants.AUDIENCE_MANAGER_JSON_COOKIE_VALUE_KEY, "cookieValue");
+		stuffArray.put(stuffValid1);
+		stuffArray.put(stuffValid2);
+		return stuffArray;
+	}
+
+	private JSONArray prepareDestArray() throws JSONException {
+		JSONArray destArray = new JSONArray();
+		JSONObject destURL = new JSONObject();
+		destURL.put(AudienceTestConstants.AUDIENCE_MANAGER_JSON_URL_KEY, "desturl");
+		destArray.put(destURL);
+		return destArray;
+	}
 
 	private HashMap<String, String> fakeLifeCycleData() {
 		HashMap<String, String> lifecycleData = new HashMap<String, String>();
