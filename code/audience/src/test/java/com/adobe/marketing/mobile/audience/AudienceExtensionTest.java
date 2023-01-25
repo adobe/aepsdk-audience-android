@@ -109,6 +109,7 @@ public class AudienceExtensionTest {
 		reset(mockState);
 		reset(mockExtensionApi);
 		reset(mockNetworkService);
+		reset(mockDeviceInfoService);
 		mockedStaticServiceProvider.close();
 		reset(mockServiceProvider);
 	}
@@ -855,236 +856,260 @@ public class AudienceExtensionTest {
 		assertTrue(audienceEntity.getUrl().contains("d_ptfm=java"));
 	}
 
-	//
-	//	@Test
-	//	public void testSubmitSignal_happyPath() throws Exception {
-	//		// setup
-	//		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData(), "pairId");
-	//
-	//		eventHub.setSharedState(
-	//			AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME,
-	//			getFakeConfigEventData()
-	//		);
-	//		eventHub.setSharedState(AudienceTestConstants.EventDataKeys.Identity.MODULE_NAME, getFakeIdentityEventData());
-	//
-	//		setAudienceManagerStateProperties();
-	//
-	//		// test
-	//		audience.submitSignal(event);
-	//
-	//		// verify
-	//		assertTrue("request got queued", mockAudienceRequestsDatabase.queueWasCalled);
-	//		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.startsWith("https://server/event?"));
-	//		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.contains("c_traitKey=traitValue"));
-	//		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.contains("d_uuid=testuuid"));
-	//		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.contains("d_dpid=testdpid"));
-	//		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.contains("d_dpuuid=testdpuuid"));
-	//		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.contains("d_ptfm=mockPlatform"));
-	//		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.contains("d_dst=1"));
-	//		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.contains("d_rtbd=json"));
-	//		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.contains("d_mid=testMarketingID"));
-	//		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.contains("d_blob=testBlob"));
-	//		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.contains("dcs_region=testLocationHint"));
-	//		assertTrue(
-	//			mockAudienceRequestsDatabase.queueParameterUrl.contains(
-	//				"d_cid_ic=id_type1%01id1%011&d_cid_ic=id_type2%01id2%012&d_cid_ic=id_type3%012&d_cid_ic=id_type4%01id4%010"
-	//			)
-	//		);
-	//		assertEquals(4, mockAudienceRequestsDatabase.queueParameterTimeout);
-	//	}
-	//
-	//	@Test
-	//	public void testSubmitSignal_happyPath_noCustomData() throws Exception {
-	//		// setup
-	//		final Event event = getSubmitSignalEvent(null, "pairId");
-	//
-	//		eventHub.setSharedState(
-	//			AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME,
-	//			getFakeConfigEventData()
-	//		);
-	//		eventHub.setSharedState(AudienceTestConstants.EventDataKeys.Identity.MODULE_NAME, getFakeIdentityEventData());
-	//
-	//		setAudienceManagerStateProperties();
-	//
-	//		// test
-	//		audience.submitSignal(event);
-	//
-	//		// verify
-	//		assertTrue("request got queued", mockAudienceRequestsDatabase.queueWasCalled);
-	//		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.startsWith("https://server/event?"));
-	//		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.contains("d_uuid=testuuid"));
-	//		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.contains("d_dpid=testdpid"));
-	//		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.contains("d_dpuuid=testdpuuid"));
-	//		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.contains("d_ptfm=mockPlatform"));
-	//		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.contains("d_dst=1"));
-	//		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.contains("d_rtbd=json"));
-	//		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.contains("d_mid=testMarketingID"));
-	//		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.contains("d_blob=testBlob"));
-	//		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.contains("dcs_region=testLocationHint"));
-	//		assertTrue(
-	//			mockAudienceRequestsDatabase.queueParameterUrl.contains(
-	//				"d_cid_ic=id_type1%01id1%011&d_cid_ic=id_type2%01id2%012&d_cid_ic=id_type3%012&d_cid_ic=id_type4%01id4%010"
-	//			)
-	//		);
-	//		assertEquals(4, mockAudienceRequestsDatabase.queueParameterTimeout);
-	//	}
-	//
-	//	@Test
-	//	public void testSubmitSignal_happyPath_traitWithNullValue() throws Exception {
-	//		// setup
-	//		final HashMap<String, String> additionalTraits = new HashMap<String, String>();
-	//		additionalTraits.put("nullKey", null);
-	//		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData(additionalTraits), "pairId");
-	//
-	//		eventHub.setSharedState(
-	//			AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME,
-	//			getFakeConfigEventData()
-	//		);
-	//		eventHub.setSharedState(AudienceTestConstants.EventDataKeys.Identity.MODULE_NAME, getFakeIdentityEventData());
-	//
-	//		setAudienceManagerStateProperties();
-	//
-	//		// test
-	//		audience.submitSignal(event);
-	//
-	//		// verify
-	//		assertTrue("request got queued", mockAudienceRequestsDatabase.queueWasCalled);
-	//		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.startsWith("https://server/event?"));
-	//		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.contains("c_traitKey=traitValue"));
-	//		assertFalse(mockAudienceRequestsDatabase.queueParameterUrl.contains("c_nullKey="));
-	//		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.contains("d_uuid=testuuid"));
-	//		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.contains("d_dpid=testdpid"));
-	//		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.contains("d_dpuuid=testdpuuid"));
-	//		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.contains("d_ptfm=mockPlatform"));
-	//		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.contains("d_dst=1"));
-	//		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.contains("d_rtbd=json"));
-	//		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.contains("d_mid=testMarketingID"));
-	//		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.contains("d_blob=testBlob"));
-	//		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.contains("dcs_region=testLocationHint"));
-	//		assertTrue(
-	//			mockAudienceRequestsDatabase.queueParameterUrl.contains(
-	//				"d_cid_ic=id_type1%01id1%011&d_cid_ic=id_type2%01id2%012&d_cid_ic=id_type3%012&d_cid_ic=id_type4%01id4%010"
-	//			)
-	//		);
-	//		assertEquals(4, mockAudienceRequestsDatabase.queueParameterTimeout);
-	//	}
-	//
-	//	@Test
-	//	public void testSubmitSignal_NullIdentitySharedState() throws Exception {
-	//		// setup
-	//		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData(), "pairId");
-	//
-	//		eventHub.setSharedState(
-	//			AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME,
-	//			getFakeConfigEventData()
-	//		);
-	//		eventHub.setSharedState(AudienceTestConstants.EventDataKeys.Identity.MODULE_NAME, null);
-	//
-	//		setAudienceManagerStateProperties();
-	//
-	//		// test
-	//		audience.submitSignal(event);
-	//
-	//		// verify
-	//		assertTrue("request got queued", mockAudienceRequestsDatabase.queueWasCalled);
-	//		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.startsWith("https://server/event?"));
-	//		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.contains("c_traitKey=traitValue"));
-	//		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.contains("d_uuid=testuuid"));
-	//		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.contains("d_dpid=testdpid"));
-	//		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.contains("d_dpuuid=testdpuuid"));
-	//		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.contains("d_ptfm=mockPlatform"));
-	//		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.contains("d_dst=1"));
-	//		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.contains("d_rtbd=json"));
-	//		assertFalse(mockAudienceRequestsDatabase.queueParameterUrl.contains("d_mid=testMarketingID"));
-	//		assertFalse(mockAudienceRequestsDatabase.queueParameterUrl.contains("d_blob=testBlob"));
-	//		assertFalse(mockAudienceRequestsDatabase.queueParameterUrl.contains("dcs_region=testLocationHint"));
-	//		assertFalse(
-	//			mockAudienceRequestsDatabase.queueParameterUrl.contains(
-	//				"d_cid_ic=id_type1%01id1%011&d_cid_ic=id_type2%01id2%012&d_cid_ic=id_type3%012&d_cid_ic=id_type4%01id4%010"
-	//			)
-	//		);
-	//		assertEquals(4, mockAudienceRequestsDatabase.queueParameterTimeout);
-	//	}
-	//
-	//	@Test
-	//	public void testSubmitSignal_SanitizesTraitKeys() throws Exception {
-	//		// setup
-	//		eventHub.setSharedState(
-	//			AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME,
-	//			getFakeConfigEventData()
-	//		);
-	//		final HashMap<String, String> additionalTraits = new HashMap<String, String>();
-	//		additionalTraits.put("trait.key", "trait.value");
-	//		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData(additionalTraits), "pairId");
-	//
-	//		// test
-	//		audience.submitSignal(event);
-	//
-	//		// verify
-	//		assertTrue("request got queued", mockAudienceRequestsDatabase.queueWasCalled);
-	//		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.startsWith("https://server/event?"));
-	//		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.contains("c_trait_key=trait.value"));
-	//	}
-	//
-	//	@Test
-	//	public void testSubmitSignal_Trait_with_EmptyKey() throws Exception {
-	//		// setup
-	//		eventHub.setSharedState(
-	//			AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME,
-	//			getFakeConfigEventData()
-	//		);
-	//		final HashMap<String, String> additionalTraits = new HashMap<String, String>();
-	//		additionalTraits.put("", "traitvalue");
-	//		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData(additionalTraits), "pairId");
-	//
-	//		// test
-	//		audience.submitSignal(event);
-	//
-	//		// verify
-	//		assertTrue("request got queued", mockAudienceRequestsDatabase.queueWasCalled);
-	//		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.startsWith("https://server/event?"));
-	//		assertFalse(mockAudienceRequestsDatabase.queueParameterUrl.contains("c_=traitvalue"));
-	//	}
-	//
-	//	@Test
-	//	public void testSubmitSignal_when_dpid_notProvided() throws Exception {
-	//		// setup
-	//		eventHub.setSharedState(
-	//			AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME,
-	//			getFakeConfigEventData()
-	//		);
-	//		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData(), "pairId");
-	//		state.setDpuuid("testdpuuid");
-	//
-	//		// test
-	//		audience.submitSignal(event);
-	//
-	//		// verify
-	//		assertTrue("request got queued", mockAudienceRequestsDatabase.queueWasCalled);
-	//		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.startsWith("https://server/event?"));
-	//		assertFalse(mockAudienceRequestsDatabase.queueParameterUrl.contains("&d_uuid=testuuid"));
-	//		assertFalse(mockAudienceRequestsDatabase.queueParameterUrl.contains("&d_dpid=testdpid"));
-	//	}
-	//
-	//	@Test
-	//	public void testSubmitSignal_when_dpuuid_notProvided() throws Exception {
-	//		// setup
-	//		eventHub.setSharedState(
-	//			AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME,
-	//			getFakeConfigEventData()
-	//		);
-	//		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData(), "pairId");
-	//		state.setDpid("testdpid");
-	//
-	//		// test
-	//		audience.submitSignal(event);
-	//
-	//		// verify
-	//		assertTrue("request got queued", mockAudienceRequestsDatabase.queueWasCalled);
-	//		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.startsWith("https://server/event?"));
-	//		assertFalse(mockAudienceRequestsDatabase.queueParameterUrl.contains("&d_uuid=testuuid"));
-	//		assertFalse(mockAudienceRequestsDatabase.queueParameterUrl.contains("&d_dpid=testdpid"));
-	//	}
+	@Test
+	public void testHandleAudienceRequestContent_packagesAllParams() {
+		// setup
+		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData());
+		when(mockDeviceInfoService.getCanonicalPlatformName()).thenReturn("mockPlatform");
+		when(
+			mockExtensionApi.getSharedState(
+				eq(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME),
+				any(Event.class),
+				eq(false),
+				any()
+			)
+		)
+			.thenReturn(new SharedStateResult(SharedStateStatus.SET, getFakeConfigEventData()));
+		when(
+			mockExtensionApi.getSharedState(
+				eq(AudienceTestConstants.EventDataKeys.Identity.MODULE_NAME),
+				any(Event.class),
+				eq(false),
+				any()
+			)
+		)
+			.thenReturn(new SharedStateResult(SharedStateStatus.SET, getFakeIdentityEventData()));
+
+		setAudienceManagerStateProperties();
+
+		// test
+		audience.handleAudienceRequestContent(event);
+
+		// verify
+		ArgumentCaptor<DataEntity> entityCaptor = ArgumentCaptor.forClass(DataEntity.class);
+		verify(mockDataQueue).add(entityCaptor.capture());
+		AudienceDataEntity audienceEntity = AudienceDataEntity.fromDataEntity(entityCaptor.getValue());
+		assertNotNull(audienceEntity);
+		assertTrue(audienceEntity.getUrl().startsWith("https://server/event?"));
+		assertTrue(audienceEntity.getUrl().contains("c_traitKey=traitValue"));
+		assertTrue(audienceEntity.getUrl().contains("d_uuid=testuuid"));
+		assertTrue(audienceEntity.getUrl().contains("d_ptfm=mockPlatform"));
+		assertTrue(audienceEntity.getUrl().contains("d_dst=1"));
+		assertTrue(audienceEntity.getUrl().contains("d_rtbd=json"));
+		assertTrue(audienceEntity.getUrl().contains("d_mid=testMarketingID"));
+		assertTrue(audienceEntity.getUrl().contains("d_blob=testBlob"));
+		assertTrue(audienceEntity.getUrl().contains("dcs_region=testLocationHint"));
+		final String expectedCustomIds =
+			"d_cid_ic=id_type1%01id1%011&d_cid_ic=id_type2%01id2%012&d_cid_ic=id_type3%012&d_cid_ic=id_type4%01id4%010";
+		assertTrue(
+			String.format(
+				"Identity params assert failed. \nURL received: %s, \nExpected contains: %s",
+				audienceEntity.getUrl(),
+				expectedCustomIds
+			),
+			audienceEntity.getUrl().contains(expectedCustomIds)
+		);
+		assertEquals(4, audienceEntity.getTimeoutSec());
+	}
+
+	@Test
+	public void testHandleAudienceRequestContent_whenNoTraitsNoCustomIds_packagesAllOtherParams() {
+		// setup
+		final Event event = getSubmitSignalEvent(null);
+
+		when(mockDeviceInfoService.getCanonicalPlatformName()).thenReturn("mockPlatform");
+		when(
+			mockExtensionApi.getSharedState(
+				eq(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME),
+				any(Event.class),
+				eq(false),
+				any()
+			)
+		)
+			.thenReturn(new SharedStateResult(SharedStateStatus.SET, getFakeConfigEventData()));
+
+		Map<String, Object> identityData = getFakeIdentityEventData();
+		identityData.remove(AudienceTestConstants.EventDataKeys.Identity.VISITOR_IDS_LIST);
+		when(
+			mockExtensionApi.getSharedState(
+				eq(AudienceTestConstants.EventDataKeys.Identity.MODULE_NAME),
+				any(Event.class),
+				eq(false),
+				any()
+			)
+		)
+			.thenReturn(new SharedStateResult(SharedStateStatus.SET, identityData));
+
+		setAudienceManagerStateProperties();
+
+		// test
+		audience.handleAudienceRequestContent(event);
+
+		// verify
+		ArgumentCaptor<DataEntity> entityCaptor = ArgumentCaptor.forClass(DataEntity.class);
+		verify(mockDataQueue).add(entityCaptor.capture());
+		AudienceDataEntity audienceEntity = AudienceDataEntity.fromDataEntity(entityCaptor.getValue());
+		assertNotNull(audienceEntity);
+		assertTrue(audienceEntity.getUrl().startsWith("https://server/event?"));
+		assertFalse(audienceEntity.getUrl().contains("c_"));
+		assertTrue(audienceEntity.getUrl().contains("d_uuid=testuuid"));
+		assertTrue(audienceEntity.getUrl().contains("d_ptfm=mockPlatform"));
+		assertTrue(audienceEntity.getUrl().contains("d_dst=1"));
+		assertTrue(audienceEntity.getUrl().contains("d_rtbd=json"));
+		assertTrue(audienceEntity.getUrl().contains("d_mid=testMarketingID"));
+		assertTrue(audienceEntity.getUrl().contains("d_blob=testBlob"));
+		assertTrue(audienceEntity.getUrl().contains("dcs_region=testLocationHint"));
+		assertFalse(
+			audienceEntity
+				.getUrl()
+				.contains(
+					"d_cid_ic=id_type1%01id1%011&d_cid_ic=id_type2%01id2%012&d_cid_ic=id_type3%012&d_cid_ic=id_type4%01id4%010"
+				)
+		);
+		assertEquals(4, audienceEntity.getTimeoutSec());
+	}
+
+	@Test
+	public void testHandleAudienceRequestContent_whenTraitWithNullValue_skipsTrait() {
+		// setup
+		final HashMap<String, String> additionalTraits = new HashMap<>();
+		additionalTraits.put("nullKey", null);
+		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData(additionalTraits));
+		when(
+			mockExtensionApi.getSharedState(
+				eq(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME),
+				any(Event.class),
+				eq(false),
+				any()
+			)
+		)
+			.thenReturn(new SharedStateResult(SharedStateStatus.SET, getFakeConfigEventData()));
+		when(
+			mockExtensionApi.getSharedState(
+				eq(AudienceTestConstants.EventDataKeys.Identity.MODULE_NAME),
+				any(Event.class),
+				eq(false),
+				any()
+			)
+		)
+			.thenReturn(new SharedStateResult(SharedStateStatus.SET, getFakeIdentityEventData()));
+
+		setAudienceManagerStateProperties();
+
+		// test
+		audience.handleAudienceRequestContent(event);
+
+		// verify
+		ArgumentCaptor<DataEntity> entityCaptor = ArgumentCaptor.forClass(DataEntity.class);
+		verify(mockDataQueue).add(entityCaptor.capture());
+		AudienceDataEntity audienceEntity = AudienceDataEntity.fromDataEntity(entityCaptor.getValue());
+		assertNotNull(audienceEntity);
+		assertTrue(audienceEntity.getUrl().startsWith("https://server/event?"));
+		assertTrue(audienceEntity.getUrl().contains("c_traitKey=traitValue"));
+		assertFalse(audienceEntity.getUrl().contains("c_nullKey="));
+		assertEquals(4, audienceEntity.getTimeoutSec());
+	}
+
+	@Test
+	public void testHandleAudienceRequestContent_whenNullIdentitySharedState_doesNotIncludeIdentityFields() {
+		// setup
+		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData());
+		when(
+			mockExtensionApi.getSharedState(
+				eq(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME),
+				any(Event.class),
+				eq(false),
+				any()
+			)
+		)
+			.thenReturn(new SharedStateResult(SharedStateStatus.SET, getFakeConfigEventData()));
+		when(
+			mockExtensionApi.getSharedState(
+				eq(AudienceTestConstants.EventDataKeys.Identity.MODULE_NAME),
+				any(Event.class),
+				eq(false),
+				any()
+			)
+		)
+			.thenReturn(new SharedStateResult(SharedStateStatus.SET, null));
+
+		setAudienceManagerStateProperties();
+
+		// test
+		audience.handleAudienceRequestContent(event);
+
+		// verify
+		ArgumentCaptor<DataEntity> entityCaptor = ArgumentCaptor.forClass(DataEntity.class);
+		verify(mockDataQueue).add(entityCaptor.capture());
+		AudienceDataEntity audienceEntity = AudienceDataEntity.fromDataEntity(entityCaptor.getValue());
+		assertNotNull(audienceEntity);
+		assertTrue(audienceEntity.getUrl().startsWith("https://server/event?"));
+		assertTrue(audienceEntity.getUrl().contains("c_traitKey=traitValue"));
+		assertTrue(audienceEntity.getUrl().contains("d_uuid=testuuid"));
+		assertTrue(audienceEntity.getUrl().contains("d_dst=1"));
+		assertTrue(audienceEntity.getUrl().contains("d_rtbd=json"));
+		assertFalse(audienceEntity.getUrl().contains("d_mid"));
+		assertFalse(audienceEntity.getUrl().contains("d_blob"));
+		assertFalse(audienceEntity.getUrl().contains("dcs_region"));
+		assertFalse(audienceEntity.getUrl().contains("d_cid_ic"));
+		assertEquals(4, audienceEntity.getTimeoutSec());
+	}
+
+	@Test
+	public void testHandleAudienceRequestContent_sanitizesTraitKeys() {
+		// setup
+		final HashMap<String, String> additionalTraits = new HashMap<>();
+		additionalTraits.put("trait.key", "trait.value");
+		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData(additionalTraits));
+
+		when(
+			mockExtensionApi.getSharedState(
+				eq(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME),
+				any(Event.class),
+				eq(false),
+				any()
+			)
+		)
+			.thenReturn(new SharedStateResult(SharedStateStatus.SET, getFakeConfigEventData()));
+
+		// test
+		audience.handleAudienceRequestContent(event);
+
+		// verify
+		ArgumentCaptor<DataEntity> entityCaptor = ArgumentCaptor.forClass(DataEntity.class);
+		verify(mockDataQueue).add(entityCaptor.capture());
+		AudienceDataEntity audienceEntity = AudienceDataEntity.fromDataEntity(entityCaptor.getValue());
+		assertNotNull(audienceEntity);
+		assertTrue(audienceEntity.getUrl().contains("c_trait_key=trait.value"));
+	}
+
+	@Test
+	public void testHandleAudienceRequestContent_whenEmptyTraitKeys_skipsTheseKeys() {
+		// setup
+		final HashMap<String, String> additionalTraits = new HashMap<>();
+		additionalTraits.put("", "traitvalue");
+		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData(additionalTraits));
+		when(
+			mockExtensionApi.getSharedState(
+				eq(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME),
+				any(Event.class),
+				eq(false),
+				any()
+			)
+		)
+			.thenReturn(new SharedStateResult(SharedStateStatus.SET, getFakeConfigEventData()));
+
+		// test
+		audience.handleAudienceRequestContent(event);
+
+		// verify
+		ArgumentCaptor<DataEntity> entityCaptor = ArgumentCaptor.forClass(DataEntity.class);
+		verify(mockDataQueue).add(entityCaptor.capture());
+		AudienceDataEntity audienceEntity = AudienceDataEntity.fromDataEntity(entityCaptor.getValue());
+		assertNotNull(audienceEntity);
+		assertFalse(audienceEntity.getUrl().contains("c_=traitvalue"));
+	}
+
 	//
 	//	// =================================================================================================================
 	//	// protected HashMap<String, String> handleNetworkResponse(final String response, final Event event)
@@ -1217,12 +1242,6 @@ public class AudienceExtensionTest {
 	//		assertEquals(HttpCommand.GET, mockNetworkService.connectUrlAsyncParametersCommand);
 	//	}
 	//
-	//	// =================================================================================================================
-	//	// helper methods
-	//	// =================================================================================================================
-	//	private LocalStorageService.DataStore getAudienceDataStore() {
-	//		return fakeLocalStorageService.getDataStore(AudienceTestConstants.AUDIENCE_MANAGER_SHARED_PREFS_DATA_STORE);
-	//	}
 
 	private Map<String, Object> getFakeAamTraitsEventData() {
 		return getFakeAamTraitsEventData(null);
@@ -1362,7 +1381,7 @@ public class AudienceExtensionTest {
 	}
 
 	private HashMap<String, String> fakeLifeCycleData() {
-		HashMap<String, String> lifecycleData = new HashMap<String, String>();
+		HashMap<String, String> lifecycleData = new HashMap<>();
 		lifecycleData.put("appid", "someAppID");
 		lifecycleData.put("launches", "2");
 		return lifecycleData;
