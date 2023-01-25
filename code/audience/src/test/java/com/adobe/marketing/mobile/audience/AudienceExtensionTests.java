@@ -60,19 +60,15 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
-public class AudienceExtensionTest {
+public class AudienceExtensionTests {
 
-	//	private JsonUtilityService fakeJsonUtilityService;
 	private AudienceExtension audience;
-
-	@Mock
-	private AudienceState mockState;
 
 	@Mock
 	private ExtensionApi mockExtensionApi;
 
 	@Mock
-	private AudienceHitProcessor mockHitProcessor;
+	private AudienceState mockState;
 
 	@Mock
 	private DataQueuing mockDataQueueService;
@@ -89,7 +85,7 @@ public class AudienceExtensionTest {
 	@Mock
 	private ServiceProvider mockServiceProvider;
 
-	private MockedStatic<ServiceProvider> mockedStaticServiceProvider = Mockito.mockStatic(ServiceProvider.class);
+	private final MockedStatic<ServiceProvider> mockedStaticServiceProvider = Mockito.mockStatic(ServiceProvider.class);
 
 	@Before
 	public void setup() {
@@ -98,16 +94,15 @@ public class AudienceExtensionTest {
 		when(mockDataQueueService.getDataQueue("com.adobe.module.audience")).thenReturn(mockDataQueue);
 		when(mockServiceProvider.getNetworkService()).thenReturn(mockNetworkService);
 		when(mockServiceProvider.getDeviceInfoService()).thenReturn(mockDeviceInfoService);
-		audience = new AudienceExtension(mockExtensionApi, mockState, mockHitProcessor);
+		audience = new AudienceExtension(mockExtensionApi, mockState);
 	}
 
 	@After
 	public void tearDown() {
+		reset(mockExtensionApi);
+		reset(mockState);
 		reset(mockDataQueue);
 		reset(mockDataQueueService);
-		reset(mockHitProcessor);
-		reset(mockState);
-		reset(mockExtensionApi);
 		reset(mockNetworkService);
 		reset(mockDeviceInfoService);
 		mockedStaticServiceProvider.close();

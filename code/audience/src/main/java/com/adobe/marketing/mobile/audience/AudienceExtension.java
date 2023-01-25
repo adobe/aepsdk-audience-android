@@ -133,24 +133,16 @@ public final class AudienceExtension extends Extension {
 	}
 
 	AudienceExtension(final ExtensionApi extensionApi) {
-		this(extensionApi, null, null);
+		this(extensionApi, null);
 	}
 
 	@VisibleForTesting
-	AudienceExtension(
-		final ExtensionApi extensionApi,
-		final AudienceState audienceState,
-		final AudienceHitProcessor audienceHitProcessor
-	) {
+	AudienceExtension(final ExtensionApi extensionApi, final AudienceState audienceState) {
 		super(extensionApi);
 		this.internalState = audienceState != null ? audienceState : new AudienceState();
 		networkResponseHandler = new NetworkResponseHandler(internalState);
 		final DataQueue dataQueue = ServiceProvider.getInstance().getDataQueueService().getDataQueue(getName());
-		if (audienceHitProcessor == null) {
-			this.hitQueue = new PersistentHitQueue(dataQueue, new AudienceHitProcessor(networkResponseHandler));
-		} else {
-			this.hitQueue = new PersistentHitQueue(dataQueue, audienceHitProcessor);
-		}
+		this.hitQueue = new PersistentHitQueue(dataQueue, new AudienceHitProcessor(networkResponseHandler));
 	}
 
 	//region Extension interface methods
