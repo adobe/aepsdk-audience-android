@@ -17,22 +17,24 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-//
-//import com.adobe.marketing.mobile.JsonUtilityService.*;
-//import com.adobe.marketing.mobile.NetworkService.HttpCommand;
 import com.adobe.marketing.mobile.Event;
 import com.adobe.marketing.mobile.EventSource;
 import com.adobe.marketing.mobile.EventType;
 import com.adobe.marketing.mobile.ExtensionApi;
 import com.adobe.marketing.mobile.ExtensionEventListener;
 import com.adobe.marketing.mobile.MobilePrivacyStatus;
+import com.adobe.marketing.mobile.SharedStateResult;
+import com.adobe.marketing.mobile.SharedStateStatus;
+import com.adobe.marketing.mobile.services.DataEntity;
 import com.adobe.marketing.mobile.services.DataQueue;
 import com.adobe.marketing.mobile.services.DataQueuing;
+import com.adobe.marketing.mobile.services.DeviceInforming;
 import com.adobe.marketing.mobile.services.HttpMethod;
 import com.adobe.marketing.mobile.services.NetworkRequest;
 import com.adobe.marketing.mobile.services.Networking;
@@ -40,12 +42,14 @@ import com.adobe.marketing.mobile.services.ServiceProvider;
 import com.adobe.marketing.mobile.util.DataReader;
 import com.adobe.marketing.mobile.util.DataReaderException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -58,13 +62,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class AudienceExtensionTest {
 
-	//
-	//	private MockNetworkService mockNetworkService;
-	//	private LocalStorageService fakeLocalStorageService;
 	//	private JsonUtilityService fakeJsonUtilityService;
-	//	private MockDispatcherAudienceResponseContentAudienceManager mockDispatcherAudienceResponseContent;
-	//	private MockDispatcherAudienceResponseIdentityAudienceManager mockDispatcherAudienceResponseIdentity;
-	//	private MockAudienceRequestsDatabase mockAudienceRequestsDatabase;
 	private AudienceExtension audience;
 
 	@Mock
@@ -86,6 +84,9 @@ public class AudienceExtensionTest {
 	private Networking mockNetworkService;
 
 	@Mock
+	private DeviceInforming mockDeviceInfoService;
+
+	@Mock
 	private ServiceProvider mockServiceProvider;
 
 	private MockedStatic<ServiceProvider> mockedStaticServiceProvider = Mockito.mockStatic(ServiceProvider.class);
@@ -96,7 +97,20 @@ public class AudienceExtensionTest {
 		when(mockServiceProvider.getDataQueueService()).thenReturn(mockDataQueueService);
 		when(mockDataQueueService.getDataQueue("com.adobe.module.audience")).thenReturn(mockDataQueue);
 		when(mockServiceProvider.getNetworkService()).thenReturn(mockNetworkService);
+		when(mockServiceProvider.getDeviceInfoService()).thenReturn(mockDeviceInfoService);
 		audience = new AudienceExtension(mockExtensionApi, mockState, mockHitProcessor);
+	}
+
+	@After
+	public void tearDown() {
+		reset(mockDataQueue);
+		reset(mockDataQueueService);
+		reset(mockHitProcessor);
+		reset(mockState);
+		reset(mockExtensionApi);
+		reset(mockNetworkService);
+		mockedStaticServiceProvider.close();
+		reset(mockServiceProvider);
 	}
 
 	//
@@ -311,7 +325,7 @@ public class AudienceExtensionTest {
 
 		verify(mockState).clearIdentifiers();
 		verify(mockState).setLastResetTimestamp(eq(testEvent.getTimestamp()));
-		verifyNoInteractions(mockDataQueue);
+		verify(mockDataQueue).clear();
 
 		//verify
 		ArgumentCaptor<Map<String, Object>> sharedStateCaptor = ArgumentCaptor.forClass(Map.class);
@@ -667,112 +681,180 @@ public class AudienceExtensionTest {
 	//		assertNull("shared data object should be null for this event", sharedAamData);
 	//	}
 	//
-	//	// =================================================================================================================
-	//	// protected void submitSignal(final Event event) // handleAudienceRequestContent
-	//	// =================================================================================================================
-	//	@Test
-	//	public void testSubmitSignal_when_AudienceNotConfigured() throws Exception {
-	//		// setup
-	//		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData(), "pairId");
-	//
-	//		// test
-	//		audience.submitSignal(event);
-	//
-	//		// verify
-	//		assertFalse(mockDispatcherAudienceResponseContent.dispatchWasCalled);
-	//	}
-	//
-	//	@Test
-	//	public void testSubmitSignal_when_MarketingCloudOrgIDSet() throws Exception {
-	//		// setup
-	//		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData(), "pairId");
-	//
-	//		final EventData fakeConfigData = getFakeConfigEventData();
-	//		fakeConfigData.putString(
-	//			AudienceTestConstants.EventDataKeys.Configuration.EXPERIENCE_CLOUD_ORGID,
-	//			"testExperience@adobeorg"
-	//		);
-	//		eventHub.setSharedState(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME, fakeConfigData);
-	//
-	//		// test
-	//		audience.submitSignal(event);
-	//
-	//		// verify
-	//		assertTrue(mockAudienceRequestsDatabase.queueWasCalled);
-	//		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.startsWith("https://server/event?"));
-	//		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.contains("d_orgid=testExperience@adobeorg"));
-	//	}
-	//
-	//	@Test
-	//	public void testSubmitSignal_when_PrivacyOptOut() throws Exception {
-	//		// setup
-	//		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData(), "pairId");
-	//
-	//		final EventData fakeConfigData = getFakeConfigEventData();
-	//		fakeConfigData.putString(AudienceTestConstants.EventDataKeys.Configuration.GLOBAL_CONFIG_PRIVACY, "optedout");
-	//		eventHub.setSharedState(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME, fakeConfigData);
-	//
-	//		// test
-	//		audience.submitSignal(event);
-	//
-	//		// verify
-	//		assertTrue(mockDispatcherAudienceResponseContent.dispatchWasCalled);
-	//		assertNull(mockDispatcherAudienceResponseContent.dispatchParametersProfileMap);
-	//	}
-	//
-	//	@Test
-	//	public void testSubmitSignal_when_PrivacyUnknown() throws Exception {
-	//		// setup
-	//		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData(), "pairId");
-	//
-	//		final EventData fakeConfigData = getFakeConfigEventData();
-	//		fakeConfigData.putString(AudienceTestConstants.EventDataKeys.Configuration.GLOBAL_CONFIG_PRIVACY, "optunknown");
-	//		eventHub.setSharedState(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME, fakeConfigData);
-	//
-	//		// test
-	//		audience.submitSignal(event);
-	//
-	//		// verify
-	//		assertTrue("request not got queued", mockAudienceRequestsDatabase.queueWasCalled);
-	//	}
-	//
-	//	@Test
-	//	public void testSubmitSignal_when_serverEmptyAndPairIdIsNull() throws Exception {
-	//		// setup
-	//		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData(), null);
-	//		final EventData configData = getFakeConfigEventData();
-	//		configData.putString(AudienceTestConstants.EventDataKeys.Configuration.AAM_CONFIG_SERVER, "");
-	//		eventHub.setSharedState(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME, configData);
-	//
-	//		// test
-	//		audience.submitSignal(event);
-	//
-	//		// verify
-	//		assertTrue(mockDispatcherAudienceResponseContent.dispatchWasCalled);
-	//	}
-	//
-	//	@Test
-	//	public void testSubmitSignal_when_systemInfoService_doesnotHavePlatformInformation() throws Exception {
-	//		// setup
-	//		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData(), "pairId");
-	//		platformServices.getMockSystemInfoService().mockCanonicalPlatformName = null;
-	//
-	//		eventHub.setSharedState(
-	//			AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME,
-	//			getFakeConfigEventData()
-	//		);
-	//		eventHub.setSharedState(AudienceTestConstants.EventDataKeys.Identity.MODULE_NAME, getFakeIdentityEventData());
-	//
-	//		setAudienceManagerStateProperties();
-	//
-	//		// test
-	//		audience.submitSignal(event);
-	//
-	//		// verify
-	//		assertTrue(mockAudienceRequestsDatabase.queueWasCalled);
-	//		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.startsWith("https://server/event?"));
-	//		assertTrue(mockAudienceRequestsDatabase.queueParameterUrl.contains("d_ptfm=java"));
-	//	}
+	// =================================================================================================================
+	// protected void submitSignal(final Event event) // handleAudienceRequestContent
+	// =================================================================================================================
+	@Test
+	public void testHandleAudienceRequestContent_whenAudienceNotConfigured_doesNotDispatchResponse() {
+		when(
+			mockExtensionApi.getSharedState(
+				eq(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME),
+				any(Event.class),
+				eq(false),
+				any()
+			)
+		)
+			.thenReturn(new SharedStateResult(SharedStateStatus.SET, Collections.emptyMap()));
+
+		// setup
+		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData());
+
+		// test
+		audience.handleAudienceRequestContent(event);
+
+		// verify
+		verifyNoInteractions(mockDataQueue);
+		verify(mockExtensionApi, never()).dispatch(any(Event.class));
+	}
+
+	@Test
+	public void testHandleAudienceRequestContent_whenMCOrgIDSet_queuesHit() {
+		// setup
+		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData());
+
+		final Map<String, Object> fakeConfigData = getFakeConfigEventData();
+		fakeConfigData.put(
+			AudienceTestConstants.EventDataKeys.Configuration.EXPERIENCE_CLOUD_ORGID,
+			"testExperience@adobeorg"
+		);
+		when(
+			mockExtensionApi.getSharedState(
+				eq(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME),
+				any(Event.class),
+				eq(false),
+				any()
+			)
+		)
+			.thenReturn(new SharedStateResult(SharedStateStatus.SET, fakeConfigData));
+
+		// test
+		audience.handleAudienceRequestContent(event);
+
+		// verify
+		verify(mockExtensionApi).dispatch(any(Event.class));
+		ArgumentCaptor<DataEntity> entityCaptor = ArgumentCaptor.forClass(DataEntity.class);
+		verify(mockDataQueue).add(entityCaptor.capture());
+		AudienceDataEntity audienceEntity = AudienceDataEntity.fromDataEntity(entityCaptor.getValue());
+		assertTrue(audienceEntity.getUrl().startsWith("https://server/event?"));
+		assertTrue(audienceEntity.getUrl().contains("d_orgid=testExperience@adobeorg"));
+	}
+
+	@Test
+	public void testHandleAudienceRequestContent_whenPrivacyOptOut_dispatchesResponse() throws Exception {
+		// setup
+		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData());
+
+		final Map<String, Object> fakeConfigData = getFakeConfigEventData();
+		fakeConfigData.put(AudienceTestConstants.EventDataKeys.Configuration.GLOBAL_CONFIG_PRIVACY, "optedout");
+		when(
+			mockExtensionApi.getSharedState(
+				eq(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME),
+				any(Event.class),
+				eq(false),
+				any()
+			)
+		)
+			.thenReturn(new SharedStateResult(SharedStateStatus.SET, fakeConfigData));
+
+		// test
+		audience.handleAudienceRequestContent(event);
+
+		// verify
+		verifyNoInteractions(mockDataQueue);
+		ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+		verify(mockExtensionApi).dispatch(eventCaptor.capture());
+		assertNull(
+			DataReader.getStringMap(
+				eventCaptor.getValue().getEventData(),
+				AudienceConstants.EventDataKeys.Audience.VISITOR_PROFILE
+			)
+		);
+	}
+
+	@Test
+	public void testHandleAudienceRequestContent_whenPrivacyUnknown_queuesHit() {
+		// setup
+		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData());
+
+		final Map<String, Object> fakeConfigData = getFakeConfigEventData();
+		fakeConfigData.put(AudienceTestConstants.EventDataKeys.Configuration.GLOBAL_CONFIG_PRIVACY, "optunknown");
+		when(
+			mockExtensionApi.getSharedState(
+				eq(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME),
+				any(Event.class),
+				eq(false),
+				any()
+			)
+		)
+			.thenReturn(new SharedStateResult(SharedStateStatus.SET, fakeConfigData));
+
+		// test
+		audience.handleAudienceRequestContent(event);
+
+		// verify
+		verify(mockDataQueue).add(any(DataEntity.class));
+	}
+
+	@Test
+	public void testHandleAudienceRequestContent_whenServerEmpty_dispatchesResponse() {
+		// setup
+		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData());
+		final Map<String, Object> fakeConfigData = getFakeConfigEventData();
+		fakeConfigData.put(AudienceTestConstants.EventDataKeys.Configuration.AAM_CONFIG_SERVER, "");
+		when(
+			mockExtensionApi.getSharedState(
+				eq(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME),
+				any(Event.class),
+				eq(false),
+				any()
+			)
+		)
+			.thenReturn(new SharedStateResult(SharedStateStatus.SET, fakeConfigData));
+
+		// test
+		audience.handleAudienceRequestContent(event);
+
+		// verify
+		verify(mockExtensionApi).dispatch(any(Event.class));
+	}
+
+	@Test
+	public void testHandleAudienceRequestContent_whenNullPlatformInfo_usesDefaultJava() {
+		// setup
+		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData());
+		when(mockDeviceInfoService.getCanonicalPlatformName()).thenReturn(null);
+		when(
+			mockExtensionApi.getSharedState(
+				eq(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME),
+				any(Event.class),
+				eq(false),
+				any()
+			)
+		)
+			.thenReturn(new SharedStateResult(SharedStateStatus.SET, getFakeConfigEventData()));
+		when(
+			mockExtensionApi.getSharedState(
+				eq(AudienceTestConstants.EventDataKeys.Identity.MODULE_NAME),
+				any(Event.class),
+				eq(false),
+				any()
+			)
+		)
+			.thenReturn(new SharedStateResult(SharedStateStatus.SET, getFakeIdentityEventData()));
+
+		setAudienceManagerStateProperties();
+
+		// test
+		audience.handleAudienceRequestContent(event);
+
+		// verify
+		ArgumentCaptor<DataEntity> entityCaptor = ArgumentCaptor.forClass(DataEntity.class);
+		verify(mockDataQueue).add(entityCaptor.capture());
+		AudienceDataEntity audienceEntity = AudienceDataEntity.fromDataEntity(entityCaptor.getValue());
+		assertTrue(audienceEntity.getUrl().startsWith("https://server/event?"));
+		assertTrue(audienceEntity.getUrl().contains("d_ptfm=java"));
+	}
+
 	//
 	//	@Test
 	//	public void testSubmitSignal_happyPath() throws Exception {

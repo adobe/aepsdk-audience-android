@@ -29,12 +29,14 @@ import com.adobe.marketing.mobile.SharedStateResult;
 import com.adobe.marketing.mobile.SharedStateStatus;
 import com.adobe.marketing.mobile.VisitorID;
 import com.adobe.marketing.mobile.services.DataQueue;
+import com.adobe.marketing.mobile.services.DeviceInforming;
 import com.adobe.marketing.mobile.services.HttpMethod;
 import com.adobe.marketing.mobile.services.Log;
 import com.adobe.marketing.mobile.services.NetworkRequest;
 import com.adobe.marketing.mobile.services.PersistentHitQueue;
 import com.adobe.marketing.mobile.services.ServiceProvider;
 import com.adobe.marketing.mobile.util.DataReader;
+import com.adobe.marketing.mobile.util.MapUtils;
 import com.adobe.marketing.mobile.util.StringUtils;
 import com.adobe.marketing.mobile.util.URLBuilder;
 import com.adobe.marketing.mobile.util.UrlUtils;
@@ -337,6 +339,7 @@ public final class AudienceExtension extends Extension {
 	 *
 	 * @param event: The lifecycle response event
 	 */
+	@VisibleForTesting
 	void handleLifecycleResponse(@NonNull final Event event) {
 		// if aam forwarding is enabled, we don't need to send anything
 		if (!serverSideForwardingToAam(event)) {
@@ -349,7 +352,7 @@ public final class AudienceExtension extends Extension {
 		}
 
 		final Map<String, Object> eventData = event.getEventData();
-		if (eventData == null || eventData.isEmpty()) {
+		if (MapUtils.isNullOrEmpty(eventData)) {
 			Log.trace(LOG_TAG, LOG_SOURCE, "Ignoring Lifecycle response event with absent or empty event data.");
 			return;
 		}
@@ -535,7 +538,7 @@ public final class AudienceExtension extends Extension {
 			DataReader.optString(
 				configData,
 				AudienceConstants.EventDataKeys.Configuration.GLOBAL_CONFIG_PRIVACY,
-				MobilePrivacyStatus.UNKNOWN.getValue()
+				AudienceConstants.DEFAULT_PRIVACY_STATUS.getValue()
 			)
 		);
 
@@ -723,7 +726,7 @@ public final class AudienceExtension extends Extension {
 	private HashMap<String, String> getLifecycleDataForAudience(final Map<String, String> lifecycleData) {
 		final HashMap<String, String> lifecycleContextData = new HashMap<>();
 
-		if (lifecycleData == null || lifecycleData.isEmpty()) {
+		if (MapUtils.isNullOrEmpty(lifecycleData)) {
 			return lifecycleContextData;
 		}
 
@@ -781,7 +784,7 @@ public final class AudienceExtension extends Extension {
 	 * @return {@link String} representing value of URL parameters
 	 */
 	private String getCustomUrlVariables(final Map<String, String> data) {
-		if (data == null || data.size() == 0) {
+		if (MapUtils.isNullOrEmpty(data)) {
 			Log.debug(LOG_TAG, LOG_SOURCE, "No data found converting customer data for URL parameters.");
 			return "";
 		}
@@ -958,11 +961,16 @@ public final class AudienceExtension extends Extension {
 	 * @return {@link String} representing the URL suffix for AAM request
 	 */
 	private String getPlatformSuffix() {
-		final String canonicalPlatformName = ServiceProvider
-			.getInstance()
-			.getDeviceInfoService()
-			.getCanonicalPlatformName();
-		final String platform = !StringUtils.isNullOrEmpty(canonicalPlatformName) ? canonicalPlatformName : "java";
+		String platform = "java";
+		DeviceInforming deviceInfoService = ServiceProvider.getInstance().getDeviceInfoService();
+		if (deviceInfoService == null) {
+			return AudienceConstants.AUDIENCE_MANAGER_URL_PLATFORM_KEY + platform;
+		}
+
+		final String canonicalPlatformName = deviceInfoService.getCanonicalPlatformName();
+		if (!StringUtils.isNullOrEmpty(canonicalPlatformName)) {
+			platform = canonicalPlatformName;
+		}
 		return AudienceConstants.AUDIENCE_MANAGER_URL_PLATFORM_KEY + platform;
 	}
 
