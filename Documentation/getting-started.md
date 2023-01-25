@@ -22,9 +22,9 @@ The Audience Manager extension depends on the Core and Identity extensions:
 1. Add the Mobile Core, Identity, and Audience extensions to your project using the app's Gradle file:
 
 ```
-implementation 'com.adobe.marketing.mobile:core:2.x.x'
-implementation 'com.adobe.marketing.mobile:identity:2.x.x'
-implementation 'com.adobe.marketing.mobile:audience:2.x.x'
+implementation 'com.adobe.marketing.mobile:core:2.+'
+implementation 'com.adobe.marketing.mobile:identity:2.+'
+implementation 'com.adobe.marketing.mobile:audience:2.+'
 ```
 
 2. Import the libraries:
