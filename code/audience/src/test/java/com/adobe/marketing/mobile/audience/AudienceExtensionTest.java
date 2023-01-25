@@ -687,15 +687,7 @@ public class AudienceExtensionTest {
 	// =================================================================================================================
 	@Test
 	public void testHandleAudienceRequestContent_whenAudienceNotConfigured_doesNotDispatchResponse() {
-		when(
-			mockExtensionApi.getSharedState(
-				eq(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME),
-				any(Event.class),
-				eq(false),
-				any()
-			)
-		)
-			.thenReturn(new SharedStateResult(SharedStateStatus.SET, Collections.emptyMap()));
+		mockConfigSharedState(new SharedStateResult(SharedStateStatus.SET, Collections.emptyMap()));
 
 		// setup
 		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData());
@@ -718,15 +710,7 @@ public class AudienceExtensionTest {
 			AudienceTestConstants.EventDataKeys.Configuration.EXPERIENCE_CLOUD_ORGID,
 			"testExperience@adobeorg"
 		);
-		when(
-			mockExtensionApi.getSharedState(
-				eq(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME),
-				any(Event.class),
-				eq(false),
-				any()
-			)
-		)
-			.thenReturn(new SharedStateResult(SharedStateStatus.SET, fakeConfigData));
+		mockConfigSharedState(new SharedStateResult(SharedStateStatus.SET, fakeConfigData));
 
 		// test
 		audience.handleAudienceRequestContent(event);
@@ -747,15 +731,7 @@ public class AudienceExtensionTest {
 
 		final Map<String, Object> fakeConfigData = getFakeConfigEventData();
 		fakeConfigData.put(AudienceTestConstants.EventDataKeys.Configuration.GLOBAL_CONFIG_PRIVACY, "optedout");
-		when(
-			mockExtensionApi.getSharedState(
-				eq(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME),
-				any(Event.class),
-				eq(false),
-				any()
-			)
-		)
-			.thenReturn(new SharedStateResult(SharedStateStatus.SET, fakeConfigData));
+		mockConfigSharedState(new SharedStateResult(SharedStateStatus.SET, fakeConfigData));
 
 		// test
 		audience.handleAudienceRequestContent(event);
@@ -779,15 +755,7 @@ public class AudienceExtensionTest {
 
 		final Map<String, Object> fakeConfigData = getFakeConfigEventData();
 		fakeConfigData.put(AudienceTestConstants.EventDataKeys.Configuration.GLOBAL_CONFIG_PRIVACY, "optunknown");
-		when(
-			mockExtensionApi.getSharedState(
-				eq(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME),
-				any(Event.class),
-				eq(false),
-				any()
-			)
-		)
-			.thenReturn(new SharedStateResult(SharedStateStatus.SET, fakeConfigData));
+		mockConfigSharedState(new SharedStateResult(SharedStateStatus.SET, fakeConfigData));
 
 		// test
 		audience.handleAudienceRequestContent(event);
@@ -824,15 +792,7 @@ public class AudienceExtensionTest {
 		// setup
 		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData());
 		when(mockDeviceInfoService.getCanonicalPlatformName()).thenReturn(null);
-		when(
-			mockExtensionApi.getSharedState(
-				eq(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME),
-				any(Event.class),
-				eq(false),
-				any()
-			)
-		)
-			.thenReturn(new SharedStateResult(SharedStateStatus.SET, getFakeConfigEventData()));
+		mockConfigSharedState(new SharedStateResult(SharedStateStatus.SET, getFakeConfigEventData()));
 		when(
 			mockExtensionApi.getSharedState(
 				eq(AudienceTestConstants.EventDataKeys.Identity.MODULE_NAME),
@@ -861,15 +821,7 @@ public class AudienceExtensionTest {
 		// setup
 		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData());
 		when(mockDeviceInfoService.getCanonicalPlatformName()).thenReturn("mockPlatform");
-		when(
-			mockExtensionApi.getSharedState(
-				eq(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME),
-				any(Event.class),
-				eq(false),
-				any()
-			)
-		)
-			.thenReturn(new SharedStateResult(SharedStateStatus.SET, getFakeConfigEventData()));
+		mockConfigSharedState(new SharedStateResult(SharedStateStatus.SET, getFakeConfigEventData()));
 		when(
 			mockExtensionApi.getSharedState(
 				eq(AudienceTestConstants.EventDataKeys.Identity.MODULE_NAME),
@@ -918,15 +870,7 @@ public class AudienceExtensionTest {
 		final Event event = getSubmitSignalEvent(null);
 
 		when(mockDeviceInfoService.getCanonicalPlatformName()).thenReturn("mockPlatform");
-		when(
-			mockExtensionApi.getSharedState(
-				eq(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME),
-				any(Event.class),
-				eq(false),
-				any()
-			)
-		)
-			.thenReturn(new SharedStateResult(SharedStateStatus.SET, getFakeConfigEventData()));
+		mockConfigSharedState(new SharedStateResult(SharedStateStatus.SET, getFakeConfigEventData()));
 
 		Map<String, Object> identityData = getFakeIdentityEventData();
 		identityData.remove(AudienceTestConstants.EventDataKeys.Identity.VISITOR_IDS_LIST);
@@ -975,15 +919,7 @@ public class AudienceExtensionTest {
 		final HashMap<String, String> additionalTraits = new HashMap<>();
 		additionalTraits.put("nullKey", null);
 		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData(additionalTraits));
-		when(
-			mockExtensionApi.getSharedState(
-				eq(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME),
-				any(Event.class),
-				eq(false),
-				any()
-			)
-		)
-			.thenReturn(new SharedStateResult(SharedStateStatus.SET, getFakeConfigEventData()));
+		mockConfigSharedState(new SharedStateResult(SharedStateStatus.SET, getFakeConfigEventData()));
 		when(
 			mockExtensionApi.getSharedState(
 				eq(AudienceTestConstants.EventDataKeys.Identity.MODULE_NAME),
@@ -1014,15 +950,7 @@ public class AudienceExtensionTest {
 	public void testHandleAudienceRequestContent_whenNullIdentitySharedState_doesNotIncludeIdentityFields() {
 		// setup
 		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData());
-		when(
-			mockExtensionApi.getSharedState(
-				eq(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME),
-				any(Event.class),
-				eq(false),
-				any()
-			)
-		)
-			.thenReturn(new SharedStateResult(SharedStateStatus.SET, getFakeConfigEventData()));
+		mockConfigSharedState(new SharedStateResult(SharedStateStatus.SET, getFakeConfigEventData()));
 		when(
 			mockExtensionApi.getSharedState(
 				eq(AudienceTestConstants.EventDataKeys.Identity.MODULE_NAME),
@@ -1062,15 +990,7 @@ public class AudienceExtensionTest {
 		additionalTraits.put("trait.key", "trait.value");
 		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData(additionalTraits));
 
-		when(
-			mockExtensionApi.getSharedState(
-				eq(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME),
-				any(Event.class),
-				eq(false),
-				any()
-			)
-		)
-			.thenReturn(new SharedStateResult(SharedStateStatus.SET, getFakeConfigEventData()));
+		mockConfigSharedState(new SharedStateResult(SharedStateStatus.SET, getFakeConfigEventData()));
 
 		// test
 		audience.handleAudienceRequestContent(event);
@@ -1089,15 +1009,7 @@ public class AudienceExtensionTest {
 		final HashMap<String, String> additionalTraits = new HashMap<>();
 		additionalTraits.put("", "traitvalue");
 		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData(additionalTraits));
-		when(
-			mockExtensionApi.getSharedState(
-				eq(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME),
-				any(Event.class),
-				eq(false),
-				any()
-			)
-		)
-			.thenReturn(new SharedStateResult(SharedStateStatus.SET, getFakeConfigEventData()));
+		mockConfigSharedState(new SharedStateResult(SharedStateStatus.SET, getFakeConfigEventData()));
 
 		// test
 		audience.handleAudienceRequestContent(event);
@@ -1110,138 +1022,156 @@ public class AudienceExtensionTest {
 		assertFalse(audienceEntity.getUrl().contains("c_=traitvalue"));
 	}
 
-	//
-	//	// =================================================================================================================
-	//	// protected HashMap<String, String> handleNetworkResponse(final String response, final Event event)
-	//	// =================================================================================================================
-	//	@Test
-	//	public void testHandleNetworkResponse_when_response_isEmpty() throws Exception {
-	//		// setup
-	//		final String mockResponse = "";
-	//		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData(), "pairId");
-	//
-	//		// test
-	//		audience.handleNetworkResponse(mockResponse, event);
-	//		waitForExecutor(audience.getExecutor(), 1);
-	//
-	//		// verify
-	//		assertEquals(1, mockDispatcherAudienceResponseContent.dispatchCallCount);
-	//		assertTrue(mockDispatcherAudienceResponseContent.dispatchParametersProfileMap.isEmpty());
-	//	}
-	//
-	//	@Test
-	//	public void testHandleNetworkResponse_when_response_hasNoProfile() throws Exception {
-	//		// setup
-	//		final String mockResponse = "{'uuid':'testuuid'}";
-	//		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData(), "pairId");
-	//		eventHub.setSharedState(
-	//			AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME,
-	//			getFakeConfigEventData()
-	//		);
-	//
-	//		// test
-	//		audience.handleNetworkResponse(mockResponse, event);
-	//		waitForExecutor(audience.getExecutor(), 1);
-	//
-	//		// verify
-	//		assertEquals("testuuid", state.getUuid());
-	//		assertEquals(1, mockDispatcherAudienceResponseContent.dispatchCallCount);
-	//	}
-	//
-	//	@Test
-	//	public void testHandleNetworkResponse_when_response_EmptyStuffArray() throws Exception {
-	//		// setup
-	//		final String mockResponse = "{'stuff':[]}";
-	//		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData(), "pairId");
-	//		eventHub.setSharedState(
-	//			AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME,
-	//			getFakeConfigEventData()
-	//		);
-	//
-	//		// test
-	//		audience.handleNetworkResponse(mockResponse, event);
-	//		waitForExecutor(audience.getExecutor(), 1);
-	//
-	//		// verify
-	//		assertEquals(1, mockDispatcherAudienceResponseContent.dispatchCallCount);
-	//		assertEquals(0, mockDispatcherAudienceResponseContent.dispatchParametersProfileMap.size());
-	//	}
-	//
-	//	@Test
-	//	public void testHandleNetworkResponse_when_response_ValidStuffArray() throws Exception {
-	//		// setup
-	//		final String stuffArrayAsString = prepareStuffArray().toString();
-	//		final String mockResponse = "{'stuff':" + stuffArrayAsString + "}";
-	//		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData(), "pairId");
-	//		eventHub.setSharedState(
-	//			AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME,
-	//			getFakeConfigEventData()
-	//		);
-	//
-	//		// test
-	//		audience.handleNetworkResponse(mockResponse, event);
-	//		waitForExecutor(audience.getExecutor(), 1);
-	//
-	//		// verify
-	//		assertEquals(2, mockDispatcherAudienceResponseContent.dispatchCallCount);
-	//		assertEquals(2, mockDispatcherAudienceResponseContent.dispatchParametersProfileMap.size());
-	//		assertEquals(2, state.getVisitorProfile().size());
-	//		assertEquals(
-	//			"seg=mobile_android",
-	//			mockDispatcherAudienceResponseContent.dispatchParametersProfileMap.get("aud")
-	//		);
-	//		assertEquals("seg=mobile_android", state.getVisitorProfile().get("aud"));
-	//		assertEquals(
-	//			"cookieValue",
-	//			mockDispatcherAudienceResponseContent.dispatchParametersProfileMap.get("cookieKey")
-	//		);
-	//		assertEquals("cookieValue", state.getVisitorProfile().get("cookieKey"));
-	//	}
-	//
-	//	@Test
-	//	public void testHandleNetworkResponse_when_response_ValidDestArray() throws Exception {
-	//		// setup
-	//		final String destsArrayAsString = prepareDestArray().toString();
-	//		final String mockResponse = "{'dests':" + destsArrayAsString + "}";
-	//		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData(), "pairId");
-	//		eventHub.setSharedState(
-	//			AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME,
-	//			getFakeConfigEventData()
-	//		);
-	//
-	//		// test
-	//		audience.handleNetworkResponse(mockResponse, event);
-	//		waitForExecutor(audience.getExecutor(), 1);
-	//
-	//		// verify
-	//		assertEquals(1, mockDispatcherAudienceResponseContent.dispatchCallCount);
-	//		assertEquals(0, mockDispatcherAudienceResponseContent.dispatchParametersProfileMap.size());
-	//		assertEquals("desturl", mockNetworkService.connectUrlAsyncParametersUrl);
-	//		assertEquals(HttpCommand.GET, mockNetworkService.connectUrlAsyncParametersCommand);
-	//	}
-	//
-	//	@Test
-	//	public void testHandleNetworkResponse_when_response_ValidDestArray_responsePairID_NotAvailable_ForEvent()
-	//		throws Exception {
-	//		// setup
-	//		final String destsArrayAsString = prepareDestArray().toString();
-	//		final String mockResponse = "{'dests':" + destsArrayAsString + "}";
-	//		final Event event = getSubmitSignalEventWithOutPairID(getFakeAamTraitsEventData(), "pairId");
-	//		eventHub.setSharedState(
-	//			AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME,
-	//			getFakeConfigEventData()
-	//		);
-	//
-	//		// test
-	//		audience.handleNetworkResponse(mockResponse, event);
-	//		waitForExecutor(audience.getExecutor(), 1);
-	//
-	//		// verify
-	//		assertEquals(0, mockDispatcherAudienceResponseContent.dispatchCallCount);
-	//		assertEquals("desturl", mockNetworkService.connectUrlAsyncParametersUrl);
-	//		assertEquals(HttpCommand.GET, mockNetworkService.connectUrlAsyncParametersCommand);
-	//	}
-	//
+	// =================================================================================================================
+	// AudienceNetworkResponseHandler tests
+	// =================================================================================================================
+	@Test
+	public void testNetworkResponseHandler_whenResponseEmpty_dispatchesResponseEvent() {
+		// setup
+		final String mockResponse = "";
+		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData());
+
+		// test
+		audience.networkResponseHandler.complete(mockResponse, event);
+
+		// verify
+		final ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+
+		verify(mockExtensionApi, times(1)).dispatch(eventCaptor.capture());
+		final Event responseEvent = eventCaptor.getValue();
+		assertEquals(EventType.AUDIENCEMANAGER, responseEvent.getType());
+		assertEquals(EventSource.RESPONSE_CONTENT, responseEvent.getSource());
+		assertEquals(event.getUniqueIdentifier(), responseEvent.getResponseID()); // verifies in response to request event
+		assertEquals(1, responseEvent.getEventData().size());
+		assertTrue(
+			DataReader
+				.optStringMap(
+					responseEvent.getEventData(),
+					AudienceTestConstants.EventDataKeys.Audience.VISITOR_PROFILE,
+					null
+				)
+				.isEmpty()
+		);
+	}
+
+	@Test
+	public void testNetworkResponseHandler_whenResponseWithUUIDNoProfile_savesUUIDAndDispatchesResponseEvent() {
+		// setup
+		final String mockResponse = "{'uuid':'testuuid'}";
+		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData());
+		mockConfigSharedState(new SharedStateResult(SharedStateStatus.SET, getFakeConfigEventData()));
+
+		// test
+		audience.networkResponseHandler.complete(mockResponse, event);
+
+		// verify
+		verify(mockState).setUuid(eq("testuuid"));
+		verify(mockExtensionApi, times(1)).dispatch(any(Event.class));
+	}
+
+	@Test
+	public void testNetworkResponseHandler_whenResponseWithEmptyStuffArray_dispatchesResponseEvent() {
+		// setup
+		final String mockResponse = "{'stuff':[]}";
+		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData());
+		mockConfigSharedState(new SharedStateResult(SharedStateStatus.SET, getFakeConfigEventData()));
+
+		// test
+		audience.networkResponseHandler.complete(mockResponse, event);
+
+		// verify
+		final ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+		verify(mockExtensionApi, times(1)).dispatch(eventCaptor.capture());
+		final Event responseEvent = eventCaptor.getValue();
+		assertEquals(EventType.AUDIENCEMANAGER, responseEvent.getType());
+		assertEquals(EventSource.RESPONSE_CONTENT, responseEvent.getSource());
+		assertEquals(event.getUniqueIdentifier(), responseEvent.getResponseID()); // verifies in response to request event
+		assertEquals(1, responseEvent.getEventData().size());
+		assertTrue(
+			DataReader
+				.optStringMap(
+					responseEvent.getEventData(),
+					AudienceTestConstants.EventDataKeys.Audience.VISITOR_PROFILE,
+					null
+				)
+				.isEmpty()
+		);
+	}
+
+	@Test
+	public void testNetworkResponseHandler_whenResponseValidStuffArray_dispatchesResponseEventsWithProfile()
+		throws Exception {
+		// setup
+		final String stuffArrayAsString = prepareStuffArray().toString();
+		final String mockResponse = "{'stuff':" + stuffArrayAsString + "}";
+		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData());
+		mockConfigSharedState(new SharedStateResult(SharedStateStatus.SET, getFakeConfigEventData()));
+
+		// test
+		audience.networkResponseHandler.complete(mockResponse, event);
+
+		// verify
+		ArgumentCaptor<Map<String, String>> visitorProfileCaptor = ArgumentCaptor.forClass(Map.class);
+		verify(mockState).setVisitorProfile(visitorProfileCaptor.capture());
+		assertEquals(2, visitorProfileCaptor.getValue().size());
+		assertEquals("cookieValue", visitorProfileCaptor.getValue().get("cookieKey"));
+		assertEquals("seg=mobile_android", visitorProfileCaptor.getValue().get("aud"));
+
+		final ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+		// expect 2 events to be dispatched, one paired and one for generic listeners
+		verify(mockExtensionApi, times(2)).dispatch(eventCaptor.capture());
+		final Event pairedResponseEvent = eventCaptor.getAllValues().get(0);
+		assertNull(event.getUniqueIdentifier(), pairedResponseEvent.getResponseID()); // generic response, not paired
+		final Event responseEvent = eventCaptor.getAllValues().get(1);
+		assertEquals(EventType.AUDIENCEMANAGER, responseEvent.getType());
+		assertEquals(EventSource.RESPONSE_CONTENT, responseEvent.getSource());
+		assertEquals(event.getUniqueIdentifier(), responseEvent.getResponseID()); // verifies in response to request event
+		assertEquals(1, responseEvent.getEventData().size());
+		Map<String, String> dispatchedVisitorProfile = DataReader.optStringMap(
+			responseEvent.getEventData(),
+			AudienceTestConstants.EventDataKeys.Audience.VISITOR_PROFILE,
+			null
+		);
+		assertEquals(2, dispatchedVisitorProfile.size());
+		assertEquals("seg=mobile_android", dispatchedVisitorProfile.get("aud"));
+		assertEquals("cookieValue", dispatchedVisitorProfile.get("cookieKey"));
+	}
+
+	@Test
+	public void testNetworkResponseHandler_whenResponseValidDestArray_dispatchesResponseAndNetworkRequest()
+		throws Exception {
+		// setup
+		final String destsArrayAsString = prepareDestArray().toString();
+		final String mockResponse = "{'dests':" + destsArrayAsString + "}";
+		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData());
+		mockConfigSharedState(new SharedStateResult(SharedStateStatus.SET, getFakeConfigEventData()));
+
+		// test
+		audience.networkResponseHandler.complete(mockResponse, event);
+
+		// verify
+		final ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+
+		verify(mockExtensionApi, times(1)).dispatch(eventCaptor.capture());
+		final Event responseEvent = eventCaptor.getValue();
+		assertEquals(EventType.AUDIENCEMANAGER, responseEvent.getType());
+		assertEquals(EventSource.RESPONSE_CONTENT, responseEvent.getSource());
+		assertEquals(event.getUniqueIdentifier(), responseEvent.getResponseID()); // verifies in response to request event
+		assertEquals(1, responseEvent.getEventData().size());
+		assertTrue(
+			DataReader
+				.optStringMap(
+					responseEvent.getEventData(),
+					AudienceTestConstants.EventDataKeys.Audience.VISITOR_PROFILE,
+					null
+				)
+				.isEmpty()
+		);
+		ArgumentCaptor<NetworkRequest> networkRequestCaptor = ArgumentCaptor.forClass(NetworkRequest.class);
+		verify(mockNetworkService).connectAsync(networkRequestCaptor.capture(), notNull());
+		assertEquals("desturl", networkRequestCaptor.getValue().getUrl());
+		assertEquals(HttpMethod.GET, networkRequestCaptor.getValue().getMethod());
+	}
 
 	private Map<String, Object> getFakeAamTraitsEventData() {
 		return getFakeAamTraitsEventData(null);
@@ -1401,5 +1331,17 @@ public class AudienceExtensionTest {
 			},
 			responseEvent.getEventData()
 		);
+	}
+
+	private void mockConfigSharedState(final SharedStateResult sharedStateResult) {
+		when(
+			mockExtensionApi.getSharedState(
+				eq(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME),
+				any(Event.class),
+				eq(false),
+				any()
+			)
+		)
+			.thenReturn(sharedStateResult);
 	}
 }

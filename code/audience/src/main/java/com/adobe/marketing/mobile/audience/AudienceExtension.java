@@ -82,6 +82,56 @@ public final class AudienceExtension extends Extension {
 	private final AudienceState internalState;
 	private final PersistentHitQueue hitQueue;
 
+	@VisibleForTesting
+	final AudienceNetworkResponseHandler networkResponseHandler;
+
+	private class NetworkResponseHandler implements AudienceNetworkResponseHandler {
+
+		private AudienceState state;
+
+		NetworkResponseHandler(final AudienceState state) {
+			this.state = state;
+		}
+
+		@Override
+		public void complete(final String responsePayload, final Event requestEvent) {
+			final String LOG_SOURCE = "AudienceNetworkResponseHandler";
+			if (requestEvent == null) {
+				Log.warning(LOG_TAG, LOG_SOURCE, "Unable to process network response, invalid request event.");
+				return;
+			}
+
+			if (requestEvent.getTimestamp() < state.getLastResetTimestampMillis()) {
+				Log.debug(
+					LOG_TAG,
+					LOG_SOURCE,
+					"Not dispatching Audience hit response since resetIdentities API was called after queuing this hit."
+				);
+				return;
+			}
+
+			Map<String, String> profile = new HashMap<>();
+
+			if (StringUtils.isNullOrEmpty(responsePayload)) {
+				Log.warning(LOG_TAG, LOG_SOURCE, "Null/empty response from server, nothing to process.");
+				shareStateForEvent(requestEvent);
+				dispatchAudienceResponseContent(profile, requestEvent);
+				return;
+			}
+
+			// process the response from the AAM server and share the shared state
+			profile = processResponse(responsePayload, requestEvent);
+
+			// if profile is empty, there was a json error in the response, don't dispatch a generic event
+			if (profile != null && !profile.isEmpty()) {
+				dispatchAudienceResponseContent(profile, null);
+			}
+
+			// dispatch paired event
+			dispatchAudienceResponseContent(profile, requestEvent);
+		}
+	}
+
 	AudienceExtension(final ExtensionApi extensionApi) {
 		this(extensionApi, null, null);
 	}
@@ -94,44 +144,9 @@ public final class AudienceExtension extends Extension {
 	) {
 		super(extensionApi);
 		this.internalState = audienceState != null ? audienceState : new AudienceState();
+		networkResponseHandler = new NetworkResponseHandler(internalState);
 		final DataQueue dataQueue = ServiceProvider.getInstance().getDataQueueService().getDataQueue(getName());
 		if (audienceHitProcessor == null) {
-			final AudienceNetworkResponseHandler networkResponseHandler = (responsePayload, requestEvent) -> {
-				final String LOG_SOURCE = "AudienceNetworkResponseHandler";
-				if (requestEvent == null) {
-					Log.warning(LOG_TAG, LOG_SOURCE, "Unable to process network response, invalid request event.");
-					return;
-				}
-
-				if (requestEvent.getTimestamp() < internalState.getLastResetTimestampMillis()) {
-					Log.debug(
-						LOG_TAG,
-						LOG_SOURCE,
-						"Not dispatching Audience hit response since resetIdentities API was called after queuing this hit."
-					);
-					return;
-				}
-
-				Map<String, String> profile = new HashMap<>();
-
-				if (StringUtils.isNullOrEmpty(responsePayload)) {
-					Log.warning(LOG_TAG, LOG_SOURCE, "Null/empty response from server, nothing to process.");
-					shareStateForEvent(requestEvent);
-					dispatchAudienceResponseContent(profile, requestEvent);
-					return;
-				}
-
-				// process the response from the AAM server and share the shared state
-				profile = processResponse(responsePayload, requestEvent);
-
-				// if profile is empty, there was a json error in the response, don't dispatch a generic event
-				if (profile != null && !profile.isEmpty()) {
-					dispatchAudienceResponseContent(profile, null);
-				}
-
-				// dispatch paired event
-				dispatchAudienceResponseContent(profile, requestEvent);
-			};
 			this.hitQueue = new PersistentHitQueue(dataQueue, new AudienceHitProcessor(networkResponseHandler));
 		} else {
 			this.hitQueue = new PersistentHitQueue(dataQueue, audienceHitProcessor);
@@ -412,7 +427,7 @@ public final class AudienceExtension extends Extension {
 			AudienceConstants.EventDataKeys.Configuration.MODULE_NAME,
 			event
 		);
-		if (configSharedState.getStatus() == SharedStateStatus.PENDING) {
+		if (configSharedState == null || configSharedState.getStatus() == SharedStateStatus.PENDING) {
 			Log.trace(
 				LOG_TAG,
 				LOG_SOURCE,
