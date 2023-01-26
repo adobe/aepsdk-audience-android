@@ -17,7 +17,6 @@ import static com.adobe.marketing.mobile.audience.AudienceConstants.LOG_TAG;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
-import com.adobe.marketing.mobile.Audience;
 import com.adobe.marketing.mobile.Event;
 import com.adobe.marketing.mobile.EventSource;
 import com.adobe.marketing.mobile.EventType;
@@ -176,7 +175,7 @@ public final class AudienceExtension extends Extension {
 	@NonNull
 	@Override
 	protected String getVersion() {
-		return Audience.extensionVersion();
+		return com.adobe.marketing.mobile.Audience.extensionVersion();
 	}
 
 	@Override
