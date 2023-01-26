@@ -58,7 +58,7 @@ jobs:
           cache-prefix: << parameters.gradle-cache-prefix >>
       - android/restore-build-cache:
           cache-prefix: << parameters.build-cache-prefix >>
-   
+
       - run:
           name: Check Code Format
           command: make format-check
@@ -108,9 +108,9 @@ jobs:
           name: Build
           command: make ci-build
 
-      # - run:
-      #     name: Build App
-      #     command: make ci-build-app
+      - run:
+          name: Build App
+          command: make ci-build-app
 
       - android/run-tests:
           test-command: make ci-unit-test

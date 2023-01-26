@@ -17,7 +17,6 @@ import static com.adobe.marketing.mobile.audience.AudienceConstants.LOG_TAG;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
-import com.adobe.marketing.mobile.Audience;
 import com.adobe.marketing.mobile.Event;
 import com.adobe.marketing.mobile.EventSource;
 import com.adobe.marketing.mobile.EventType;
@@ -27,14 +26,15 @@ import com.adobe.marketing.mobile.MobilePrivacyStatus;
 import com.adobe.marketing.mobile.SharedStateResolution;
 import com.adobe.marketing.mobile.SharedStateResult;
 import com.adobe.marketing.mobile.SharedStateStatus;
-import com.adobe.marketing.mobile.VisitorID;
 import com.adobe.marketing.mobile.services.DataQueue;
+import com.adobe.marketing.mobile.services.DeviceInforming;
 import com.adobe.marketing.mobile.services.HttpMethod;
 import com.adobe.marketing.mobile.services.Log;
 import com.adobe.marketing.mobile.services.NetworkRequest;
 import com.adobe.marketing.mobile.services.PersistentHitQueue;
 import com.adobe.marketing.mobile.services.ServiceProvider;
 import com.adobe.marketing.mobile.util.DataReader;
+import com.adobe.marketing.mobile.util.MapUtils;
 import com.adobe.marketing.mobile.util.StringUtils;
 import com.adobe.marketing.mobile.util.URLBuilder;
 import com.adobe.marketing.mobile.util.UrlUtils;
@@ -80,6 +80,55 @@ public final class AudienceExtension extends Extension {
 	private final AudienceState internalState;
 	private final PersistentHitQueue hitQueue;
 
+	@VisibleForTesting
+	final AudienceNetworkResponseHandler networkResponseHandler;
+
+	private class NetworkResponseHandler implements AudienceNetworkResponseHandler {
+
+		private AudienceState state;
+
+		NetworkResponseHandler(final AudienceState state) {
+			this.state = state;
+		}
+
+		@Override
+		public void complete(final String responsePayload, final Event requestEvent) {
+			final String LOG_SOURCE = "AudienceNetworkResponseHandler";
+			if (requestEvent == null) {
+				Log.warning(LOG_TAG, LOG_SOURCE, "Unable to process network response, invalid request event.");
+				return;
+			}
+
+			if (requestEvent.getTimestamp() < state.getLastResetTimestampMillis()) {
+				Log.debug(
+					LOG_TAG,
+					LOG_SOURCE,
+					"Not dispatching Audience hit response since resetIdentities API was called after queuing this hit."
+				);
+				return;
+			}
+
+			Map<String, String> profile = new HashMap<>();
+
+			if (StringUtils.isNullOrEmpty(responsePayload)) {
+				Log.debug(LOG_TAG, LOG_SOURCE, "Null/empty response from server, nothing to process.");
+				dispatchAudienceResponseContent(profile, requestEvent);
+				return;
+			}
+
+			// process the response from the AAM server and share the shared state
+			profile = processResponse(responsePayload, requestEvent);
+
+			// if profile is empty, there was a json error in the response, don't dispatch a generic event
+			if (profile != null && !profile.isEmpty()) {
+				dispatchAudienceResponseContent(profile, null);
+			}
+
+			// dispatch paired event
+			dispatchAudienceResponseContent(profile, requestEvent);
+		}
+	}
+
 	AudienceExtension(final ExtensionApi extensionApi) {
 		this(extensionApi, null, null);
 	}
@@ -88,51 +137,16 @@ public final class AudienceExtension extends Extension {
 	AudienceExtension(
 		final ExtensionApi extensionApi,
 		final AudienceState audienceState,
-		final AudienceHitProcessor audienceHitProcessor
+		final PersistentHitQueue hitQueue
 	) {
 		super(extensionApi);
 		this.internalState = audienceState != null ? audienceState : new AudienceState();
-		final DataQueue dataQueue = ServiceProvider.getInstance().getDataQueueService().getDataQueue(getName());
-		if (audienceHitProcessor == null) {
-			final AudienceNetworkResponseHandler networkResponseHandler = (responsePayload, requestEvent) -> {
-				final String LOG_SOURCE = "AudienceNetworkResponseHandler";
-				if (requestEvent == null) {
-					Log.warning(LOG_TAG, LOG_SOURCE, "Unable to process network response, invalid request event.");
-					return;
-				}
-
-				if (requestEvent.getTimestamp() < internalState.getLastResetTimestampMillis()) {
-					Log.debug(
-						LOG_TAG,
-						LOG_SOURCE,
-						"Not dispatching Audience hit response since resetIdentities API was called after queuing this hit."
-					);
-					return;
-				}
-
-				Map<String, String> profile = new HashMap<>();
-
-				if (StringUtils.isNullOrEmpty(responsePayload)) {
-					Log.warning(LOG_TAG, LOG_SOURCE, "Null/empty response from server, nothing to process.");
-					shareStateForEvent(requestEvent);
-					dispatchAudienceResponseContent(profile, requestEvent);
-					return;
-				}
-
-				// process the response from the AAM server and share the shared state
-				profile = processResponse(responsePayload, requestEvent);
-
-				// if profile is empty, there was a json error in the response, don't dispatch a generic event
-				if (profile != null && !profile.isEmpty()) {
-					dispatchAudienceResponseContent(profile, null);
-				}
-
-				// dispatch paired event
-				dispatchAudienceResponseContent(profile, requestEvent);
-			};
+		networkResponseHandler = new NetworkResponseHandler(internalState);
+		if (hitQueue == null) {
+			final DataQueue dataQueue = ServiceProvider.getInstance().getDataQueueService().getDataQueue(getName());
 			this.hitQueue = new PersistentHitQueue(dataQueue, new AudienceHitProcessor(networkResponseHandler));
 		} else {
-			this.hitQueue = new PersistentHitQueue(dataQueue, audienceHitProcessor);
+			this.hitQueue = hitQueue;
 		}
 	}
 
@@ -168,7 +182,7 @@ public final class AudienceExtension extends Extension {
 	@NonNull
 	@Override
 	protected String getVersion() {
-		return Audience.extensionVersion();
+		return com.adobe.marketing.mobile.Audience.extensionVersion();
 	}
 
 	@Override
@@ -210,10 +224,6 @@ public final class AudienceExtension extends Extension {
 			AudienceConstants.EventDataKeys.Configuration.MODULE_NAME,
 			event
 		);
-		final SharedStateResult identitySharedState = getSharedStateForExtension(
-			AudienceConstants.EventDataKeys.Identity.MODULE_NAME,
-			event
-		);
 
 		// signal events require both config and identity shared states
 		if (
@@ -223,6 +233,10 @@ public final class AudienceExtension extends Extension {
 			) ||
 			(event.getType().equals(EventType.LIFECYCLE) && event.getSource().equals(EventSource.RESPONSE_CONTENT))
 		) {
+			final SharedStateResult identitySharedState = getSharedStateForExtension(
+				AudienceConstants.EventDataKeys.Identity.MODULE_NAME,
+				event
+			);
 			return (
 				configSharedState.getStatus() != SharedStateStatus.PENDING &&
 				identitySharedState.getStatus() != SharedStateStatus.PENDING
@@ -235,8 +249,8 @@ public final class AudienceExtension extends Extension {
 	//endregion
 
 	//region Event listeners
-
-	private void handleConfigurationResponse(@NonNull final Event event) {
+	@VisibleForTesting
+	void handleConfigurationResponse(@NonNull final Event event) {
 		// check privacy status. if not found, .UNKNOWN privacy status will be used
 		final Map<String, Object> eventData = event.getEventData();
 		final MobilePrivacyStatus privacyStatus = MobilePrivacyStatus.fromString(
@@ -252,13 +266,14 @@ public final class AudienceExtension extends Extension {
 	}
 
 	/**
-	 * Resets UUID, DPID, DPUUID, and the Audience Manager Visitor Profile from the {@code AudienceState} instance.
+	 * Resets UUID, and the Audience Manager Visitor Profile from the {@code AudienceState} instance.
 	 * <p>
 	 * This method also updates shared state for version provided by {@code event} param.
 	 *
 	 * @param event {@link Event} containing instruction to reset identities
 	 */
-	private void handleResetIdentities(@NonNull final Event event) {
+	@VisibleForTesting
+	void handleResetIdentities(@NonNull final Event event) {
 		Log.debug(LOG_TAG, LOG_SOURCE, "Resetting stored Audience Manager identities and visitor profile.");
 		if (EventType.GENERIC_IDENTITY.equals(event.getType())) {
 			hitQueue.clear();
@@ -299,7 +314,8 @@ public final class AudienceExtension extends Extension {
 	 *
 	 * @param event The event coming from the signalWithData API invocation
 	 */
-	private void handleAudienceRequestContent(@NonNull final Event event) {
+	@VisibleForTesting
+	void handleAudienceRequestContent(@NonNull final Event event) {
 		submitSignal(event);
 	}
 
@@ -308,7 +324,8 @@ public final class AudienceExtension extends Extension {
 	 *
 	 * @param event the event coming from the getVisitorProfile API invocation
 	 */
-	private void handleAudienceRequestIdentity(@NonNull final Event event) {
+	@VisibleForTesting
+	void handleAudienceRequestIdentity(@NonNull final Event event) {
 		final Map<String, Object> responseEventData = new HashMap<>();
 		responseEventData.put(
 			AudienceConstants.EventDataKeys.Audience.VISITOR_PROFILE,
@@ -334,9 +351,10 @@ public final class AudienceExtension extends Extension {
 	 *
 	 * @param event: The lifecycle response event
 	 */
+	@VisibleForTesting
 	void handleLifecycleResponse(@NonNull final Event event) {
 		// if aam forwarding is enabled, we don't need to send anything
-		if (!serverSideForwardingToAam(event)) {
+		if (serverSideForwardingToAam(event)) {
 			Log.trace(
 				LOG_TAG,
 				LOG_SOURCE,
@@ -346,7 +364,7 @@ public final class AudienceExtension extends Extension {
 		}
 
 		final Map<String, Object> eventData = event.getEventData();
-		if (eventData == null || eventData.isEmpty()) {
+		if (MapUtils.isNullOrEmpty(eventData)) {
 			Log.trace(LOG_TAG, LOG_SOURCE, "Ignoring Lifecycle response event with absent or empty event data.");
 			return;
 		}
@@ -406,7 +424,7 @@ public final class AudienceExtension extends Extension {
 			AudienceConstants.EventDataKeys.Configuration.MODULE_NAME,
 			event
 		);
-		if (configSharedState.getStatus() == SharedStateStatus.PENDING) {
+		if (configSharedState == null || configSharedState.getStatus() == SharedStateStatus.PENDING) {
 			Log.trace(
 				LOG_TAG,
 				LOG_SOURCE,
@@ -532,7 +550,7 @@ public final class AudienceExtension extends Extension {
 			DataReader.optString(
 				configData,
 				AudienceConstants.EventDataKeys.Configuration.GLOBAL_CONFIG_PRIVACY,
-				MobilePrivacyStatus.UNKNOWN.getValue()
+				AudienceConstants.DEFAULT_PRIVACY_STATUS.getValue()
 			)
 		);
 
@@ -720,7 +738,7 @@ public final class AudienceExtension extends Extension {
 	private HashMap<String, String> getLifecycleDataForAudience(final Map<String, String> lifecycleData) {
 		final HashMap<String, String> lifecycleContextData = new HashMap<>();
 
-		if (lifecycleData == null || lifecycleData.isEmpty()) {
+		if (MapUtils.isNullOrEmpty(lifecycleData)) {
 			return lifecycleContextData;
 		}
 
@@ -778,7 +796,7 @@ public final class AudienceExtension extends Extension {
 	 * @return {@link String} representing value of URL parameters
 	 */
 	private String getCustomUrlVariables(final Map<String, String> data) {
-		if (data == null || data.size() == 0) {
+		if (MapUtils.isNullOrEmpty(data)) {
 			Log.debug(LOG_TAG, LOG_SOURCE, "No data found converting customer data for URL parameters.");
 			return "";
 		}
@@ -863,8 +881,8 @@ public final class AudienceExtension extends Extension {
 			}
 
 			// append customer Ids
-			List<VisitorID> customerIds = DataReader.optTypedList(
-				VisitorID.class,
+			List<Map<String, Object>> customerIds = DataReader.optTypedListOfMap(
+				Object.class,
 				identitySharedState,
 				AudienceConstants.EventDataKeys.Identity.VISITOR_IDS_LIST,
 				null
@@ -904,7 +922,7 @@ public final class AudienceExtension extends Extension {
 	}
 
 	/**
-	 * Generates Customer VisitorID String.
+	 * Generates customer VisitorID string.
 	 * <p>
 	 * The format of customer VisitorID string is:
 	 * {@code &d_cid_ic=[customerIDType]%01[customerID]%01[authStateIntegerValue]}
@@ -912,26 +930,35 @@ public final class AudienceExtension extends Extension {
 	 * {@code &d_cid_ic=[customerIDType]%01[authStateIntegerValue]}
 	 * <p>
 	 * Example: If {@code VisitorID.idType} is "id_type1", {@code VisitorID#id} is "id1" and {@code VisitorID.authenticationState}
-	 * is {@link VisitorID.AuthenticationState#AUTHENTICATED} then generated customer id string
+	 * is {@code VisitorID.AuthenticationState#AUTHENTICATED} then generated customer id string
 	 * shall be {@literal &d_cid_ic=id_type1%01id1%011}
 	 *
-	 * @param customerIds list of all the customer provided {@code VisitorID} objects obtained from the Identity shared state
+	 * @param customerIds list of all the customer provided {@code VisitorID} as Map, obtained from the Identity shared state
 	 * @return {@link String} containing URL encoded value of all the customer ids in the predefined format.
 	 */
-	private String generateCustomerVisitorIdString(final List<VisitorID> customerIds) {
+	private String generateCustomerVisitorIdString(final List<Map<String, Object>> customerIds) {
 		if (customerIds == null) {
 			return null;
 		}
 
 		final StringBuilder customerIdString = new StringBuilder();
 
-		for (VisitorID visitorId : customerIds) {
+		for (Map<String, Object> visitorId : customerIds) {
 			if (visitorId != null) {
 				customerIdString.append(
-					serializeKeyValuePair(AudienceConstants.VISITOR_ID_PARAMETER_KEY_CUSTOMER, visitorId.getIdType())
+					serializeKeyValuePair(
+						AudienceConstants.VISITOR_ID_PARAMETER_KEY_CUSTOMER,
+						DataReader.optString(
+							visitorId,
+							AudienceConstants.EventDataKeys.Identity.VisitorID.ID_TYPE,
+							null
+						)
+					)
 				);
 
-				String urlEncodedId = UrlUtils.urlEncode(visitorId.getId());
+				String urlEncodedId = UrlUtils.urlEncode(
+					DataReader.optString(visitorId, AudienceConstants.EventDataKeys.Identity.VisitorID.ID, null)
+				);
 
 				if (!StringUtils.isNullOrEmpty(urlEncodedId)) {
 					customerIdString.append(AudienceConstants.VISITOR_ID_CID_DELIMITER);
@@ -939,7 +966,9 @@ public final class AudienceExtension extends Extension {
 				}
 
 				customerIdString.append(AudienceConstants.VISITOR_ID_CID_DELIMITER);
-				customerIdString.append(visitorId.getAuthenticationState().getValue());
+				customerIdString.append(
+					DataReader.optInt(visitorId, AudienceConstants.EventDataKeys.Identity.VisitorID.STATE, 0)
+				); // default authentication unknown
 			}
 		}
 
@@ -955,11 +984,16 @@ public final class AudienceExtension extends Extension {
 	 * @return {@link String} representing the URL suffix for AAM request
 	 */
 	private String getPlatformSuffix() {
-		final String canonicalPlatformName = ServiceProvider
-			.getInstance()
-			.getDeviceInfoService()
-			.getCanonicalPlatformName();
-		final String platform = !StringUtils.isNullOrEmpty(canonicalPlatformName) ? canonicalPlatformName : "java";
+		String platform = "java";
+		DeviceInforming deviceInfoService = ServiceProvider.getInstance().getDeviceInfoService();
+		if (deviceInfoService == null) {
+			return AudienceConstants.AUDIENCE_MANAGER_URL_PLATFORM_KEY + platform;
+		}
+
+		final String canonicalPlatformName = deviceInfoService.getCanonicalPlatformName();
+		if (!StringUtils.isNullOrEmpty(canonicalPlatformName)) {
+			platform = canonicalPlatformName;
+		}
 		return AudienceConstants.AUDIENCE_MANAGER_URL_PLATFORM_KEY + platform;
 	}
 
