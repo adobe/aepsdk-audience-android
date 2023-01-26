@@ -573,7 +573,8 @@ public class AudienceExtensionTests {
 	}
 
 	@Test
-	public void testHandleAudienceRequestContent_whenAudienceNotConfigured_doesNotDispatchResponse() {
+	public void testHandleAudienceRequestContent_whenAudienceNotConfigured_dispatchesResponseWithNullProfile()
+		throws DataReaderException {
 		mockConfigSharedState(new SharedStateResult(SharedStateStatus.SET, Collections.emptyMap()));
 
 		// setup
@@ -584,7 +585,14 @@ public class AudienceExtensionTests {
 
 		// verify
 		verifyNoInteractions(mockDataQueue);
-		verify(mockExtensionApi, never()).dispatch(any(Event.class));
+		ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+		verify(mockExtensionApi).dispatch(eventCaptor.capture());
+		assertNull(
+			DataReader.getStringMap(
+				eventCaptor.getValue().getEventData(),
+				AudienceConstants.EventDataKeys.Audience.VISITOR_PROFILE
+			)
+		);
 	}
 
 	@Test
@@ -603,7 +611,7 @@ public class AudienceExtensionTests {
 		audience.handleAudienceRequestContent(event);
 
 		// verify
-		verify(mockExtensionApi).dispatch(any(Event.class));
+		verify(mockExtensionApi, never()).dispatch(any(Event.class));
 		ArgumentCaptor<DataEntity> entityCaptor = ArgumentCaptor.forClass(DataEntity.class);
 		verify(mockDataQueue).add(entityCaptor.capture());
 		AudienceDataEntity audienceEntity = AudienceDataEntity.fromDataEntity(entityCaptor.getValue());
@@ -699,7 +707,7 @@ public class AudienceExtensionTests {
 		ArgumentCaptor<DataEntity> entityCaptor = ArgumentCaptor.forClass(DataEntity.class);
 		verify(mockDataQueue).add(entityCaptor.capture());
 		AudienceDataEntity audienceEntity = AudienceDataEntity.fromDataEntity(entityCaptor.getValue());
-		assertNull(audienceEntity);
+		assertNotNull(audienceEntity);
 		assertTrue(audienceEntity.getUrl().startsWith("https://server/event?"));
 		assertTrue(audienceEntity.getUrl().contains("d_ptfm=java"));
 	}
@@ -1257,7 +1265,7 @@ public class AudienceExtensionTests {
 	}
 
 	private Event getLifecycleEvent(final Map<String, Object> eventData) {
-		return new Event.Builder("TEST", EventType.LIFECYCLE, EventSource.REQUEST_CONTENT)
+		return new Event.Builder("TEST", EventType.LIFECYCLE, EventSource.RESPONSE_CONTENT)
 			.setEventData(eventData)
 			.build();
 	}

@@ -189,6 +189,16 @@ class AudienceConstants {
 			static final String VISITOR_IDS_LIST = "visitoridslist";
 			static final String ADVERTISING_IDENTIFIER = "advertisingidentifier";
 
+			static final class VisitorID {
+
+				static final String ID = "ID";
+				static final String ID_ORIGIN = "ID_ORIGIN";
+				static final String ID_TYPE = "ID_TYPE";
+				static final String STATE = "STATE";
+
+				private VisitorID() {}
+			}
+
 			private Identity() {}
 		}
 

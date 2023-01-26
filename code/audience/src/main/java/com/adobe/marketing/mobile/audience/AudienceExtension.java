@@ -27,7 +27,6 @@ import com.adobe.marketing.mobile.MobilePrivacyStatus;
 import com.adobe.marketing.mobile.SharedStateResolution;
 import com.adobe.marketing.mobile.SharedStateResult;
 import com.adobe.marketing.mobile.SharedStateStatus;
-import com.adobe.marketing.mobile.VisitorID;
 import com.adobe.marketing.mobile.services.DataQueue;
 import com.adobe.marketing.mobile.services.DeviceInforming;
 import com.adobe.marketing.mobile.services.HttpMethod;
@@ -876,8 +875,8 @@ public final class AudienceExtension extends Extension {
 			}
 
 			// append customer Ids
-			List<VisitorID> customerIds = DataReader.optTypedList(
-				VisitorID.class,
+			List<Map<String, Object>> customerIds = DataReader.optTypedListOfMap(
+				Object.class,
 				identitySharedState,
 				AudienceConstants.EventDataKeys.Identity.VISITOR_IDS_LIST,
 				null
@@ -917,7 +916,7 @@ public final class AudienceExtension extends Extension {
 	}
 
 	/**
-	 * Generates Customer VisitorID String.
+	 * Generates customer VisitorID string.
 	 * <p>
 	 * The format of customer VisitorID string is:
 	 * {@code &d_cid_ic=[customerIDType]%01[customerID]%01[authStateIntegerValue]}
@@ -925,26 +924,35 @@ public final class AudienceExtension extends Extension {
 	 * {@code &d_cid_ic=[customerIDType]%01[authStateIntegerValue]}
 	 * <p>
 	 * Example: If {@code VisitorID.idType} is "id_type1", {@code VisitorID#id} is "id1" and {@code VisitorID.authenticationState}
-	 * is {@link VisitorID.AuthenticationState#AUTHENTICATED} then generated customer id string
+	 * is {@code VisitorID.AuthenticationState#AUTHENTICATED} then generated customer id string
 	 * shall be {@literal &d_cid_ic=id_type1%01id1%011}
 	 *
-	 * @param customerIds list of all the customer provided {@code VisitorID} objects obtained from the Identity shared state
+	 * @param customerIds list of all the customer provided {@code VisitorID} as Map, obtained from the Identity shared state
 	 * @return {@link String} containing URL encoded value of all the customer ids in the predefined format.
 	 */
-	private String generateCustomerVisitorIdString(final List<VisitorID> customerIds) {
+	private String generateCustomerVisitorIdString(final List<Map<String, Object>> customerIds) {
 		if (customerIds == null) {
 			return null;
 		}
 
 		final StringBuilder customerIdString = new StringBuilder();
 
-		for (VisitorID visitorId : customerIds) {
+		for (Map<String, Object> visitorId : customerIds) {
 			if (visitorId != null) {
 				customerIdString.append(
-					serializeKeyValuePair(AudienceConstants.VISITOR_ID_PARAMETER_KEY_CUSTOMER, visitorId.getIdType())
+					serializeKeyValuePair(
+						AudienceConstants.VISITOR_ID_PARAMETER_KEY_CUSTOMER,
+						DataReader.optString(
+							visitorId,
+							AudienceConstants.EventDataKeys.Identity.VisitorID.ID_TYPE,
+							null
+						)
+					)
 				);
 
-				String urlEncodedId = UrlUtils.urlEncode(visitorId.getId());
+				String urlEncodedId = UrlUtils.urlEncode(
+					DataReader.optString(visitorId, AudienceConstants.EventDataKeys.Identity.VisitorID.ID, null)
+				);
 
 				if (!StringUtils.isNullOrEmpty(urlEncodedId)) {
 					customerIdString.append(AudienceConstants.VISITOR_ID_CID_DELIMITER);
@@ -952,7 +960,9 @@ public final class AudienceExtension extends Extension {
 				}
 
 				customerIdString.append(AudienceConstants.VISITOR_ID_CID_DELIMITER);
-				customerIdString.append(visitorId.getAuthenticationState().getValue());
+				customerIdString.append(
+					DataReader.optInt(visitorId, AudienceConstants.EventDataKeys.Identity.VisitorID.STATE, 0)
+				); // default authentication unknown
 			}
 		}
 
