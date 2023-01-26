@@ -111,7 +111,7 @@ public final class AudienceExtension extends Extension {
 			Map<String, String> profile = new HashMap<>();
 
 			if (StringUtils.isNullOrEmpty(responsePayload)) {
-				Log.warning(LOG_TAG, LOG_SOURCE, "Null/empty response from server, nothing to process.");
+				Log.debug(LOG_TAG, LOG_SOURCE, "Null/empty response from server, nothing to process.");
 				shareStateForEvent(requestEvent);
 				dispatchAudienceResponseContent(profile, requestEvent);
 				return;
@@ -131,16 +131,24 @@ public final class AudienceExtension extends Extension {
 	}
 
 	AudienceExtension(final ExtensionApi extensionApi) {
-		this(extensionApi, null);
+		this(extensionApi, null, null);
 	}
 
 	@VisibleForTesting
-	AudienceExtension(final ExtensionApi extensionApi, final AudienceState audienceState) {
+	AudienceExtension(
+		final ExtensionApi extensionApi,
+		final AudienceState audienceState,
+		final PersistentHitQueue hitQueue
+	) {
 		super(extensionApi);
 		this.internalState = audienceState != null ? audienceState : new AudienceState();
 		networkResponseHandler = new NetworkResponseHandler(internalState);
-		final DataQueue dataQueue = ServiceProvider.getInstance().getDataQueueService().getDataQueue(getName());
-		this.hitQueue = new PersistentHitQueue(dataQueue, new AudienceHitProcessor(networkResponseHandler));
+		if (hitQueue == null) {
+			final DataQueue dataQueue = ServiceProvider.getInstance().getDataQueueService().getDataQueue(getName());
+			this.hitQueue = new PersistentHitQueue(dataQueue, new AudienceHitProcessor(networkResponseHandler));
+		} else {
+			this.hitQueue = hitQueue;
+		}
 	}
 
 	//region Extension interface methods

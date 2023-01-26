@@ -33,13 +33,12 @@ import com.adobe.marketing.mobile.SharedStateResolution;
 import com.adobe.marketing.mobile.SharedStateResult;
 import com.adobe.marketing.mobile.SharedStateStatus;
 import com.adobe.marketing.mobile.services.DataEntity;
-import com.adobe.marketing.mobile.services.DataQueue;
-import com.adobe.marketing.mobile.services.DataQueuing;
 import com.adobe.marketing.mobile.services.DeviceInforming;
 import com.adobe.marketing.mobile.services.HttpMethod;
 import com.adobe.marketing.mobile.services.NetworkCallback;
 import com.adobe.marketing.mobile.services.NetworkRequest;
 import com.adobe.marketing.mobile.services.Networking;
+import com.adobe.marketing.mobile.services.PersistentHitQueue;
 import com.adobe.marketing.mobile.services.ServiceProvider;
 import com.adobe.marketing.mobile.util.DataReader;
 import com.adobe.marketing.mobile.util.DataReaderException;
@@ -73,10 +72,7 @@ public class AudienceExtensionTests {
 	private AudienceState mockState;
 
 	@Mock
-	private DataQueuing mockDataQueueService;
-
-	@Mock
-	private DataQueue mockDataQueue;
+	private PersistentHitQueue mockDataQueue;
 
 	@Mock
 	private Networking mockNetworkService;
@@ -92,11 +88,9 @@ public class AudienceExtensionTests {
 	@Before
 	public void setup() {
 		mockedStaticServiceProvider.when(ServiceProvider::getInstance).thenReturn(mockServiceProvider);
-		when(mockServiceProvider.getDataQueueService()).thenReturn(mockDataQueueService);
-		when(mockDataQueueService.getDataQueue("com.adobe.module.audience")).thenReturn(mockDataQueue);
 		when(mockServiceProvider.getNetworkService()).thenReturn(mockNetworkService);
 		when(mockServiceProvider.getDeviceInfoService()).thenReturn(mockDeviceInfoService);
-		audience = new AudienceExtension(mockExtensionApi, mockState);
+		audience = new AudienceExtension(mockExtensionApi, mockState, mockDataQueue);
 	}
 
 	@After
@@ -104,7 +98,6 @@ public class AudienceExtensionTests {
 		reset(mockExtensionApi);
 		reset(mockState);
 		reset(mockDataQueue);
-		reset(mockDataQueueService);
 		reset(mockNetworkService);
 		reset(mockDeviceInfoService);
 		mockedStaticServiceProvider.close();
@@ -422,7 +415,7 @@ public class AudienceExtensionTests {
 
 		//
 		verify(mockState).setMobilePrivacyStatus(eq(MobilePrivacyStatus.OPT_IN));
-		// todo: verify(mockDataQueue).handlePrivacyChange
+		verify(mockDataQueue).handlePrivacyChange(eq(MobilePrivacyStatus.OPT_IN));
 		verify(mockExtensionApi, never()).dispatch(any(Event.class));
 		verify(mockExtensionApi).createSharedState(any(), any(Event.class));
 	}
@@ -442,7 +435,7 @@ public class AudienceExtensionTests {
 
 		//
 		verify(mockState).setMobilePrivacyStatus(eq(MobilePrivacyStatus.UNKNOWN));
-		// todo: verify(mockDataQueue).handlePrivacyChange
+		verify(mockDataQueue).handlePrivacyChange(eq(MobilePrivacyStatus.UNKNOWN));
 		verify(mockExtensionApi, never()).dispatch(any(Event.class));
 		verify(mockExtensionApi).createSharedState(any(), any(Event.class));
 		verifyNoInteractions(mockNetworkService);
@@ -461,7 +454,7 @@ public class AudienceExtensionTests {
 
 		// verify
 		verify(mockState).setMobilePrivacyStatus(eq(MobilePrivacyStatus.OPT_OUT));
-		// todo: verify(mockDataQueue).handlePrivacyChange
+		verify(mockDataQueue).handlePrivacyChange(eq(MobilePrivacyStatus.OPT_OUT));
 		verifyNoInteractions(mockNetworkService);
 		verify(mockExtensionApi).createSharedState(any(), any(Event.class));
 		ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
@@ -485,7 +478,7 @@ public class AudienceExtensionTests {
 
 		// verify
 		verify(mockState).setMobilePrivacyStatus(eq(MobilePrivacyStatus.OPT_OUT));
-		// todo: verify(mockDataQueue).handlePrivacyChange
+		verify(mockDataQueue).handlePrivacyChange(eq(MobilePrivacyStatus.OPT_OUT));
 		ArgumentCaptor<NetworkRequest> networkRequestCaptor = ArgumentCaptor.forClass(NetworkRequest.class);
 		verify(mockNetworkService).connectAsync(networkRequestCaptor.capture(), notNull());
 		assertEquals("https://server.com/demoptout.jpg?d_uuid=testuuid", networkRequestCaptor.getValue().getUrl());
@@ -566,7 +559,7 @@ public class AudienceExtensionTests {
 
 		// verify
 		ArgumentCaptor<DataEntity> entityCaptor = ArgumentCaptor.forClass(DataEntity.class);
-		verify(mockDataQueue).add(entityCaptor.capture());
+		verify(mockDataQueue).queue(entityCaptor.capture());
 		AudienceDataEntity audienceEntity = AudienceDataEntity.fromDataEntity(entityCaptor.getValue());
 		assertTrue(audienceEntity.getUrl().startsWith("https://server/event?"));
 		assertTrue(audienceEntity.getUrl().contains("c_a_Launches=2&c_a_AppID=someAppID"));
@@ -613,7 +606,7 @@ public class AudienceExtensionTests {
 		// verify
 		verify(mockExtensionApi, never()).dispatch(any(Event.class));
 		ArgumentCaptor<DataEntity> entityCaptor = ArgumentCaptor.forClass(DataEntity.class);
-		verify(mockDataQueue).add(entityCaptor.capture());
+		verify(mockDataQueue).queue(entityCaptor.capture());
 		AudienceDataEntity audienceEntity = AudienceDataEntity.fromDataEntity(entityCaptor.getValue());
 		assertTrue(audienceEntity.getUrl().startsWith("https://server/event?"));
 		assertTrue(audienceEntity.getUrl().contains("d_orgid=testExperience@adobeorg"));
@@ -656,7 +649,7 @@ public class AudienceExtensionTests {
 		audience.handleAudienceRequestContent(event);
 
 		// verify
-		verify(mockDataQueue).add(any(DataEntity.class));
+		verify(mockDataQueue).queue(any(DataEntity.class));
 	}
 
 	@Test
@@ -705,7 +698,7 @@ public class AudienceExtensionTests {
 
 		// verify
 		ArgumentCaptor<DataEntity> entityCaptor = ArgumentCaptor.forClass(DataEntity.class);
-		verify(mockDataQueue).add(entityCaptor.capture());
+		verify(mockDataQueue).queue(entityCaptor.capture());
 		AudienceDataEntity audienceEntity = AudienceDataEntity.fromDataEntity(entityCaptor.getValue());
 		assertNotNull(audienceEntity);
 		assertTrue(audienceEntity.getUrl().startsWith("https://server/event?"));
@@ -735,7 +728,7 @@ public class AudienceExtensionTests {
 
 		// verify
 		ArgumentCaptor<DataEntity> entityCaptor = ArgumentCaptor.forClass(DataEntity.class);
-		verify(mockDataQueue).add(entityCaptor.capture());
+		verify(mockDataQueue).queue(entityCaptor.capture());
 		AudienceDataEntity audienceEntity = AudienceDataEntity.fromDataEntity(entityCaptor.getValue());
 		assertNotNull(audienceEntity);
 		assertTrue(audienceEntity.getUrl().startsWith("https://server/event?"));
@@ -787,7 +780,7 @@ public class AudienceExtensionTests {
 
 		// verify
 		ArgumentCaptor<DataEntity> entityCaptor = ArgumentCaptor.forClass(DataEntity.class);
-		verify(mockDataQueue).add(entityCaptor.capture());
+		verify(mockDataQueue).queue(entityCaptor.capture());
 		AudienceDataEntity audienceEntity = AudienceDataEntity.fromDataEntity(entityCaptor.getValue());
 		assertNotNull(audienceEntity);
 		assertTrue(audienceEntity.getUrl().startsWith("https://server/event?"));
@@ -833,7 +826,7 @@ public class AudienceExtensionTests {
 
 		// verify
 		ArgumentCaptor<DataEntity> entityCaptor = ArgumentCaptor.forClass(DataEntity.class);
-		verify(mockDataQueue).add(entityCaptor.capture());
+		verify(mockDataQueue).queue(entityCaptor.capture());
 		AudienceDataEntity audienceEntity = AudienceDataEntity.fromDataEntity(entityCaptor.getValue());
 		assertNotNull(audienceEntity);
 		assertTrue(audienceEntity.getUrl().startsWith("https://server/event?"));
@@ -864,7 +857,7 @@ public class AudienceExtensionTests {
 
 		// verify
 		ArgumentCaptor<DataEntity> entityCaptor = ArgumentCaptor.forClass(DataEntity.class);
-		verify(mockDataQueue).add(entityCaptor.capture());
+		verify(mockDataQueue).queue(entityCaptor.capture());
 		AudienceDataEntity audienceEntity = AudienceDataEntity.fromDataEntity(entityCaptor.getValue());
 		assertNotNull(audienceEntity);
 		assertTrue(audienceEntity.getUrl().startsWith("https://server/event?"));
@@ -893,7 +886,7 @@ public class AudienceExtensionTests {
 
 		// verify
 		ArgumentCaptor<DataEntity> entityCaptor = ArgumentCaptor.forClass(DataEntity.class);
-		verify(mockDataQueue).add(entityCaptor.capture());
+		verify(mockDataQueue).queue(entityCaptor.capture());
 		AudienceDataEntity audienceEntity = AudienceDataEntity.fromDataEntity(entityCaptor.getValue());
 		assertNotNull(audienceEntity);
 		assertTrue(audienceEntity.getUrl().contains("c_trait_key=trait.value"));
@@ -912,7 +905,7 @@ public class AudienceExtensionTests {
 
 		// verify
 		ArgumentCaptor<DataEntity> entityCaptor = ArgumentCaptor.forClass(DataEntity.class);
-		verify(mockDataQueue).add(entityCaptor.capture());
+		verify(mockDataQueue).queue(entityCaptor.capture());
 		AudienceDataEntity audienceEntity = AudienceDataEntity.fromDataEntity(entityCaptor.getValue());
 		assertNotNull(audienceEntity);
 		assertFalse(audienceEntity.getUrl().contains("c_=traitvalue"));
