@@ -349,7 +349,7 @@ public final class AudienceExtension extends Extension {
 	@VisibleForTesting
 	void handleLifecycleResponse(@NonNull final Event event) {
 		// if aam forwarding is enabled, we don't need to send anything
-		if (!serverSideForwardingToAam(event)) {
+		if (serverSideForwardingToAam(event)) {
 			Log.trace(
 				LOG_TAG,
 				LOG_SOURCE,

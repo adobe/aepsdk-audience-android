@@ -36,6 +36,7 @@ import com.adobe.marketing.mobile.services.DataQueue;
 import com.adobe.marketing.mobile.services.DataQueuing;
 import com.adobe.marketing.mobile.services.DeviceInforming;
 import com.adobe.marketing.mobile.services.HttpMethod;
+import com.adobe.marketing.mobile.services.NetworkCallback;
 import com.adobe.marketing.mobile.services.NetworkRequest;
 import com.adobe.marketing.mobile.services.Networking;
 import com.adobe.marketing.mobile.services.ServiceProvider;
@@ -109,36 +110,10 @@ public class AudienceExtensionTests {
 		reset(mockServiceProvider);
 	}
 
-	//
-	//	@Before
-	//	public void setup() throws MissingPlatformServicesException {
-	//		super.beforeEach();
-	//		// Mock Platform Services
-	//		mockNetworkService = platformServices.getMockNetworkService();
-	//		fakeJsonUtilityService = platformServices.getJsonUtilityService();
-	//		fakeLocalStorageService = platformServices.getLocalStorageService();
-	//		mockDispatcherAudienceResponseContent = new MockDispatcherAudienceResponseContentAudienceManager();
-	//		mockDispatcherAudienceResponseIdentity = new MockDispatcherAudienceResponseIdentityAudienceManager();
-	//		state = new AudienceState(fakeLocalStorageService);
-	//		state.setMobilePrivacyStatus(MobilePrivacyStatus.OPT_IN);
-	//		audience =
-	//			new TestableAudience(
-	//				eventHub,
-	//				platformServices,
-	//				mockDispatcherAudienceResponseContent,
-	//				mockDispatcherAudienceResponseIdentity,
-	//				state
-	//			);
-	//		mockAudienceRequestsDatabase = (MockAudienceRequestsDatabase) audience.internalDatabase;
-	//	}
-	//
-	//	// =================================================================================================================
-	//	// void bootup(final Event bootEvent)
-	//	// =================================================================================================================
 	@Test
 	public void testOnRegistered_sharesAudienceSharedState() {
 		// setup
-		final HashMap<String, String> visitorProfile = new HashMap<String, String>();
+		final HashMap<String, String> visitorProfile = new HashMap<>();
 		visitorProfile.put("someKey", "someValue");
 		when(mockState.getUuid()).thenReturn("mock-uuid");
 		when(mockState.getVisitorProfile()).thenReturn(visitorProfile);
@@ -532,154 +507,40 @@ public class AudienceExtensionTests {
 	//		assertEquals("submit signal should not be called", 0, mockAudienceExtension.submitSignalCallCount);
 	//	}
 	//
-	//	@Test
-	//	public void testProcessQueuedEvents_when_aamForwarding_then_shouldNotProcessLifecycleEvents() throws Exception {
-	//		// setup
-	//		final MockAudienceExtension mockAudienceExtension = new MockAudienceExtension(eventHub, platformServices);
-	//		final Event aamEvent1 = getSubmitSignalEvent(getFakeAamTraitsEventData(), null);
-	//		final Event aamEvent2 = getSubmitSignalEvent(getFakeAamTraitsEventData(), null);
-	//		final Event lifecycleEvent = getLifecycleEvent(getFakeLifecycleEventData(), null);
-	//		mockAudienceExtension.waitingEvents.add(aamEvent1);
-	//		mockAudienceExtension.waitingEvents.add(aamEvent2);
-	//		mockAudienceExtension.waitingEvents.add(lifecycleEvent);
-	//		final EventData fakeConfigData = getFakeConfigEventData();
-	//		fakeConfigData.putBoolean(
-	//			AudienceTestConstants.EventDataKeys.Configuration.ANALYTICS_CONFIG_AAMFORWARDING,
-	//			true
-	//		);
-	//		eventHub.setSharedState(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME, fakeConfigData);
-	//
-	//		// test
-	//		mockAudienceExtension.processQueuedEvents();
-	//
-	//		// verify
-	//		assertEquals("waiting events queue should be empty", 0, mockAudienceExtension.waitingEvents.size());
-	//		assertEquals("submit signal should be called twice", 2, mockAudienceExtension.submitSignalCallCount);
-	//	}
-	//
-	//	// =================================================================================================================
-	//	// protected HashMap<String, String> processResponse(final String response, final Event event)
-	//	// =================================================================================================================
-	//	@Test
-	//	public void testProcessResponse_when_happy_then_responseIsProperlyProcessed() throws Exception {
-	//		// setup
-	//		final Event testEvent = getSubmitSignalEvent(getFakeAamTraitsEventData(), null);
-	//		final String jsonResponse =
-	//			"{" +
-	//			"'uuid':'12345', " +
-	//			"'stuff':[{'cn':'cookieName', 'cv':'key1=value1'}], " +
-	//			"'dests':[{'c':'https://www.adobe.com'}]}";
-	//		eventHub.setSharedState(
-	//			AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME,
-	//			getFakeConfigEventData()
-	//		);
-	//
-	//		// test
-	//		audience.processResponse(jsonResponse, testEvent);
-	//
-	//		// verify
-	//		assertEquals("uuid should be set in state", "12345", audience.internalState.getUuid());
-	//		final HashMap<String, String> profile = (HashMap<String, String>) audience.internalState.getVisitorProfile();
-	//		assertNotNull("visitor profile should be set in state", profile);
-	//		assertEquals("visitor profile should have the correct value", "key1=value1", profile.get("cookieName"));
-	//		assertTrue(
-	//			"the dest was properly forwarded",
-	//			platformServices.getMockNetworkService().connectUrlAsyncWasCalled
-	//		);
-	//	}
-	//
-	//	@Test
-	//	public void testProcessResponse_when_nullResponse_then_doNothing() throws Exception {
-	//		// setup
-	//		final Event testEvent = getSubmitSignalEvent(getFakeAamTraitsEventData(), null);
-	//		final String jsonResponse = null;
-	//		eventHub.setSharedState(
-	//			AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME,
-	//			getFakeConfigEventData()
-	//		);
-	//
-	//		// test
-	//		audience.processResponse(jsonResponse, testEvent);
-	//
-	//		// verify
-	//		assertNull("uuid should be null in state", audience.internalState.getUuid());
-	//		assertNull("visitor profile should be null in state", audience.internalState.getVisitorProfile());
-	//
-	//		final EventData sharedAamData = audience.getSharedAAMStateFromEventHub(testEvent);
-	//		assertNull("shared data object should be null for this event", sharedAamData);
-	//	}
-	//
-	//	@Test
-	//	public void testProcessResponse_when_emptyResponse_then_doNothing() throws Exception {
-	//		// setup
-	//		final Event testEvent = getSubmitSignalEvent(getFakeAamTraitsEventData(), null);
-	//		final String jsonResponse = "";
-	//		eventHub.setSharedState(
-	//			AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME,
-	//			getFakeConfigEventData()
-	//		);
-	//
-	//		// test
-	//		audience.processResponse(jsonResponse, testEvent);
-	//
-	//		// verify
-	//		assertNull("uuid should be null in state", audience.internalState.getUuid());
-	//		assertNull("visitor profile should be null in state", audience.internalState.getVisitorProfile());
-	//
-	//		final EventData sharedAamData = audience.getSharedAAMStateFromEventHub(testEvent);
-	//		assertNull("shared data object should be null for this event", sharedAamData);
-	//	}
-	//
-	//	@Test
-	//	public void testProcessResponse_when_noConfiguration_then_doNothing() throws Exception {
-	//		// setup
-	//		final Event testEvent = getSubmitSignalEvent(getFakeAamTraitsEventData(), null);
-	//		final String jsonResponse =
-	//			"{" +
-	//			"'uuid':'12345', " +
-	//			"'stuff':[{'cn':'cookieName', 'cv':'key1=value1'}], " +
-	//			"'dests':[{'c':'https://www.adobe.com'}]}";
-	//		eventHub.setSharedState(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME, null);
-	//
-	//		// test
-	//		audience.processResponse(jsonResponse, testEvent);
-	//
-	//		// verify
-	//		assertNull("uuid should be null in state", audience.internalState.getUuid());
-	//		assertNull("visitor profile should be null in state", audience.internalState.getVisitorProfile());
-	//
-	//		final EventData sharedAamData = audience.getSharedAAMStateFromEventHub(testEvent);
-	//		assertNull("shared data object should be null for this event", sharedAamData);
-	//	}
-	//
-	//	@Test
-	//	public void testProcessResponse_when_malFormedJSON_doNothing() throws Exception {
-	//		// setup
-	//		final Event testEvent = getSubmitSignalEvent(getFakeAamTraitsEventData(), null);
-	//		final String jsonResponse =
-	//			"{" +
-	//			"'uuid':'12345', " +
-	//			"'stuff':{'cn':'cookieName', 'cv':'key1=value1'}], " +
-	//			"'dests':[{'c':'https://www.adobe.com']";
-	//		eventHub.setSharedState(
-	//			AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME,
-	//			getFakeConfigEventData()
-	//		);
-	//
-	//		// test
-	//		audience.processResponse(jsonResponse, testEvent);
-	//
-	//		// verify
-	//		assertNull("uuid should be null in state", audience.internalState.getUuid());
-	//		assertNull("visitor profile should be null in state", audience.internalState.getVisitorProfile());
-	//
-	//		final EventData sharedAamData = audience.getSharedAAMStateFromEventHub(testEvent);
-	//		assertNull("shared data object should be null for this event", sharedAamData);
-	//	}
-	//
-	// =================================================================================================================
-	// protected void submitSignal(final Event event) // handleAudienceRequestContent
-	// =================================================================================================================
+	@Test
+	public void testHandleLifecycleResponse_whenAamForwardingEnabled_shouldIgnoreLifecycleEvent() {
+		// setup
+		final Event lifecycleEvent = getLifecycleEvent(getFakeLifecycleEventData());
+		final Map<String, Object> fakeConfigData = getFakeConfigEventData();
+		fakeConfigData.put(AudienceTestConstants.EventDataKeys.Configuration.ANALYTICS_CONFIG_AAMFORWARDING, true);
+		mockConfigSharedState(new SharedStateResult(SharedStateStatus.SET, fakeConfigData));
+
+		// test
+		audience.handleLifecycleResponse(lifecycleEvent);
+
+		// verify
+		verifyNoInteractions(mockDataQueue);
+	}
+
+	@Test
+	public void testHandleLifecycleResponse_whenAamForwardingDisabled_shouldProcessLifecycleEvent() {
+		// setup
+		final Event lifecycleEvent = getLifecycleEvent(getFakeLifecycleEventData());
+		final Map<String, Object> fakeConfigData = getFakeConfigEventData();
+		fakeConfigData.put(AudienceTestConstants.EventDataKeys.Configuration.ANALYTICS_CONFIG_AAMFORWARDING, false);
+		mockConfigSharedState(new SharedStateResult(SharedStateStatus.SET, fakeConfigData));
+
+		// test
+		audience.handleLifecycleResponse(lifecycleEvent);
+
+		// verify
+		ArgumentCaptor<DataEntity> entityCaptor = ArgumentCaptor.forClass(DataEntity.class);
+		verify(mockDataQueue).add(entityCaptor.capture());
+		AudienceDataEntity audienceEntity = AudienceDataEntity.fromDataEntity(entityCaptor.getValue());
+		assertTrue(audienceEntity.getUrl().startsWith("https://server/event?"));
+		assertTrue(audienceEntity.getUrl().contains("c_a_Launches=2&c_a_AppID=someAppID"));
+	}
+
 	@Test
 	public void testHandleAudienceRequestContent_whenAudienceNotConfigured_doesNotDispatchResponse() {
 		mockConfigSharedState(new SharedStateResult(SharedStateStatus.SET, Collections.emptyMap()));
@@ -807,6 +668,7 @@ public class AudienceExtensionTests {
 		ArgumentCaptor<DataEntity> entityCaptor = ArgumentCaptor.forClass(DataEntity.class);
 		verify(mockDataQueue).add(entityCaptor.capture());
 		AudienceDataEntity audienceEntity = AudienceDataEntity.fromDataEntity(entityCaptor.getValue());
+		assertNull(audienceEntity);
 		assertTrue(audienceEntity.getUrl().startsWith("https://server/event?"));
 		assertTrue(audienceEntity.getUrl().contains("d_ptfm=java"));
 	}
@@ -1166,6 +1028,112 @@ public class AudienceExtensionTests {
 		verify(mockNetworkService).connectAsync(networkRequestCaptor.capture(), notNull());
 		assertEquals("desturl", networkRequestCaptor.getValue().getUrl());
 		assertEquals(HttpMethod.GET, networkRequestCaptor.getValue().getMethod());
+	}
+
+	// =================================================================================================================
+	// protected HashMap<String, String> processResponse(final String response, final Event event)
+	// =================================================================================================================
+	@Test
+	public void testNetworkResponseHandler_whenAllParams_responseIsProperlyProcessed() {
+		// setup
+		final Event testEvent = getSubmitSignalEvent(getFakeAamTraitsEventData());
+		final String jsonResponse =
+			"{" +
+			"'uuid':'12345', " +
+			"'stuff':[{'cn':'cookieName', 'cv':'key1=value1'}], " +
+			"'dests':[{'c':'https://www.adobe.com'}]}";
+		mockConfigSharedState(new SharedStateResult(SharedStateStatus.SET, getFakeConfigEventData()));
+
+		// test
+		audience.networkResponseHandler.complete(jsonResponse, testEvent);
+
+		// verify
+		verify(mockState).setUuid(eq("12345"));
+		ArgumentCaptor<Map<String, String>> visitorProfileCaptor = ArgumentCaptor.forClass(Map.class);
+		verify(mockState).setVisitorProfile(visitorProfileCaptor.capture());
+		assertEquals(1, visitorProfileCaptor.getValue().size());
+		assertEquals("key1=value1", visitorProfileCaptor.getValue().get("cookieName"));
+		verify(mockNetworkService).connectAsync(any(NetworkRequest.class), any(NetworkCallback.class)); // the dest was properly forwarded
+	}
+
+	@Test
+	public void testNetworkResponseHandler_whenNullResponse_ignoresResponse() {
+		// setup
+		final Event testEvent = getSubmitSignalEvent(getFakeAamTraitsEventData());
+		final String jsonResponse = null;
+		mockConfigSharedState(new SharedStateResult(SharedStateStatus.SET, getFakeConfigEventData()));
+
+		// test
+		audience.networkResponseHandler.complete(jsonResponse, testEvent);
+
+		// verify
+		verify(mockState, never()).setUuid(any(String.class));
+		verify(mockState, never()).setVisitorProfile(any());
+		verifyNoInteractions(mockNetworkService);
+		verify(mockExtensionApi, never()).createSharedState(any(), any(Event.class));
+		// todo: shared state still gets updated for null responses?
+	}
+
+	@Test
+	public void testNetworkResponseHandler_whenEmptyResponse_ignoresResponse() {
+		// setup
+		final Event testEvent = getSubmitSignalEvent(getFakeAamTraitsEventData());
+		final String jsonResponse = "";
+		mockConfigSharedState(new SharedStateResult(SharedStateStatus.SET, getFakeConfigEventData()));
+
+		// test
+		audience.networkResponseHandler.complete(jsonResponse, testEvent);
+
+		// verify
+		verify(mockState, never()).setUuid(any(String.class));
+		verify(mockState, never()).setVisitorProfile(any());
+		verifyNoInteractions(mockNetworkService);
+		verify(mockExtensionApi, never()).createSharedState(any(), any(Event.class));
+		// todo: shared state still gets updated for "" responses?
+	}
+
+	@Test
+	public void testNetworkResponseHandler_whenNoConfiguration_doesNothing() {
+		// setup
+		final Event testEvent = getSubmitSignalEvent(getFakeAamTraitsEventData());
+		final String jsonResponse =
+			"{" +
+			"'uuid':'12345', " +
+			"'stuff':[{'cn':'cookieName', 'cv':'key1=value1'}], " +
+			"'dests':[{'c':'https://www.adobe.com'}]}";
+		mockConfigSharedState(new SharedStateResult(SharedStateStatus.PENDING, null));
+
+		// test
+		audience.networkResponseHandler.complete(jsonResponse, testEvent);
+
+		// verify
+		verify(mockState, never()).setUuid(any(String.class));
+		verify(mockState, never()).setVisitorProfile(any());
+		verifyNoInteractions(mockNetworkService);
+		verify(mockExtensionApi, never()).createSharedState(any(), any(Event.class));
+		verify(mockExtensionApi).dispatch(any(Event.class)); // dispatches response content
+	}
+
+	@Test
+	public void testNetworkResponseHandler_whenMalformedJSON_doesNothing() {
+		// setup
+		final Event testEvent = getSubmitSignalEvent(getFakeAamTraitsEventData());
+		final String jsonResponse =
+			"{" +
+			"'uuid':'12345', " +
+			"'stuff':{'cn':'cookieName', 'cv':'key1=value1'}], " +
+			"'dests':[{'c':'https://www.adobe.com']";
+		mockConfigSharedState(new SharedStateResult(SharedStateStatus.SET, getFakeConfigEventData()));
+
+		// test
+		audience.networkResponseHandler.complete(jsonResponse, testEvent);
+
+		// verify
+		verify(mockState, never()).setUuid(any(String.class));
+		verify(mockState, never()).setVisitorProfile(any());
+		verifyNoInteractions(mockNetworkService);
+		verify(mockExtensionApi, never()).createSharedState(any(), any(Event.class));
+		verify(mockExtensionApi).dispatch(any(Event.class)); // dispatches response content with empty data
 	}
 
 	private Map<String, Object> getFakeAamTraitsEventData() {
