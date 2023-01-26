@@ -112,7 +112,6 @@ public final class AudienceExtension extends Extension {
 
 			if (StringUtils.isNullOrEmpty(responsePayload)) {
 				Log.debug(LOG_TAG, LOG_SOURCE, "Null/empty response from server, nothing to process.");
-				shareStateForEvent(requestEvent);
 				dispatchAudienceResponseContent(profile, requestEvent);
 				return;
 			}

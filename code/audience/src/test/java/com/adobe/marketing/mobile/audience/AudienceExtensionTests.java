@@ -250,6 +250,12 @@ public class AudienceExtensionTests {
 			)
 		);
 
+		assertTrue(
+			audience.readyForEvent(
+				new Event.Builder("test5", EventType.CONFIGURATION, EventSource.RESPONSE_CONTENT).build()
+			)
+		);
+
 		verify(mockExtensionApi, never())
 			.getSharedState(
 				eq(AudienceTestConstants.EventDataKeys.Identity.MODULE_NAME),
@@ -281,6 +287,12 @@ public class AudienceExtensionTests {
 		assertFalse(
 			audience.readyForEvent(
 				new Event.Builder("test4", EventType.ANALYTICS, EventSource.RESPONSE_CONTENT).build()
+			)
+		);
+
+		assertFalse(
+			audience.readyForEvent(
+				new Event.Builder("test5", EventType.CONFIGURATION, EventSource.RESPONSE_CONTENT).build()
 			)
 		);
 
@@ -1103,7 +1115,6 @@ public class AudienceExtensionTests {
 		verify(mockState, never()).setVisitorProfile(any());
 		verifyNoInteractions(mockNetworkService);
 		verify(mockExtensionApi, never()).createSharedState(any(), any(Event.class));
-		// todo: shared state still gets updated for null responses?
 	}
 
 	@Test
@@ -1121,7 +1132,6 @@ public class AudienceExtensionTests {
 		verify(mockState, never()).setVisitorProfile(any());
 		verifyNoInteractions(mockNetworkService);
 		verify(mockExtensionApi, never()).createSharedState(any(), any(Event.class));
-		// todo: shared state still gets updated for "" responses?
 	}
 
 	@Test
