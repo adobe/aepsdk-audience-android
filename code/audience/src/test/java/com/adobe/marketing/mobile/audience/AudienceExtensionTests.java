@@ -29,6 +29,7 @@ import com.adobe.marketing.mobile.EventType;
 import com.adobe.marketing.mobile.ExtensionApi;
 import com.adobe.marketing.mobile.ExtensionEventListener;
 import com.adobe.marketing.mobile.MobilePrivacyStatus;
+import com.adobe.marketing.mobile.SharedStateResolution;
 import com.adobe.marketing.mobile.SharedStateResult;
 import com.adobe.marketing.mobile.SharedStateStatus;
 import com.adobe.marketing.mobile.services.DataEntity;
@@ -197,6 +198,106 @@ public class AudienceExtensionTests {
 	@Test
 	public void testGetVersion_notNull() {
 		assertNotNull(audience.getVersion());
+	}
+
+	@Test
+	public void testReadyForEvent_whenAudienceRequestOrLifecycle_whenConfigIdentitySet_returnsTrue() {
+		mockConfigSharedState(new SharedStateResult(SharedStateStatus.SET, getFakeConfigEventData()));
+		mockIdentitySharedState(new SharedStateResult(SharedStateStatus.SET, getFakeIdentityEventData()));
+		assertTrue(audience.readyForEvent(getSubmitSignalEvent(getFakeAamTraitsEventData())));
+		assertTrue(audience.readyForEvent(getLifecycleEvent(getFakeLifecycleEventData())));
+	}
+
+	@Test
+	public void testReadyForEvent_whenAudienceRequestOrLifecycle_whenConfigSetIdentityPending_returnsFalse() {
+		mockConfigSharedState(new SharedStateResult(SharedStateStatus.SET, getFakeConfigEventData()));
+		mockIdentitySharedState(new SharedStateResult(SharedStateStatus.PENDING, null));
+		assertFalse(audience.readyForEvent(getSubmitSignalEvent(getFakeAamTraitsEventData())));
+		assertFalse(audience.readyForEvent(getLifecycleEvent(getFakeLifecycleEventData())));
+	}
+
+	@Test
+	public void testReadyForEvent_whenAudienceRequestOrLifecycle_whenConfigPendingIdentitySet_returnsFalse() {
+		mockConfigSharedState(new SharedStateResult(SharedStateStatus.PENDING, null));
+		mockIdentitySharedState(new SharedStateResult(SharedStateStatus.SET, getFakeIdentityEventData()));
+		assertFalse(audience.readyForEvent(getSubmitSignalEvent(getFakeAamTraitsEventData())));
+		assertFalse(audience.readyForEvent(getLifecycleEvent(getFakeLifecycleEventData())));
+	}
+
+	@Test
+	public void testReadyForEvent_whenAudienceRequestOrLifecycle_whenConfigPendingIdentityPending_returnsFalse() {
+		mockConfigSharedState(new SharedStateResult(SharedStateStatus.PENDING, null));
+		mockIdentitySharedState(new SharedStateResult(SharedStateStatus.PENDING, null));
+		assertFalse(audience.readyForEvent(getSubmitSignalEvent(getFakeAamTraitsEventData())));
+		assertFalse(audience.readyForEvent(getLifecycleEvent(getFakeLifecycleEventData())));
+	}
+
+	@Test
+	public void testReadyForEvent_whenAnyOtherEvent_whenConfigSet_returnsTrue() {
+		mockConfigSharedState(new SharedStateResult(SharedStateStatus.SET, getFakeConfigEventData()));
+
+		assertTrue(
+			audience.readyForEvent(
+				new Event.Builder("test1", EventType.AUDIENCEMANAGER, EventSource.REQUEST_IDENTITY).build()
+			)
+		);
+		assertTrue(
+			audience.readyForEvent(
+				new Event.Builder("test2", EventType.AUDIENCEMANAGER, EventSource.REQUEST_RESET).build()
+			)
+		);
+		assertTrue(
+			audience.readyForEvent(
+				new Event.Builder("test3", EventType.GENERIC_IDENTITY, EventSource.REQUEST_RESET).build()
+			)
+		);
+		assertTrue(
+			audience.readyForEvent(
+				new Event.Builder("test4", EventType.ANALYTICS, EventSource.RESPONSE_CONTENT).build()
+			)
+		);
+
+		verify(mockExtensionApi, never())
+			.getSharedState(
+				eq(AudienceTestConstants.EventDataKeys.Identity.MODULE_NAME),
+				any(Event.class),
+				eq(false),
+				any(SharedStateResolution.class)
+			);
+	}
+
+	@Test
+	public void testReadyForEvent_whenAnyOtherEvent_whenConfigPending_returnsFalse() {
+		mockConfigSharedState(new SharedStateResult(SharedStateStatus.PENDING, null));
+
+		assertFalse(
+			audience.readyForEvent(
+				new Event.Builder("test1", EventType.AUDIENCEMANAGER, EventSource.REQUEST_IDENTITY).build()
+			)
+		);
+		assertFalse(
+			audience.readyForEvent(
+				new Event.Builder("test2", EventType.AUDIENCEMANAGER, EventSource.REQUEST_RESET).build()
+			)
+		);
+		assertFalse(
+			audience.readyForEvent(
+				new Event.Builder("test3", EventType.GENERIC_IDENTITY, EventSource.REQUEST_RESET).build()
+			)
+		);
+		assertFalse(
+			audience.readyForEvent(
+				new Event.Builder("test4", EventType.ANALYTICS, EventSource.RESPONSE_CONTENT).build()
+			)
+		);
+
+		verify(mockExtensionApi, never())
+			.getSharedState(
+				eq(AudienceTestConstants.EventDataKeys.Identity.MODULE_NAME),
+				any(Event.class),
+				eq(false),
+				any(SharedStateResolution.class)
+			);
 	}
 
 	@Test
@@ -437,76 +538,6 @@ public class AudienceExtensionTests {
 		assertOptOutEvent(eventCaptor.getValue(), false);
 	}
 
-	//	// =================================================================================================================
-	//	// protected void processQueuedEvents()
-	//	// =================================================================================================================
-	//	@Test
-	//	public void testProcessQueuedEvents_when_happy_then_shouldLoopThroughAndSubmitSignalForAllWaitingEvents()
-	//		throws Exception {
-	//		// setup
-	//		final MockAudienceExtension mockAudienceExtension = new MockAudienceExtension(eventHub, platformServices);
-	//		final Event aamEvent1 = getSubmitSignalEvent(getFakeAamTraitsEventData(), null);
-	//		final Event aamEvent2 = getSubmitSignalEvent(getFakeAamTraitsEventData(), null);
-	//		final Event lifecycleEvent = getLifecycleEvent(getFakeLifecycleEventData(), null);
-	//		mockAudienceExtension.waitingEvents.add(aamEvent1);
-	//		mockAudienceExtension.waitingEvents.add(aamEvent2);
-	//		mockAudienceExtension.waitingEvents.add(lifecycleEvent);
-	//		eventHub.setSharedState(
-	//			AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME,
-	//			getFakeConfigEventData()
-	//		);
-	//
-	//		// test
-	//		mockAudienceExtension.processQueuedEvents();
-	//
-	//		// verify
-	//		assertEquals("waiting events queue should be empty", 0, mockAudienceExtension.waitingEvents.size());
-	//		assertEquals("submit signal was called for all 3 events", 3, mockAudienceExtension.submitSignalCallCount);
-	//	}
-	//
-	//	@Test
-	//	public void testProcessQueuedEvents_when_noConfiguration_then_shouldNotProcessEvents() throws Exception {
-	//		// setup
-	//		final MockAudienceExtension mockAudienceExtension = new MockAudienceExtension(eventHub, platformServices);
-	//		final Event aamEvent1 = getSubmitSignalEvent(getFakeAamTraitsEventData(), null);
-	//		final Event aamEvent2 = getSubmitSignalEvent(getFakeAamTraitsEventData(), null);
-	//		final Event lifecycleEvent = getLifecycleEvent(getFakeLifecycleEventData(), null);
-	//		mockAudienceExtension.waitingEvents.add(aamEvent1);
-	//		mockAudienceExtension.waitingEvents.add(aamEvent2);
-	//		mockAudienceExtension.waitingEvents.add(lifecycleEvent);
-	//		eventHub.setSharedState(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME, null);
-	//
-	//		// test
-	//		mockAudienceExtension.processQueuedEvents();
-	//
-	//		// verify
-	//		assertEquals("waiting events queue should be unchanged", 3, mockAudienceExtension.waitingEvents.size());
-	//		assertEquals("submit signal should not be called", 0, mockAudienceExtension.submitSignalCallCount);
-	//	}
-	//
-	//	@Test
-	//	public void testProcessQueuedEvents_when_configurationHasNoAamServer_then_shouldNotProcessEvents()
-	//		throws Exception {
-	//		// setup
-	//		final MockAudienceExtension mockAudienceExtension = new MockAudienceExtension(eventHub, platformServices);
-	//		final Event aamEvent1 = getSubmitSignalEvent(getFakeAamTraitsEventData(), null);
-	//		final Event aamEvent2 = getSubmitSignalEvent(getFakeAamTraitsEventData(), null);
-	//		final Event lifecycleEvent = getLifecycleEvent(getFakeLifecycleEventData(), null);
-	//		mockAudienceExtension.waitingEvents.add(aamEvent1);
-	//		mockAudienceExtension.waitingEvents.add(aamEvent2);
-	//		mockAudienceExtension.waitingEvents.add(lifecycleEvent);
-	//		final EventData config = getFakeConfigEventData();
-	//		config.putString(AudienceTestConstants.EventDataKeys.Configuration.AAM_CONFIG_SERVER, "");
-	//		eventHub.setSharedState(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME, config);
-	//
-	//		// test
-	//		mockAudienceExtension.processQueuedEvents();
-	//
-	//		// verify
-	//		assertEquals("waiting events queue should be unchanged", 3, mockAudienceExtension.waitingEvents.size());
-	//		assertEquals("submit signal should not be called", 0, mockAudienceExtension.submitSignalCallCount);
-	//	}
-	//
 	@Test
 	public void testHandleLifecycleResponse_whenAamForwardingEnabled_shouldIgnoreLifecycleEvent() {
 		// setup
@@ -1300,6 +1331,18 @@ public class AudienceExtensionTests {
 		when(
 			mockExtensionApi.getSharedState(
 				eq(AudienceTestConstants.EventDataKeys.Configuration.MODULE_NAME),
+				any(Event.class),
+				eq(false),
+				any()
+			)
+		)
+			.thenReturn(sharedStateResult);
+	}
+
+	private void mockIdentitySharedState(final SharedStateResult sharedStateResult) {
+		when(
+			mockExtensionApi.getSharedState(
+				eq(AudienceTestConstants.EventDataKeys.Identity.MODULE_NAME),
 				any(Event.class),
 				eq(false),
 				any()

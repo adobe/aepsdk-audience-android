@@ -219,10 +219,6 @@ public final class AudienceExtension extends Extension {
 			AudienceConstants.EventDataKeys.Configuration.MODULE_NAME,
 			event
 		);
-		final SharedStateResult identitySharedState = getSharedStateForExtension(
-			AudienceConstants.EventDataKeys.Identity.MODULE_NAME,
-			event
-		);
 
 		// signal events require both config and identity shared states
 		if (
@@ -232,6 +228,10 @@ public final class AudienceExtension extends Extension {
 			) ||
 			(event.getType().equals(EventType.LIFECYCLE) && event.getSource().equals(EventSource.RESPONSE_CONTENT))
 		) {
+			final SharedStateResult identitySharedState = getSharedStateForExtension(
+				AudienceConstants.EventDataKeys.Identity.MODULE_NAME,
+				event
+			);
 			return (
 				configSharedState.getStatus() != SharedStateStatus.PENDING &&
 				identitySharedState.getStatus() != SharedStateStatus.PENDING
