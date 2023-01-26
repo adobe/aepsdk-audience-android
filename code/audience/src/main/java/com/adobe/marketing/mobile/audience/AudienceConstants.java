@@ -63,6 +63,9 @@ class AudienceConstants {
 	static final String AUDIENCE_MANAGER_OPT_OUT_URL_BASE = "https://%s/demoptout.jpg?";
 	static final String AUDIENCE_MANAGER_OPT_OUT_URL_AAM = "d_uuid=%s";
 
+	// databases
+	static final String DEPRECATED_1X_HIT_DATABASE_FILENAME = "ADBMobileAAM.sqlite";
+
 	static final HashMap<String, String> MAP_TO_CONTEXT_DATA_KEYS = createMap();
 
 	static HashMap<String, String> createMap() {
