@@ -563,7 +563,7 @@ public final class AudienceExtension extends Extension {
 			Log.debug(
 				LOG_TAG,
 				LOG_SOURCE,
-				"Dispatching an empty profile - AAM server configuration is unavailable or privacy status is opted-out."
+				"Dropping Audience hit, AAM server configuration is unavailable or privacy status is opted-out. Dispatching an empty profile."
 			);
 			dispatchAudienceResponseContent(null, event);
 			return;

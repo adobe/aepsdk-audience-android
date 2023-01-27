@@ -17,9 +17,11 @@ import com.adobe.marketing.mobile.Analytics;
 import com.adobe.marketing.mobile.Assurance;
 import com.adobe.marketing.mobile.Audience;
 import com.adobe.marketing.mobile.Identity;
+import com.adobe.marketing.mobile.Lifecycle;
 import com.adobe.marketing.mobile.LoggingMode;
 import com.adobe.marketing.mobile.MobileCore;
 import java.util.Arrays;
+import java.util.HashMap;
 
 public class AudienceTestApp extends Application {
 
@@ -35,8 +37,27 @@ public class AudienceTestApp extends Application {
 		MobileCore.configureWithAppID(ENVIRONMENT_FILE_ID);
 
 		MobileCore.registerExtensions(
-			Arrays.asList(Identity.EXTENSION, Analytics.EXTENSION, Audience.EXTENSION, Assurance.EXTENSION),
-			o -> Log.d(LOG_TAG, "Mobile SDK was initialized")
+			Arrays.asList(
+				Identity.EXTENSION,
+				Audience.EXTENSION,
+				Lifecycle.EXTENSION,
+				Analytics.EXTENSION,
+				Assurance.EXTENSION
+			),
+			o -> {
+				Log.d(LOG_TAG, "Mobile SDK was initialized");
+				// testWithAAMForwardingForAnalytics(false);
+			}
+		);
+	}
+
+	private void testWithAAMForwardingForAnalytics(final boolean aamForwardingEnabled) {
+		MobileCore.updateConfiguration(
+			new HashMap<String, Object>() {
+				{
+					put("analytics.aamForwardingEnabled", aamForwardingEnabled);
+				}
+			}
 		);
 	}
 }

@@ -41,6 +41,9 @@ dependencies {
     implementation ('com.adobe.marketing.mobile:identity:2.0.0-SNAPSHOT') {
         transitive = false
     }
+    implementation ('com.adobe.marketing.mobile:lifecycle:2.0.0-SNAPSHOT') {
+        transitive = false
+    }
     implementation ('com.adobe.marketing.mobile:analytics:2.0.0-SNAPSHOT') {
         transitive = false
     }
