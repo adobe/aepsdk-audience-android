@@ -14,7 +14,10 @@
     <string name="btn_track_state">trackState</string>
     <string name="btn_track_action">trackAction</string>
     <string name="btn_getsdkidentities">getSDKIdentities</string>
-    <string name="btn_setadid">setAdvertisingIdentifier</string>
+    <string name="btn_setadid">setAdvertisingId</string>
+    <string name="btn_privacyoptin">OPT-IN</string>
+    <string name="btn_privacyoptout">OPT-OUT</string>
+    <string name="btn_privacyunknown">UNKNOWN</string>
     <string name="btn_reset">reset</string>
     <string name="btn_getvisitorprofile">getVisitorProfile</string>
     <string name="btn_submit_signal">submitSignal</string>
@@ -22,4 +25,9 @@
     <string name="btn_connect_to_assurance">Connect to Assurance</string>
     <string name="title_enter_assurance_session_url">Enter the Assurance Session URL:</string>
     <string name="et_hint_assurance_id">Paste your Assurance session ID here</string>
+    <string name="no_data">No data available</string>
+    <string name="tv_track">Track with Analytics</string>
+    <string name="tv_audience">Audience</string>
+    <string name="tv_mobilecore">Mobile Core</string>
+    <string name="tv_privacystatus">Privacy status</string>
 </resources>

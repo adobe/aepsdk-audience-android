@@ -42,6 +42,7 @@ import com.adobe.marketing.mobile.services.PersistentHitQueue;
 import com.adobe.marketing.mobile.services.ServiceProvider;
 import com.adobe.marketing.mobile.util.DataReader;
 import com.adobe.marketing.mobile.util.DataReaderException;
+import com.adobe.marketing.mobile.util.SQLiteUtils;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -176,6 +177,16 @@ public class AudienceExtensionTests {
 		assertEquals(EventSource.REQUEST_RESET, eventSourceCaptor.getAllValues().get(5));
 		assertEquals(EventType.LIFECYCLE, eventTypeCaptor.getAllValues().get(6));
 		assertEquals(EventSource.RESPONSE_CONTENT, eventSourceCaptor.getAllValues().get(6));
+	}
+
+	@Test
+	public void testOnRegistered_deletesDeprecatedV1HitDatabase() {
+		final MockedStatic<SQLiteUtils> mockedSqliteUtils = Mockito.mockStatic(SQLiteUtils.class);
+
+		audience.onRegistered();
+		mockedSqliteUtils.verify(() -> SQLiteUtils.deleteDBFromCacheDir(eq("ADBMobileAAM.sqlite")), times(1));
+
+		mockedSqliteUtils.close();
 	}
 
 	@Test
