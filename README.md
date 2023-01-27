@@ -1,22 +1,15 @@
 # Adobe Audience Manager Android Extension
+[![Maven Central](https://img.shields.io/maven-central/v/com.adobe.marketing.mobile/audience.svg?logo=android&logoColor=white&label=audience)](https://mvnrepository.com/artifact/com.adobe.marketing.mobile/audience)
 
 ## About this project
 
 Adobe Audience Manager is a versatile audience data management platform. With the SDK, you can update audience profiles for users and retrieve user segment information from your mobile app. For more information, see [Adobe Audience Manager](https://business.adobe.com/products/audience-manager/adobe-audience-manager.html).
 
-The Audience Manager mobile extension is an extension for the Android 2.x [Adobe Experience Platform SDK](https://developer.adobe.com/client-sdks/documentation/current-sdk-versions/) and requires the `Core` and `Identity` extensions for event handling.
-
-To learn more, read the [Mobile Core](https://developer.adobe.com/client-sdks/documentation/mobile-core/) documentation.
+The Audience Manager mobile extension is an extension for the Android 2.x [Adobe Experience Platform SDK](https://developer.adobe.com/client-sdks) and requires the `Core` and `Identity` extensions for event handling.
 
 ### Installation
 
-Integrate the Audience extension into your app by including the following in your gradle file's `dependencies`:
-
-```gradle
-implementation 'com.adobe.marketing.mobile:audience:2.+'
-implementation 'com.adobe.marketing.mobile:core:2.+'
-implementation 'com.adobe.marketing.mobile:identity:2.+'
-```
+Integrate the Audience mobile extension into your app by following the [getting started guide](Documentation/getting-started.md).
 
 ### Development
 
@@ -24,36 +17,19 @@ implementation 'com.adobe.marketing.mobile:identity:2.+'
 
 To open and run the project, open the `code/settings.gradle` file in Android Studio.
 
-**Data Collection mobile property prerequisites**
-
-The test app needs to be configured with the following extensions before it can be used:
-
-- Mobile Core (installed by default)
-- [Identity](https://developer.adobe.com/client-sdks/documentation/mobile-core/identity/)
-- [Assurance](https://developer.adobe.com/client-sdks/documentation/platform-assurance-sdk/)
 
 **Run test application**
 
-1. In the test app, set your `ENVIRONMENT_FILE_ID` in `AudienceTestApp.java`.
-2. Select the `app` runnable with the desired emulator and run the program.
-
-**Inspect the events with Assurance**
-
-Configure a new Assurance session by setting the Base URL to `audiencetestapp://main` and launch Assurance in the test app by running the following command in your terminal:
-
-```bash
-$ adb shell am start -W -a  android.intent.action.VIEW -d "audiencetestapp://main?adb_validation_sessionid=ADD_YOUR_SESSION_ID_HERE" com.adobe.audiencetestapp
-```
-
-> Note: replace ADD_YOUR_SESSION_ID_HERE with your Assurance session identifier.
+To configure and run the test app for this project, follow the [getting started guide for the test app](Documentation/getting-started-test-app.md).
 
 ## Related Projects
 
-| Project                                                                              | Description                                                  |
-| ------------------------------------------------------------------------------------ | ------------------------------------------------------------ |
-| [Core extensions](https://github.com/adobe/aepsdk-core-android)                      | The Core extension represents the foundation of the Adobe Experience Platform SDK. |
-| [Assurance extension](https://github.com/adobe/aepsdk-assurance-android)             | The Assurance extension enables validation workflows for your SDK implementation. |
-| [AEP SDK sample app for Android](https://github.com/adobe/aepsdk-sample-app-android) | Contains Android sample app for the AEP SDK.                 |
+| Project                                                                              | Description                                                                                          |
+| ------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| [Core extensions](https://github.com/adobe/aepsdk-core-android)                      | The Mobile Core represents the foundation of the Adobe Experience Platform mobile SDK.               |
+| [Analytics extension](https://github.com/adobe/aepsdk-analytics-android)             | The Analytics extension allows for sending mobile interaction data from your app to Adobe Analytics. |
+| [Assurance extension](https://github.com/adobe/aepsdk-assurance-android)             | The Assurance extension enables validation workflows for your SDK implementation.                    |
+| [AEP SDK sample app for Android](https://github.com/adobe/aepsdk-sample-app-android) | Contains Android sample app for the AEP SDKs.                                                        |
 
 ## Documentation
 

@@ -52,7 +52,7 @@ Audience.getVisitorProfile(new AdobeCallback<Map<String, String>>() {
 #### Kotlin
 
 ```kotlin
-Audience.getVisitorProfile { visitorProfile -> 
+Audience.getVisitorProfile { visitorProfile ->
     // provide code to process the visitorProfile
 }
 
@@ -61,7 +61,7 @@ Audience.getVisitorProfile { visitorProfile ->
 ## registerExtension
 
 > **Warning**
-> Deprecated as of 2.0.0. Use the [MobileCore.registerExtensions API](https://developer.adobe.com/client-sdks/documentation/mobile-core/api-reference) instead.
+> Deprecated as of 2.0.0. Use the [MobileCore.registerExtensions API](https://github.com/adobe/aepsdk-core-android) instead.
 
 Registers the Audience extension with `MobileCore`.
 
@@ -136,7 +136,7 @@ val traits: Map<String, String?> = mapOf(
     "trait2" to "value2"
 )
 
-Audience.signalWithData(traits) { visitorProfile -> 
+Audience.signalWithData(traits) { visitorProfile ->
     // handle the returned visitorProfile
 }
 ```
