@@ -24,11 +24,12 @@ To configure and run the test app for this project, follow the [getting started 
 
 ## Related Projects
 
-| Project                                                                              | Description                                                                            |
-| ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
-| [Core extensions](https://github.com/adobe/aepsdk-core-android)                      | The Mobile Core represents the foundation of the Adobe Experience Platform mobile SDK. |
-| [Assurance extension](https://github.com/adobe/aepsdk-assurance-android)             | The Assurance extension enables validation workflows for your SDK implementation.      |
-| [AEP SDK sample app for Android](https://github.com/adobe/aepsdk-sample-app-android) | Contains Android sample app for the AEP SDKs.                                          |
+| Project                                                                              | Description                                                                                          |
+| ------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| [Core extensions](https://github.com/adobe/aepsdk-core-android)                      | The Mobile Core represents the foundation of the Adobe Experience Platform mobile SDK.               |
+| [Analytics extension](https://github.com/adobe/aepsdk-analytics-android)             | The Analytics extension allows for sending mobile interaction data from your app to Adobe Analytics. |
+| [Assurance extension](https://github.com/adobe/aepsdk-assurance-android)             | The Assurance extension enables validation workflows for your SDK implementation.                    |
+| [AEP SDK sample app for Android](https://github.com/adobe/aepsdk-sample-app-android) | Contains Android sample app for the AEP SDKs.                                                        |
 
 ## Documentation
 

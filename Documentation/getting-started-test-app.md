@@ -6,6 +6,7 @@ The test app needs to be configured with the following extensions before it can 
 
 * Mobile Core (installed by default)
 * [Identity](https://github.com/adobe/aepsdk-core-android)
+* [Analytics](https://github.com/adobe/aepsdk-analytics-android)
 * [Assurance](https://github.com/adobe/aepsdk-assurance-android)
 
 ## Run test application
