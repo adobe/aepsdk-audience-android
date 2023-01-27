@@ -35,6 +35,7 @@ import com.adobe.marketing.mobile.services.PersistentHitQueue;
 import com.adobe.marketing.mobile.services.ServiceProvider;
 import com.adobe.marketing.mobile.util.DataReader;
 import com.adobe.marketing.mobile.util.MapUtils;
+import com.adobe.marketing.mobile.util.SQLiteUtils;
 import com.adobe.marketing.mobile.util.StringUtils;
 import com.adobe.marketing.mobile.util.URLBuilder;
 import com.adobe.marketing.mobile.util.UrlUtils;
@@ -216,6 +217,7 @@ public final class AudienceExtension extends Extension {
 
 		Log.trace(LOG_TAG, LOG_SOURCE, "Dispatching Audience shared state");
 		shareStateForEvent(null);
+		deleteDeprecatedV1HitDatabase();
 	}
 
 	@Override
@@ -1104,11 +1106,18 @@ public final class AudienceExtension extends Extension {
 	 * @param value nullable {@code String} to be appended after "="
 	 * @return nullable serialized key-value pair
 	 */
-	String serializeKeyValuePair(final String key, final String value) {
+	private String serializeKeyValuePair(final String key, final String value) {
 		if (StringUtils.isNullOrEmpty(key) || value == null) {
 			return null;
 		}
 
 		return "&" + key + "=" + value;
+	}
+
+	/**
+	 * Deletes the deprecated Audience 1.x hit database file if it exists
+	 */
+	private void deleteDeprecatedV1HitDatabase() {
+		SQLiteUtils.deleteDBFromCacheDir(AudienceConstants.DEPRECATED_1X_HIT_DATABASE_FILENAME);
 	}
 }
