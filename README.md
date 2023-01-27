@@ -1,4 +1,5 @@
 # Adobe Audience Manager Android Extension
+[![Maven Central](https://img.shields.io/maven-central/v/com.adobe.marketing.mobile/audience.svg?logo=android&logoColor=white&label=audience)](https://mvnrepository.com/artifact/com.adobe.marketing.mobile/audience)
 
 ## About this project
 
