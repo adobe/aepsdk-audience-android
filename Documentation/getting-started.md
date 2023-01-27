@@ -27,6 +27,9 @@ implementation 'com.adobe.marketing.mobile:identity:2.+'
 implementation 'com.adobe.marketing.mobile:audience:2.+'
 ```
 
+> **Warning**
+> Using dynamic dependency versions is not recommended for production apps. Refer to this [page](https://github.com/adobe/aepsdk-core-android/blob/main/Documentation/GradleDependencies.md) for managing gradle dependencies.
+
 2. Import the libraries:
 
 #### Java
