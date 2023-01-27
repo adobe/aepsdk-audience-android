@@ -100,7 +100,7 @@ For more information about implementing Audience Manager APIs, please read the [
 
 ## Configuration keys
 
-To update SDK configuration programmatically, use the following information to change your Audience Manager configuration values. For more information, see the [updateConfiguration API from Mobile Core](https://github.com/adobe/aepsdk-core-android).
+To update SDK configuration programmatically, use the following information to change your Audience Manager configuration values. For more information, see the [MobileCore.updateConfiguration API](https://github.com/adobe/aepsdk-core-android).
 
 | Key | Required | Description | Data Type |
 | :--- | :--- | :--- | :--- |
