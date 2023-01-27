@@ -47,7 +47,7 @@ public final class Audience {
 	 * <p>
 	 * This will allow the extension to send and receive events to and from the SDK.
 	 *
-	 * @deprecated as of 2.0.0, use {@link com.adobe.marketing.mobile.MobileCore#registerExtensions(List, AdobeCallback)} with {@link Audience#EXTENSION} instead.
+	 * @deprecated as of 2.0.0, use {@link com.adobe.marketing.mobile.MobileCore#registerExtensions(List, AdobeCallback)} with Audience.EXTENSION instead.
 	 */
 	@SuppressWarnings("deprecation")
 	@Deprecated

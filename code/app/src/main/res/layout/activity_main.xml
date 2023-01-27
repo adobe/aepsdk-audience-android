@@ -18,6 +18,28 @@
     android:orientation="vertical"
     tools:context=".MainActivity">
 
+    <TextView
+        android:id="@+id/tvExtensions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="10dp"
+        android:textColor="@color/colorAccent"
+        android:text="Running with: " />
+
+    <TextView
+        android:id="@+id/tvAudience"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="10dp"
+        android:text="@string/tv_audience" />
+
+    <LinearLayout
+        android:id="@+id/layout_audience"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        >
+
     <Button
         android:id="@+id/submitSignalButton"
         android:layout_width="wrap_content"
@@ -27,14 +49,6 @@
         android:onClick="submitSignal"/>
 
     <Button
-        android:id="@+id/getVisitorProfileButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="10dp"
-        android:text="@string/btn_getvisitorprofile"
-        android:onClick="getVisitorProfile"/>
-
-    <Button
         android:id="@+id/resetButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -42,21 +56,38 @@
         android:text="@string/btn_reset"
         android:onClick="reset"/>
 
-    <Button
-        android:id="@+id/button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="10dp"
-        android:text="@string/btn_setadid"
-        android:onClick="setAdID" />
+    </LinearLayout>
 
     <Button
-        android:id="@+id/trackStateButton"
+        android:id="@+id/getVisitorProfileButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="10dp"
-        android:text="@string/btn_track_state"
-        android:onClick="trackState" />
+        android:text="@string/btn_getvisitorprofile"
+        android:onClick="getVisitorProfile"/>
+
+    <View
+        android:id="@+id/breakLineTrack"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/colorPrimary"
+        android:layout_marginHorizontal="10dp"
+        android:layout_marginVertical="5dp" />
+
+    <TextView
+        android:id="@+id/tvTrack"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="10dp"
+        android:text="@string/tv_track" />
+
+
+    <LinearLayout
+        android:id="@+id/layout_track"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        >
 
     <Button
         android:id="@+id/trackActionButton"
@@ -67,11 +98,120 @@
         android:onClick="trackAction" />
 
     <Button
-        android:id="@+id/getSDKIdentitiesButton"
+        android:id="@+id/trackStateButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="10dp"
-        android:text="@string/btn_getsdkidentities"
-        android:onClick="getSDKIdentities" />
+        android:text="@string/btn_track_state"
+        android:onClick="trackState" />
+
+    </LinearLayout>
+
+    <View
+        android:id="@+id/breakLineMobileCore"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/colorPrimary"
+        android:layout_marginHorizontal="10dp"
+        android:layout_marginVertical="5dp" />
+
+    <TextView
+        android:id="@+id/tvMobileCore"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="10dp"
+        android:text="@string/tv_mobilecore" />
+
+    <LinearLayout
+        android:id="@+id/layout_core"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        >
+        <Button
+            android:id="@+id/getSDKIdentitiesButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="10dp"
+            android:text="@string/btn_getsdkidentities"
+            android:onClick="getSDKIdentities" />
+
+        <Button
+            android:id="@+id/button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="10dp"
+            android:text="@string/btn_setadid"
+            android:onClick="setAdID" />
+
+    </LinearLayout>
+
+    <View
+        android:id="@+id/breakLinePrivacy"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/colorPrimary"
+        android:layout_marginHorizontal="10dp"
+        android:layout_marginVertical="5dp" />
+
+    <TextView
+        android:id="@+id/tvPrivacy"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="10dp"
+        android:text="@string/tv_privacystatus" />
+
+    <LinearLayout
+        android:id="@+id/layout_privacy"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        >
+        <Button
+            android:id="@+id/btnPrivacyIn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="10dp"
+            android:text="@string/btn_privacyoptin"
+            android:onClick="setPrivacyOptIn" />
+
+        <Button
+            android:id="@+id/btnPrivacyOut"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="10dp"
+            android:text="@string/btn_privacyoptout"
+            android:onClick="setPrivacyOptOut" />
+
+        <Button
+            android:id="@+id/btnPrivacyUnknown"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="10dp"
+            android:text="@string/btn_privacyunknown"
+            android:onClick="setPrivacyUnknown" />
+
+    </LinearLayout>
+
+    <ScrollView
+        android:id="@+id/scrollerId1"
+        android:layout_width="fill_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="4dp"
+        android:layout_marginHorizontal="10dp"
+        android:fillViewport="true"
+        android:scrollbars="vertical">
+
+        <TextView
+            android:id="@+id/tvResultData"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/no_data"
+            android:textAlignment="viewStart"
+            android:textAllCaps="false"
+            android:textColor="@color/colorGrey"
+            android:textSize="14sp" />
+    </ScrollView>
 
 </LinearLayout>
