@@ -16,8 +16,8 @@ Adobe Audience Manager is a versatile audience data management platform. With th
 ## Add Audience Manager to your app
 
 The Audience Manager extension depends on the Core and Identity extensions:
-* [Core](https://developer.adobe.com/client-sdks/documentation/mobile-core/)
-* [Identity](https://developer.adobe.com/client-sdks/documentation/mobile-core/identity/)
+* [Core](https://github.com/adobe/aepsdk-core-android)
+* [Identity](https://github.com/adobe/aepsdk-core-android)
 
 1. Add the Mobile Core, Identity, and Audience extensions to your project using the app's Gradle file:
 
@@ -100,7 +100,7 @@ For more information about implementing Audience Manager APIs, please read the [
 
 ## Configuration keys
 
-To update SDK configuration programmatically, use the following information to change your Audience Manager configuration values. For more information, see the [Configuration API reference](https://developer.adobe.com/client-sdks/documentation/mobile-core/configuration/api-reference/).
+To update SDK configuration programmatically, use the following information to change your Audience Manager configuration values. For more information, see the [updateConfiguration API from Mobile Core](https://github.com/adobe/aepsdk-core-android).
 
 | Key | Required | Description | Data Type |
 | :--- | :--- | :--- | :--- |
@@ -113,4 +113,3 @@ To update SDK configuration programmatically, use the following information to c
 * Want to know more about setting up Adobe Analytics server-side forwarding to Audience Manager?
   * [Server-side forwarding overview](https://experienceleague.adobe.com/docs/analytics/admin/admin-tools/server-side-forwarding/ssf.html)
   * [Set up server-side forwarding with Audience Manager](https://developer.adobe.com/client-sdks/documentation/adobe-analytics/#server-side-forwarding-with-audience-manager)
-
