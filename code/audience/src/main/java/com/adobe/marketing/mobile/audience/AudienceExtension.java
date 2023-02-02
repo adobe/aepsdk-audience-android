@@ -258,12 +258,15 @@ public final class AudienceExtension extends Extension {
 		final MobilePrivacyStatus privacyStatus = MobilePrivacyStatus.fromString(
 			DataReader.optString(eventData, AudienceConstants.EventDataKeys.Configuration.GLOBAL_CONFIG_PRIVACY, "")
 		);
-		internalState.setMobilePrivacyStatus(privacyStatus);
-		hitQueue.handlePrivacyChange(privacyStatus);
 
+		// first send the optout hit for uuid
 		if (privacyStatus.equals(MobilePrivacyStatus.OPT_OUT)) {
 			sendOptOutHit(eventData);
 		}
+
+		// handle the privacy change and clear all identifiers
+		internalState.setMobilePrivacyStatus(privacyStatus);
+		hitQueue.handlePrivacyChange(privacyStatus);
 		shareStateForEvent(event);
 	}
 

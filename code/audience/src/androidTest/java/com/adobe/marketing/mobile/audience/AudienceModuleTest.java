@@ -647,67 +647,73 @@ public class AudienceModuleTest {
 	//
 	//		waitForThreadsWithFailIfTimedOut(1000);
 	//	}
-	//
-	//	@Test
-	//	public void testSubmitSignal_when_PrivacyUnknown_Then_PrivacyChangesToOptOUT_ShouldClearHits() throws Exception {
-	//		eventHub.ignoreEvents(EventType.HUB, EventSource.SHARED_STATE);
-	//		final HashMap<String, Object> audienceResponse1 = new HashMap<String, Object>();
-	//		final HashMap<String, Object> audienceResponse2 = new HashMap<String, Object>();
-	//		final CountDownLatch latch = new CountDownLatch(2);
-	//		testableNetworkService.setExpectedCount(2);
-	//		testableNetworkService.setDefaultResponse(
-	//			"{\"uuid\":\"19994521975870785742420741570375407533\", \"stuff\":[{\"cv\":\"cv\",\"cn\":\"cn\"}]}"
-	//		);
-	//
-	//		// Preset the shared state and shared Preferences
-	//		configureWithPrivacy("optunknown", 0);
-	//		providedValidIdentityState();
-	//		mockUUIDInPersistence();
-	//
-	//		// Test
-	//		HashMap<String, String> data = new HashMap<String, String>();
-	//		data.put("key1", "value1");
-	//		AdobeCallback<HashMap<String, String>> callback1 = new AdobeCallback<HashMap<String, String>>() {
-	//			@Override
-	//			public void call(HashMap<String, String> profileData) {
-	//				audienceResponse1.put(RESPONSE_PROFILE_DATA, profileData);
-	//				latch.countDown();
-	//			}
-	//		};
-	//		AdobeCallback<HashMap<String, String>> callback2 = new AdobeCallback<HashMap<String, String>>() {
-	//			@Override
-	//			public void call(HashMap<String, String> profileData) {
-	//				audienceResponse2.put(RESPONSE_PROFILE_DATA, profileData);
-	//				latch.countDown();
-	//			}
-	//		};
-	//
-	//		eventHub.dispatch(createAudienceRequestContentEventWithData(data, callback1));
-	//		eventHub.dispatch(createAudienceRequestContentEventWithData(data, callback2));
-	//
-	//		latch.await(1, TimeUnit.SECONDS);
-	//		waitForThreadsWithFailIfTimedOut(1000);
-	//
-	//		assertEquals(0, testableNetworkService.waitAndGetCount());
-	//
-	//		// Privacy changes to opt out
-	//		//The only hit that goes out is the opt-out hit
-	//		dispatchConfigurationResponseEvent(MobilePrivacyStatus.OPT_OUT);
-	//		assertEquals(1, testableNetworkService.waitAndGetCount());
-	//		assertEquals(
-	//			"The Network hit should have been the AAM optout hit!",
-	//			"https://server/demoptout.jpg?d_uuid=testUUID",
-	//			testableNetworkService.getItem(0).url
-	//		);
-	//		waitForThreadsWithFailIfTimedOut(1000);
-	//		testableNetworkService.clearNetworkRequests();
-	//
-	//		// Privacy change to optin and check that the previous events are cleared on opt-out
-	//		dispatchConfigurationResponseEvent(MobilePrivacyStatus.OPT_IN);
-	//		assertEquals(0, testableNetworkService.waitAndGetCount());
-	//		waitForThreadsWithFailIfTimedOut(1000);
-	//	}
-	//
+
+	@Test
+	public void testSubmitSignal_when_PrivacyUnknown_Then_PrivacyChangesToOptOUT_ShouldClearHits() throws Exception {
+		TestableNetworkRequest signalRequest = new TestableNetworkRequest("https://server/event", HttpMethod.GET);
+		testableNetworkService.setResponseConnectionFor(
+			signalRequest,
+			getMockConnection(
+				200,
+				"{\"uuid\":\"19994521975870785742420741570375407533\", \"stuff\":[{\"cv\":\"cv\",\"cn\":\"cn\"}]}"
+			)
+		);
+
+		TestableNetworkRequest optoutRequest = new TestableNetworkRequest(
+			"https://server/demoptout.jpg",
+			HttpMethod.GET
+		);
+		testableNetworkService.setExpectedNetworkRequest(optoutRequest, 1);
+
+		// Preset config and shared Preferences
+		config.put("global.privacy", "optunknown");
+		mockUUIDInPersistence();
+		registerExtensions(config);
+
+		// Test
+		final HashMap<String, String> audienceProfileResponse1 = new HashMap<>();
+		final HashMap<String, String> audienceProfileResponse2 = new HashMap<>();
+		HashMap<String, String> data = new HashMap<>();
+		data.put("key1", "value1");
+
+		final CountDownLatch latch = new CountDownLatch(2);
+		Audience.signalWithData(
+			data,
+			profileData -> {
+				audienceProfileResponse1.putAll(profileData);
+				latch.countDown();
+			}
+		);
+		Audience.signalWithData(
+			data,
+			profileData -> {
+				audienceProfileResponse2.putAll(profileData);
+				latch.countDown();
+			}
+		);
+
+		latch.await(1, TimeUnit.SECONDS);
+		assertTrue(audienceProfileResponse1.isEmpty());
+		assertTrue(audienceProfileResponse2.isEmpty());
+
+		assertEquals(0, testableNetworkService.getReceivedNetworkRequestsMatching(signalRequest).size());
+
+		// Privacy changes to opt out, the only hit that goes out is the opt-out hit
+		MobileCore.setPrivacyStatus(MobilePrivacyStatus.OPT_OUT);
+
+		testableNetworkService.assertNetworkRequestCount();
+		assertEquals(0, testableNetworkService.getReceivedNetworkRequestsMatching(signalRequest).size());
+		assertEquals(1, testableNetworkService.getReceivedNetworkRequestsMatching(optoutRequest).size());
+		assertEquals(
+			"The Network hit should have been the AAM optout hit!",
+			"https://server/demoptout.jpg?d_uuid=testUUID",
+			testableNetworkService.getReceivedNetworkRequestsMatching(optoutRequest).get(0).getUrl()
+		);
+
+		// Privacy change to optin and check that the previous events are cleared on opt-out
+		MobileCore.setPrivacyStatus(MobilePrivacyStatus.OPT_IN);
+		assertEquals(0, testableNetworkService.getReceivedNetworkRequestsMatching(signalRequest).size());
+	}
 
 	@Test
 	public void test_RulesResponseEvent_when_NotAAM_then_shouldNotSendRequest() {
