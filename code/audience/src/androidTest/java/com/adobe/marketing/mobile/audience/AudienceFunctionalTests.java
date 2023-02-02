@@ -98,7 +98,7 @@ public class AudienceFunctionalTests {
 
 	@Ignore("to investigate, fails when running the entire suite")
 	@Test
-	public void testSubmitSignal_when_NetworkHasUnrecoverableError_then_callbackCalledWithEmptyProfile()
+	public void testSubmitSignal_when_NetworkHasUnrecoverableError_thenCallbackCalledWithEmptyProfile()
 		throws Exception {
 		TestableNetworkRequest signalRequest = new TestableNetworkRequest("https://server/event", HttpMethod.GET);
 		testableNetworkService.setResponseConnectionFor(signalRequest, getMockConnection(404, null));
@@ -151,7 +151,7 @@ public class AudienceFunctionalTests {
 	}
 
 	@Test
-	public void testLifecycleEventToAAM_when_AAMForwardingEnabled_then_shouldNotSendRequest() {
+	public void testLifecycleResponseEvent_AndAAMForwardingEnabled_thenShouldNotSendRequest() {
 		// setup
 		testableNetworkService.setExpectedNetworkRequest(
 			new TestableNetworkRequest("https://server/event", HttpMethod.GET),
@@ -175,7 +175,7 @@ public class AudienceFunctionalTests {
 
 	@Ignore("to investigate, fails when running the entire suite")
 	@Test
-	public void testLifecycleEventToAAM_when_AAMForwardingDisabled_then_shouldSendRequest() throws Exception {
+	public void testLifecycleResponseEvent_AndAAMForwardingDisabled_thenShouldSendRequest() throws Exception {
 		// setup
 		testableNetworkService.setExpectedNetworkRequest(
 			new TestableNetworkRequest("https://server/event", HttpMethod.GET),
@@ -261,104 +261,15 @@ public class AudienceFunctionalTests {
 		assertNull(networkRequests.get(1).getHeaders());
 	}
 
-	//
-	//	@Test
-	//	public void testSubmitSignal_then_LifecycleEventToAAM_then_ConfigUpdate_with_AAMForwardingEnabled_then_shouldSendRequestOnce()
-	//		throws Exception {
-	//		// setup expectations
-	//		testableNetworkService.setExpectedCount(2);
-	//		eventHub.ignoreAllStateChangeEvents();
-	//		eventHub.ignoreEvents(EventType.LIFECYCLE, EventSource.RESPONSE_CONTENT);
-	//
-	//		// dispatch Submit Event 1
-	//		HashMap<String, String> data = new HashMap<String, String>();
-	//		data.put("key1", "value1");
-	//		eventHub.dispatch(createAudienceRequestContentEventWithData(data, null));
-	//
-	//		// dispatch Lifecycle Event
-	//		eventHub.dispatch(createLifecycleResponseEvent());
-	//
-	//		waitForThreadsWithFailIfTimedOut(5000);
-	//
-	//		// Verify that no network call is made
-	//		assertEquals(0, testableNetworkService.waitAndGetCount());
-	//		testableNetworkService.setExpectedCount(2);
-	//
-	//		// configure
-	//		configureWithPrivacyAAMForwardingEnabled();
-	//
-	//		// Verify that one network call is made
-	//		assertEquals(1, testableNetworkService.waitAndGetCount());
-	//		assertTrue(testableNetworkService.getItem(0).url.contains("http://server/event?"));
-	//		assertTrue(testableNetworkService.getItem(0).url.contains("c_key1=value1"));
-	//		assertTrue(testableNetworkService.getItem(0).url.contains("d_ptfm=mockPlatform"));
-	//		assertTrue(testableNetworkService.getItem(0).url.contains("d_dst=1"));
-	//		assertTrue(testableNetworkService.getItem(0).url.contains("d_rtbd=json"));
-	//		assertNull(testableNetworkService.getItem(0).connectPayload);
-	//		assertNull(testableNetworkService.getItem(0).requestProperty);
-	//		assertEquals(TestableNetworkService.NetworkRequestType.SYNC, testableNetworkService.getItem(0).type);
-	//	}
-	//
-	//
-	//	@Test
-	//	public void testSubmitSignal_AndLifecycleEventToAAM_AndIdentityUpdate_AndAAMForwardingEnabled_then_shouldSendRequestOnce()
-	//		throws Exception {
-	//		// setup expectations
-	//		testableNetworkService.setExpectedCount(2);
-	//		eventHub.ignoreAllStateChangeEvents();
-	//		eventHub.ignoreEvents(EventType.LIFECYCLE, EventSource.RESPONSE_CONTENT);
-	//
-	//		// configure
-	//		configureWithPrivacyAAMForwardingEnabled();
-	//
-	//		// create pending Identity state (causes AAM to wait)
-	//		eventHub.createSharedState("com.adobe.module.identity", 0, EventHub.SHARED_STATE_PENDING);
-	//
-	//		// dispatch Submit Event 1
-	//		HashMap<String, String> data = new HashMap<String, String>();
-	//		data.put("key1", "value1");
-	//		eventHub.dispatch(createAudienceRequestContentEventWithData(data, null));
-	//
-	//		// dispatch Lifecycle Event
-	//		eventHub.dispatch(createLifecycleResponseEvent());
-	//
-	//		waitForThreadsWithFailIfTimedOut(5000);
-	//
-	//		// Verify that no network call is made
-	//		assertEquals(0, testableNetworkService.waitAndGetCount());
-	//		testableNetworkService.setExpectedCount(1);
-	//
-	//		// update pending Identity state
-	//		eventHub.updateSharedState(
-	//			"com.adobe.module.identity",
-	//			0,
-	//			new EventData()
-	//				.putString("mid", "marketingCloudId")
-	//				.putString("blob", "blobValue")
-	//				.putString("locationhint", "locationHintValue")
-	//		);
-	//
-	//		// Verify that one network call is made
-	//		assertEquals(1, testableNetworkService.waitAndGetCount());
-	//		assertTrue(testableNetworkService.getItem(0).url.contains("http://server/event?"));
-	//		assertTrue(testableNetworkService.getItem(0).url.contains("c_key1=value1"));
-	//		assertTrue(testableNetworkService.getItem(0).url.contains("d_ptfm=mockPlatform"));
-	//		assertTrue(testableNetworkService.getItem(0).url.contains("d_dst=1"));
-	//		assertTrue(testableNetworkService.getItem(0).url.contains("d_rtbd=json"));
-	//		assertNull(testableNetworkService.getItem(0).connectPayload);
-	//		assertNull(testableNetworkService.getItem(0).requestProperty);
-	//		assertEquals(TestableNetworkService.NetworkRequestType.SYNC, testableNetworkService.getItem(0).type);
-	//	}
-
-	@Ignore("fails when running the entire suite")
+	@Ignore("fails in suite")
 	@Test
-	public void testSubmitSignal_AndLifecycleEventToAAM_AndConfigUpdateAAMForwardingDisabled_thenShouldSendTwoRequestsInCorrectOrder()
+	public void testSubmitSignal_AndLifecycleResponseEvent_AndConfigWithAAMForwardingEnabled_thenShouldSendSignalAndIgnoreLifecycle()
 		throws Exception {
 		// setup
 		TestableNetworkRequest signalRequest = new TestableNetworkRequest("https://server/event", HttpMethod.GET);
-		testableNetworkService.setExpectedNetworkRequest(signalRequest, 2);
+		testableNetworkService.setExpectedNetworkRequest(signalRequest, 1);
 
-		config.put("global.privacy", "optunknown");
+		config.put("analytics.aamForwardingEnabled", true);
 		registerExtensions(config);
 
 		// dispatch signal
@@ -369,13 +280,39 @@ public class AudienceFunctionalTests {
 		// dispatch Lifecycle Event
 		MobileCore.dispatchEvent(createLifecycleResponseEvent());
 
-		// verify that no network call is made
-		assertEquals(0, testableNetworkService.getReceivedNetworkRequestsMatching(signalRequest).size());
+		// verify that two network calls are made in order
+		testableNetworkService.assertNetworkRequestCount();
+		List<TestableNetworkRequest> requests = testableNetworkService.getReceivedNetworkRequestsMatching(
+			signalRequest
+		);
+		assertEquals(1, requests.size());
+		assertTrue(requests.get(0).getUrl().contains("https://server/event?"));
+		assertTrue(requests.get(0).getUrl().contains("c_key1=value1"));
+		assertTrue(requests.get(0).getUrl().contains("d_ptfm=android"));
+		assertTrue(requests.get(0).getUrl().contains("d_dst=1"));
+		assertTrue(requests.get(0).getUrl().contains("d_rtbd=json"));
+		assertNull(requests.get(0).getBody());
+		assertNull(requests.get(0).getHeaders());
+	}
 
-		// configure
-		config.put("global.privacy", "optedin");
+	@Ignore("fails when running the entire suite")
+	@Test
+	public void testSubmitSignal_AndLifecycleResponseEvent_AndConfigWithAAMForwardingDisabled_thenShouldSendTwoRequestsInCorrectOrder()
+		throws Exception {
+		// setup
+		TestableNetworkRequest signalRequest = new TestableNetworkRequest("https://server/event", HttpMethod.GET);
+		testableNetworkService.setExpectedNetworkRequest(signalRequest, 2);
+
 		config.put("analytics.aamForwardingEnabled", false);
-		MobileCore.updateConfiguration(config);
+		registerExtensions(config);
+
+		// dispatch signal
+		HashMap<String, String> data = new HashMap<>();
+		data.put("key1", "value1");
+		Audience.signalWithData(data, null);
+
+		// dispatch Lifecycle Event
+		MobileCore.dispatchEvent(createLifecycleResponseEvent());
 
 		// verify that two network calls are made in order
 		testableNetworkService.assertNetworkRequestCount();
