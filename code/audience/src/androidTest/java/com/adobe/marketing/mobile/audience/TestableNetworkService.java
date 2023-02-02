@@ -12,6 +12,9 @@
 package com.adobe.marketing.mobile.audience;
 
 import static com.adobe.marketing.mobile.audience.AudienceTestConstants.LOG_TAG;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.adobe.marketing.mobile.services.HttpConnecting;
 import com.adobe.marketing.mobile.services.Log;
@@ -128,6 +131,44 @@ public class TestableNetworkService implements Networking {
 		}
 
 		delayedResponse = delaySec;
+	}
+
+	/**
+	 * Asserts that the correct number of network requests were being sent, based on the previously set expectations.
+	 * @throws InterruptedException
+	 * @see #setExpectedNetworkRequest(TestableNetworkRequest, int)
+	 */
+	public void assertNetworkRequestCount() throws InterruptedException {
+		Map<TestableNetworkRequest, ADBCountDownLatch> expectedNetworkRequests = getExpectedNetworkRequests();
+
+		if (expectedNetworkRequests.isEmpty()) {
+			fail(
+				"There are no network request expectations set, use this API after calling setExpectationNetworkRequest"
+			);
+			return;
+		}
+
+		for (Map.Entry<TestableNetworkRequest, ADBCountDownLatch> expectedRequest : expectedNetworkRequests.entrySet()) {
+			boolean awaitResult = expectedRequest.getValue().await(5, TimeUnit.SECONDS);
+			assertTrue(
+				"Time out waiting for network request with URL '" +
+				expectedRequest.getKey().getUrl() +
+				"' and method '" +
+				expectedRequest.getKey().getMethod().name() +
+				"'",
+				awaitResult
+			);
+			int expectedCount = expectedRequest.getValue().getInitialCount();
+			int receivedCount = expectedRequest.getValue().getCurrentCount();
+			String message = String.format(
+				"Expected %d network requests for URL %s (%s), but received %d",
+				expectedCount,
+				expectedRequest.getKey().getUrl(),
+				expectedRequest.getKey().getMethod(),
+				receivedCount
+			);
+			assertEquals(message, expectedCount, receivedCount);
+		}
 	}
 
 	@Override

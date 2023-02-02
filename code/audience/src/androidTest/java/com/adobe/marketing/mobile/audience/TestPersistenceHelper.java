@@ -24,6 +24,7 @@ public class TestPersistenceHelper {
 	private static final ArrayList<String> knownDatastoreName = new ArrayList<String>() {
 		{
 			add(AudienceTestConstants.DataStoreKey.AUDIENCE_DATASTORE);
+			add(AudienceTestConstants.DataStoreKey.IDENTITY_DATASTORE);
 			add(AudienceTestConstants.DataStoreKey.CONFIG_DATASTORE);
 		}
 	};

@@ -15,13 +15,21 @@ import static org.junit.Assert.*;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.adobe.marketing.mobile.*;
+import com.adobe.marketing.mobile.services.HttpConnecting;
 import com.adobe.marketing.mobile.services.HttpMethod;
 import com.adobe.marketing.mobile.services.ServiceProvider;
 import com.adobe.marketing.mobile.util.DataReader;
 import com.adobe.marketing.mobile.util.StringUtils;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -31,15 +39,7 @@ import org.junit.runner.RunWith;
 @RunWith(AndroidJUnit4.class)
 public class AudienceModuleTest {
 
-	private final Map<String, Object> config = new HashMap<String, Object>() {
-		{
-			put("audience.server", "server");
-			put("audience.timeout", 5);
-			put("global.privacy", "optedin");
-			put("analytics.aamForwardingEnabled", false);
-			put("experienceCloud.org", "test@AdobeOrg");
-		}
-	};
+	private final Map<String, Object> config = new HashMap<>();
 
 	private TestableNetworkService testableNetworkService;
 
@@ -47,251 +47,217 @@ public class AudienceModuleTest {
 	public TestRule rule = new TestHelper.SetupCoreRule();
 
 	@Before
-	public void beforeEach() throws InterruptedException {
+	public void beforeEach() {
+		config.put("audience.server", "server");
+		config.put("audience.timeout", 5);
+		config.put("global.privacy", "optedin");
+		config.put("analytics.aamForwardingEnabled", false);
+		config.put("experienceCloud.org", "test@AdobeOrg");
 		testableNetworkService = new TestableNetworkService();
 		ServiceProvider.getInstance().setNetworkService(testableNetworkService);
-		TestHelper.registerExtensions(
-			Arrays.asList(MonitorExtension.EXTENSION, Audience.EXTENSION, Identity.EXTENSION),
-			config
+		mockECIDInPersistence();
+	}
+
+	@After
+	public void tearDown() {
+		TestPersistenceHelper.resetKnownPersistence();
+		testableNetworkService.reset();
+		config.clear();
+	}
+
+	@Test
+	public void testGetVisitorProfile_whenVisitorProfileInPersistence_returnsValue() throws Exception {
+		// setup
+		final CountDownLatch latch = new CountDownLatch(1);
+		mockVisitorProfileInPersistence();
+		registerExtensions(config);
+		final Map<String, String> actualVisitorProfile = new HashMap<>();
+
+		// test
+		Audience.getVisitorProfile(
+			new AdobeCallbackWithError<Map<String, String>>() {
+				@Override
+				public void fail(AdobeError adobeError) {
+					Assert.fail("Unexpected AdobeError: " + adobeError.getErrorName());
+				}
+
+				@Override
+				public void call(Map<String, String> eventData) {
+					actualVisitorProfile.putAll(eventData);
+					latch.countDown();
+				}
+			}
+		);
+		latch.await(1, TimeUnit.SECONDS);
+
+		// verify
+		assertEquals(1, actualVisitorProfile.size());
+		assertEquals("visitorValue", actualVisitorProfile.get("visitorKey"));
+	}
+
+	@Test
+	public void testSubmitSignal_when_NetworkHasUnrecoverableError_then_callbackCalledWithEmptyProfile()
+		throws Exception {
+		TestableNetworkRequest signalRequest = new TestableNetworkRequest("https://server/event", HttpMethod.GET);
+		testableNetworkService.setResponseConnectionFor(signalRequest, getMockConnection(404, null));
+		testableNetworkService.setExpectedNetworkRequest(signalRequest, 1);
+
+		mockUUIDInPersistence();
+		registerExtensions(config);
+
+		final HashMap<String, String> responseProfile = new HashMap<>();
+		final CountDownLatch latch = new CountDownLatch(1);
+
+		// Test
+		HashMap<String, String> data = new HashMap<>();
+		data.put("key1", "value1");
+		Audience.signalWithData(
+			data,
+			profileData -> {
+				responseProfile.putAll(profileData);
+				latch.countDown();
+			}
+		);
+
+		// Verify
+		testableNetworkService.assertNetworkRequestCount();
+		latch.await(500, TimeUnit.MILLISECONDS);
+		assertTrue(responseProfile.isEmpty());
+	}
+
+	@Test
+	public void testAudienceReset_shouldClearAllAudienceData() {
+		// setup
+		mockUUIDInPersistence();
+		mockVisitorProfileInPersistence();
+		registerExtensions(config);
+
+		// test
+		Audience.reset();
+
+		TestHelper.sleep(200);
+
+		assertNull(
+			TestPersistenceHelper.readPersistedData(AudienceTestConstants.DataStoreKey.AUDIENCE_DATASTORE, "AAMUserId")
+		);
+		assertNull(
+			TestPersistenceHelper.readPersistedData(
+				AudienceTestConstants.DataStoreKey.AUDIENCE_DATASTORE,
+				"AAMUserProfile"
+			)
 		);
 	}
 
-	//	@Test
-	//	public void testGet_VisitorProfile_when_VisitorProfileInPersistence() throws Exception {
-	//		// Setup Variables
-	//		final HashMap<String, Object> audienceResponse = new HashMap<String, Object>();
-	//		final CountDownLatch latch = new CountDownLatch(1);
-	//
-	//		// Setup expectations
-	//		eventHub.setExpectedEventCount(5);
-	//		mockVisitorProfileInPersistence();
-	//
-	//		// Create callback for getter event
-	//		AdobeCallback<EventData> callback = new AdobeCallback<EventData>() {
-	//			@Override
-	//			public void call(EventData eventData) {
-	//				audienceResponse.put(DPID_KEY, eventData.optString("dpid", null));
-	//				audienceResponse.put(DPUUID_KEY, eventData.optString("dpuuid", null));
-	//				audienceResponse.put(VISITOR_PROFILE_KEY, eventData.optStringMap("aamprofile", null));
-	//				latch.countDown();
-	//			}
-	//		};
-	//
-	//		// Dispatch getter event
-	//		eventHub.dispatch(createAudienceRequestIdentityEvent(callback));
-	//		latch.await(1, TimeUnit.SECONDS);
-	//		List<Event> events = eventHub.getEvents();
-	//
-	//		// Check if 2 events are dispatched
-	//		assertEquals(2, events.size());
-	//
-	//		// check if the getter request event is dispatched
-	//		Event event1 = events.get(0);
-	//		assertEquals(EventType.AUDIENCEMANAGER, event1.getType());
-	//		assertEquals(EventSource.REQUEST_IDENTITY, event1.getSource());
-	//
-	//		// check if the getter's response event is dispatched
-	//		Event event2 = events.get(1);
-	//		assertEquals(EventType.AUDIENCEMANAGER, event2.getType());
-	//		assertEquals(EventSource.RESPONSE_IDENTITY, event2.getSource());
-	//		assertNull(event2.getData().optString(DPUUID_KEY, null));
-	//		assertNull(event2.getData().optString(DPID_KEY, null));
-	//		//assertEquals("testDpid", event2.getData().getString("aamProfile"));
-	//
-	//		// check if the callback is called with correct data
-	//		assertNull(audienceResponse.get(DPID_KEY));
-	//		assertNull(audienceResponse.get(DPUUID_KEY));
-	//		HashMap<String, String> aamProfile = (HashMap<String, String>) audienceResponse.get("aamprofile");
-	//		assertEquals("visitorValue", aamProfile.get("visitorKey"));
-	//	}
+	@Test
+	public void testLifecycleEventToAAM_when_AAMForwardingEnabled_then_shouldNotSendRequest() {
+		// setup
+		testableNetworkService.setExpectedNetworkRequest(
+			new TestableNetworkRequest("https://server/event", HttpMethod.GET),
+			1
+		);
 
-	//	// =============================================================================
-	//	// Test Submit Signal (checks on network request)
-	//	// =============================================================================
-	//
-	//	// =============================================================================
-	//	// Test Submit Signal (mock network request and test further)
-	//	// =============================================================================
-	//
-	//	@Test
-	//	public void testSubmitSignal_when_NetworkHasUnRecoverableError_then_callBackCalledWithEmptyProfile()
-	//		throws Exception {
-	//		eventHub.setExpectedEventCount(3);
-	//		eventHub.ignoreEvents(EventType.HUB, EventSource.SHARED_STATE);
-	//		final HashMap<String, Object> audienceResponse = new HashMap<String, Object>();
-	//		final CountDownLatch latch = new CountDownLatch(1);
-	//		testableNetworkService.setExpectedCount(2);
-	//		TestableNetworkService.NetworkResponse response = new TestableNetworkService.NetworkResponse(
-	//			(String) null,
-	//			404,
-	//			null
-	//		);
-	//		testableNetworkService.setDefaultResponse(response);
-	//
-	//		// Preset the shared state and shared Preferences
-	//		providedValidConfigurationState();
-	//		providedValidIdentityState();
-	//		mockUUIDInPersistence();
-	//
-	//		// Test
-	//		HashMap<String, String> data = new HashMap<String, String>();
-	//		data.put("key1", "value1");
-	//		AdobeCallback<HashMap<String, String>> callback = new AdobeCallback<HashMap<String, String>>() {
-	//			@Override
-	//			public void call(HashMap<String, String> profileData) {
-	//				audienceResponse.put(RESPONSE_PROFILE_DATA, profileData);
-	//				latch.countDown();
-	//			}
-	//		};
-	//		eventHub.dispatch(createAudienceRequestContentEventWithData(data, callback));
-	//		latch.await(1, TimeUnit.SECONDS);
-	//		waitForThreadsWithFailIfTimedOut(5000);
-	//
-	//		// Verify
-	//		List<Event> events = eventHub.getEvents();
-	//		assertEquals(2, events.size());
-	//		HashMap<String, String> aamProfile = (HashMap<String, String>) audienceResponse.get(RESPONSE_PROFILE_DATA);
-	//		assertTrue(aamProfile.isEmpty());
-	//	}
-	//
-	//	@Test
-	//	public void testAudienceReset_shouldClearAllAudienceData() throws Exception {
-	//		// Preset the shared state for audience manager
-	//		mockUUIDInPersistence();
-	//		mockVisitorProfileInPersistence();
-	//
-	//		eventHub.ignoreAllStateChangeEvents();
-	//		EventData aamSharedState = new EventData();
-	//		aamSharedState.putString(UUID_KEY, "testUUID");
-	//		aamSharedState.putString(DPID_KEY, "testDPID");
-	//		aamSharedState.putString(DPUUID_KEY, "testDPUUID");
-	//		aamSharedState.putStringMap(
-	//			VISITOR_PROFILE_KEY,
-	//			new HashMap<String, String>() {
-	//				{
-	//					put("key1", "val1");
-	//				}
-	//			}
-	//		);
-	//		eventHub.createSharedState("com.adobe.module.audience", 0, aamSharedState);
-	//
-	//		eventHub.clearIgnoredEventFilters();
-	//		eventHub.setExpectedEventCount(1);
-	//		eventHub.ignoreEvents(EventType.AUDIENCEMANAGER, EventSource.REQUEST_RESET);
-	//		// Test
-	//		eventHub.dispatch(
-	//			new Event.Builder("AudienceRequestReset", EventType.AUDIENCEMANAGER, EventSource.REQUEST_RESET).build()
-	//		);
-	//
-	//		waitForThreadsWithFailIfTimedOut(5000);
-	//
-	//		List<Event> events = eventHub.getEvents();
-	//
-	//		assertEquals(1, events.size());
-	//		assertNull(platformServices.getLocalStorageService().getDataStore(AAM_DATA_STORE).getString("AAMUserId", null));
-	//		assertNull(
-	//			platformServices.getLocalStorageService().getDataStore(AAM_DATA_STORE).getString("AAMUserProfile", null)
-	//		);
-	//		assertEquals(EventType.HUB, events.get(0).getEventType());
-	//		assertEquals(EventSource.SHARED_STATE, events.get(0).getEventSource());
-	//	}
-	//
-	//	@Test
-	//	public void testLifecycleEventToAAM_when_AAMForwardingEnabled_then_shouldNotSendRequest() {
-	//		// setup expectations
-	//		testableNetworkService.setExpectedCount(1);
-	//		eventHub.ignoreAllStateChangeEvents();
-	//		eventHub.ignoreEvents(EventType.LIFECYCLE, EventSource.RESPONSE_CONTENT);
-	//
-	//		// configure
-	//		configureWithPrivacyAAMForwardingEnabled();
-	//		providedValidIdentityState();
-	//		mockUUIDInPersistence();
-	//
-	//		eventHub.dispatch(createLifecycleResponseEvent());
-	//		waitForThreadsWithFailIfTimedOut(5000);
-	//
-	//		// Verify
-	//		assertEquals(0, testableNetworkService.waitAndGetCount());
-	//	}
-	//
-	//	@Test
-	//	public void testLifecycleEventToAAM_when_AAMForwardingDisabled_then_shouldSendRequest() throws Exception {
-	//		// setup expectations
-	//		testableNetworkService.setExpectedCount(1);
-	//		eventHub.ignoreAllStateChangeEvents();
-	//		eventHub.ignoreEvents(EventType.LIFECYCLE, EventSource.RESPONSE_CONTENT);
-	//
-	//		// configure
-	//		configureWithPrivacyAAMForwardingDisabled();
-	//		providedValidIdentityState();
-	//		mockUUIDInPersistence();
-	//
-	//		eventHub.dispatch(createLifecycleResponseEvent());
-	//		waitForThreadsWithFailIfTimedOut(5000);
-	//
-	//		// Verify
-	//		assertEquals(1, testableNetworkService.waitAndGetCount());
-	//		assertTrue(testableNetworkService.getItem(0).url.contains("http://server/event?"));
-	//		assertTrue(testableNetworkService.getItem(0).url.contains("c_contextDataKey=contextDataValue"));
-	//		assertTrue(testableNetworkService.getItem(0).url.contains("d_mid=marketingCloudId"));
-	//		assertTrue(testableNetworkService.getItem(0).url.contains("d_blob=blobValue"));
-	//		assertTrue(testableNetworkService.getItem(0).url.contains("dcs_region=locationHintValue"));
-	//		assertTrue(testableNetworkService.getItem(0).url.contains("d_uuid=testUUID"));
-	//		assertTrue(testableNetworkService.getItem(0).url.contains("d_ptfm=mockPlatform"));
-	//		assertTrue(testableNetworkService.getItem(0).url.contains("d_dst=1"));
-	//		assertTrue(testableNetworkService.getItem(0).url.contains("d_rtbd=json"));
-	//		assertNull(testableNetworkService.getItem(0).connectPayload);
-	//		assertNull(testableNetworkService.getItem(0).requestProperty);
-	//		assertEquals(TestableNetworkService.NetworkRequestType.SYNC, testableNetworkService.getItem(0).type);
-	//	}
-	//
-	//	@Test
-	//	public void testSubmitSignalTwice_then_ConfigUpdate_shouldSendRequestTwiceInOrder() throws Exception {
-	//		// setup expectations
-	//		testableNetworkService.setExpectedCount(2);
-	//		eventHub.ignoreAllStateChangeEvents();
-	//		eventHub.ignoreEvents(EventType.LIFECYCLE, EventSource.RESPONSE_CONTENT);
-	//
-	//		// dispatch Submit Event 1
-	//		HashMap<String, String> data = new HashMap<String, String>();
-	//		data.put("key1", "value1");
-	//		eventHub.dispatch(createAudienceRequestContentEventWithData(data, null));
-	//
-	//		// dispatch Submit Event 2
-	//		HashMap<String, String> data2 = new HashMap<String, String>();
-	//		data2.put("key2", "value2");
-	//		eventHub.dispatch(createAudienceRequestContentEventWithData(data2, null));
-	//
-	//		waitForThreadsWithFailIfTimedOut(5000);
-	//
-	//		// Verify that no network call is made
-	//		assertEquals(0, testableNetworkService.waitAndGetCount());
-	//		testableNetworkService.setExpectedCount(2);
-	//
-	//		// configure
-	//		configureWithPrivacyAAMForwardingDisabled();
-	//
-	//		// Verify that two network calls are made
-	//		assertEquals(2, testableNetworkService.waitAndGetCount());
-	//		assertTrue(testableNetworkService.getItem(0).url.contains("http://server/event?"));
-	//		assertTrue(testableNetworkService.getItem(0).url.contains("c_key1=value1"));
-	//		assertTrue(testableNetworkService.getItem(0).url.contains("d_ptfm=mockPlatform"));
-	//		assertTrue(testableNetworkService.getItem(0).url.contains("d_dst=1"));
-	//		assertTrue(testableNetworkService.getItem(0).url.contains("d_rtbd=json"));
-	//		assertNull(testableNetworkService.getItem(0).connectPayload);
-	//		assertNull(testableNetworkService.getItem(0).requestProperty);
-	//		assertEquals(TestableNetworkService.NetworkRequestType.SYNC, testableNetworkService.getItem(0).type);
-	//
-	//		assertTrue(testableNetworkService.getItem(1).url.contains("http://server/event?"));
-	//		assertTrue(testableNetworkService.getItem(1).url.contains("c_key2=value2"));
-	//		assertTrue(testableNetworkService.getItem(1).url.contains("d_ptfm=mockPlatform"));
-	//		assertTrue(testableNetworkService.getItem(1).url.contains("d_dst=1"));
-	//		assertTrue(testableNetworkService.getItem(1).url.contains("d_rtbd=json"));
-	//		assertNull(testableNetworkService.getItem(1).connectPayload);
-	//		assertNull(testableNetworkService.getItem(1).requestProperty);
-	//		assertEquals(TestableNetworkService.NetworkRequestType.SYNC, testableNetworkService.getItem(1).type);
-	//	}
+		mockUUIDInPersistence();
+		config.put("analytics.aamForwardingEnabled", true);
+		registerExtensions(config);
+
+		MobileCore.dispatchEvent(createLifecycleResponseEvent());
+
+		// Verify
+		assertEquals(
+			0,
+			testableNetworkService
+				.getReceivedNetworkRequestsMatching(new TestableNetworkRequest("https://server/event", HttpMethod.GET))
+				.size()
+		);
+	}
+
+	@Test
+	public void testLifecycleEventToAAM_when_AAMForwardingDisabled_then_shouldSendRequest() throws Exception {
+		// setup
+		testableNetworkService.setExpectedNetworkRequest(
+			new TestableNetworkRequest("https://server/event", HttpMethod.GET),
+			1
+		);
+
+		mockUUIDInPersistence();
+		config.put("analytics.aamForwardingEnabled", false);
+		registerExtensions(config);
+
+		// test
+		MobileCore.dispatchEvent(createLifecycleResponseEvent());
+
+		// Verify
+		testableNetworkService.assertNetworkRequestCount();
+		List<TestableNetworkRequest> networkRequests = testableNetworkService.getReceivedNetworkRequestsMatching(
+			new TestableNetworkRequest("https://server/event", HttpMethod.GET)
+		);
+		assertEquals(1, networkRequests.size());
+
+		assertTrue(networkRequests.get(0).getUrl().contains("https://server/event?"));
+		assertTrue(networkRequests.get(0).getUrl().contains("c_contextDataKey=contextDataValue"));
+		assertTrue(networkRequests.get(0).getUrl().contains("d_mid=testMid"));
+		assertTrue(networkRequests.get(0).getUrl().contains("d_uuid=testUUID"));
+		assertTrue(networkRequests.get(0).getUrl().contains("d_ptfm=android"));
+		assertTrue(networkRequests.get(0).getUrl().contains("d_dst=1"));
+		assertTrue(networkRequests.get(0).getUrl().contains("d_rtbd=json"));
+		assertNull(networkRequests.get(0).getBody());
+		assertNull(networkRequests.get(0).getHeaders());
+	}
+
+	@Test
+	public void testSubmitSignalTwice_then_ConfigUpdate_shouldSendRequestTwiceInOrder() throws Exception {
+		// setup expectations
+		testableNetworkService.setExpectedNetworkRequest(
+			new TestableNetworkRequest("https://server/event", HttpMethod.GET),
+			2
+		);
+		mockUUIDInPersistence();
+		registerExtensions(null);
+
+		// test
+		HashMap<String, String> data = new HashMap<>();
+		data.put("key1", "value1");
+		Audience.signalWithData(data, null);
+
+		// dispatch Submit Event 2
+		HashMap<String, String> data2 = new HashMap<>();
+		data2.put("key2", "value2");
+		Audience.signalWithData(data2, null);
+
+		// Verify that no network call is made
+		List<TestableNetworkRequest> networkRequests = testableNetworkService.getReceivedNetworkRequestsMatching(
+			new TestableNetworkRequest("https://server/event", HttpMethod.GET)
+		);
+		assertEquals(0, networkRequests.size());
+
+		// configure
+		config.put("analytics.aamForwardingEnabled", false);
+		MobileCore.updateConfiguration(config);
+
+		// Verify that two network calls are made
+		testableNetworkService.assertNetworkRequestCount();
+		networkRequests =
+			testableNetworkService.getReceivedNetworkRequestsMatching(
+				new TestableNetworkRequest("https://server/event", HttpMethod.GET)
+			);
+		assertEquals(2, networkRequests.size());
+		assertTrue(networkRequests.get(0).getUrl().contains("https://server/event?"));
+		assertTrue(networkRequests.get(0).getUrl().contains("c_key1=value1"));
+		assertTrue(networkRequests.get(0).getUrl().contains("d_ptfm=android"));
+		assertTrue(networkRequests.get(0).getUrl().contains("d_dst=1"));
+		assertTrue(networkRequests.get(0).getUrl().contains("d_rtbd=json"));
+		assertNull(networkRequests.get(0).getBody());
+		assertNull(networkRequests.get(0).getHeaders());
+
+		assertTrue(networkRequests.get(1).getUrl().contains("https://server/event?"));
+		assertTrue(networkRequests.get(1).getUrl().contains("c_key2=value2"));
+		assertTrue(networkRequests.get(1).getUrl().contains("d_ptfm=android"));
+		assertTrue(networkRequests.get(1).getUrl().contains("d_dst=1"));
+		assertTrue(networkRequests.get(1).getUrl().contains("d_rtbd=json"));
+		assertNull(networkRequests.get(1).getBody());
+		assertNull(networkRequests.get(1).getHeaders());
+	}
+
 	//
 	//	@Test
 	//	public void testSubmitSignal_then_LifecycleEventToAAM_then_ConfigUpdate_with_AAMForwardingEnabled_then_shouldSendRequestOnce()
@@ -739,6 +705,7 @@ public class AudienceModuleTest {
 	//		waitForThreadsWithFailIfTimedOut(1000);
 	//	}
 	//
+
 	@Test
 	public void test_RulesResponseEvent_when_NotAAM_then_shouldNotSendRequest() {
 		// setup expectations
@@ -748,8 +715,8 @@ public class AudienceModuleTest {
 		);
 
 		// configure
-		providedValidConfigurationState();
 		mockUUIDInPersistence();
+		registerExtensions(config);
 
 		MobileCore.dispatchEvent(createNonAAMRulesResponseEvent());
 
@@ -764,50 +731,6 @@ public class AudienceModuleTest {
 	}
 
 	// =============================================================================
-	// Configuration Shared State Mocks
-	// =============================================================================
-	private void providedValidConfigurationState() {
-		configureWithPrivacyAAMForwardingDisabled();
-	}
-
-	private void providedConfigurationStateWithoutAudienceManager() {
-		MobileCore.clearUpdatedConfiguration();
-	}
-
-	private void configureWithPrivacy(final String privacyStatus) {
-		Map<String, Object> config = new HashMap<>();
-		config.put("audience.server", "server");
-		config.put("audience.timeout", 5);
-		config.put("global.privacy", privacyStatus);
-		config.put("analytics.aamForwardingEnabled", false);
-		config.put("experienceCloud.org", "test@AdobeOrg");
-
-		MobileCore.updateConfiguration(config);
-	}
-
-	private void configureWithPrivacyAAMForwardingDisabled() {
-		Map<String, Object> config = new HashMap<>();
-		config.put("audience.server", "server");
-		config.put("audience.timeout", 5);
-		config.put("global.privacy", "optedin");
-		config.put("analytics.aamForwardingEnabled", false);
-		config.put("experienceCloud.org", "test@AdobeOrg");
-
-		MobileCore.updateConfiguration(config);
-	}
-
-	private void configureWithPrivacyAAMForwardingEnabled() {
-		Map<String, Object> config = new HashMap<>();
-		config.put("audience.server", "server");
-		config.put("audience.timeout", 5);
-		config.put("global.privacy", "optedin");
-		config.put("analytics.aamForwardingEnabled", true);
-		config.put("experienceCloud.org", "test@AdobeOrg");
-
-		MobileCore.updateConfiguration(config);
-	}
-
-	// =============================================================================
 	// Persistence Mocks
 	// =============================================================================
 
@@ -816,6 +739,14 @@ public class AudienceModuleTest {
 			AudienceTestConstants.DataStoreKey.AUDIENCE_DATASTORE,
 			"AAMUserId",
 			"testUUID"
+		);
+	}
+
+	private void mockECIDInPersistence() {
+		TestPersistenceHelper.updatePersistence(
+			AudienceTestConstants.DataStoreKey.IDENTITY_DATASTORE,
+			"ADOBEMOBILE_PERSISTED_MID",
+			"testMid"
 		);
 	}
 
@@ -989,5 +920,51 @@ public class AudienceModuleTest {
 		// todo: set shared state
 		//eventHub.createSharedState("com.adobe.module.configuration", eventHub.getAllEventsCount(), config);
 		MobileCore.dispatchEvent(event);
+	}
+
+	void registerExtensions(final Map<String, Object> config) {
+		try {
+			TestHelper.registerExtensions(
+				Arrays.asList(MonitorExtension.EXTENSION, Audience.EXTENSION, Identity.EXTENSION),
+				config
+			);
+		} catch (InterruptedException e) {
+			fail("Unexpected InterruptedException thrown on registerExtensions");
+		}
+	}
+
+	HttpConnecting getMockConnection(final int responseCode, final String payload) {
+		return new HttpConnecting() {
+			@Override
+			public InputStream getInputStream() {
+				if (payload != null) {
+					return new ByteArrayInputStream(payload.getBytes());
+				}
+				return null;
+			}
+
+			@Override
+			public InputStream getErrorStream() {
+				return null;
+			}
+
+			@Override
+			public int getResponseCode() {
+				return responseCode;
+			}
+
+			@Override
+			public String getResponseMessage() {
+				return null;
+			}
+
+			@Override
+			public String getResponsePropertyValue(String s) {
+				return null;
+			}
+
+			@Override
+			public void close() {}
+		};
 	}
 }

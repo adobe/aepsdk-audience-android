@@ -47,6 +47,7 @@ public class AudienceTestConstants {
 
 		public static final String CONFIG_DATASTORE = "AdobeMobile_ConfigState";
 		public static final String AUDIENCE_DATASTORE = "AAMDataStore";
+		public static final String IDENTITY_DATASTORE = "visitorIDServiceDataStore";
 
 		private DataStoreKey() {}
 	}
