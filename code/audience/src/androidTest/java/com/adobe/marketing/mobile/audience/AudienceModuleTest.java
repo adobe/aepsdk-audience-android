@@ -596,57 +596,68 @@ public class AudienceModuleTest {
 	//			)
 	//		);
 	//	}
-	//
-	//	@Test
-	//	public void testSubmitSignal_when_PrivacyUnknown_Then_PrivacyChangesToOptIN_ShouldSendTwoHits() throws Exception {
-	//		eventHub.ignoreEvents(EventType.HUB, EventSource.SHARED_STATE);
-	//		final HashMap<String, Object> audienceResponse1 = new HashMap<String, Object>();
-	//		final HashMap<String, Object> audienceResponse2 = new HashMap<String, Object>();
-	//		final CountDownLatch latch = new CountDownLatch(2);
-	//		testableNetworkService.setExpectedCount(2);
-	//		testableNetworkService.setDefaultResponse(
-	//			"{\"uuid\":\"19994521975870785742420741570375407533\", \"stuff\":[{\"cv\":\"cv\",\"cn\":\"cn\"}]}"
-	//		);
-	//
-	//		// Preset the shared state and shared Preferences
-	//		configureWithPrivacy("optunknown", 0);
-	//		providedValidIdentityState();
-	//		mockUUIDInPersistence();
-	//
-	//		// Test
-	//		HashMap<String, String> data = new HashMap<String, String>();
-	//		data.put("key1", "value1");
-	//		AdobeCallback<HashMap<String, String>> callback1 = new AdobeCallback<HashMap<String, String>>() {
-	//			@Override
-	//			public void call(HashMap<String, String> profileData) {
-	//				audienceResponse1.put(RESPONSE_PROFILE_DATA, profileData);
-	//				latch.countDown();
-	//			}
-	//		};
-	//		AdobeCallback<HashMap<String, String>> callback2 = new AdobeCallback<HashMap<String, String>>() {
-	//			@Override
-	//			public void call(HashMap<String, String> profileData) {
-	//				audienceResponse2.put(RESPONSE_PROFILE_DATA, profileData);
-	//				latch.countDown();
-	//			}
-	//		};
-	//
-	//		eventHub.dispatch(createAudienceRequestContentEventWithData(data, callback1));
-	//		eventHub.dispatch(createAudienceRequestContentEventWithData(data, callback2));
-	//
-	//		latch.await(1, TimeUnit.SECONDS);
-	//		waitForThreadsWithFailIfTimedOut(1000);
-	//
-	//		assertEquals(0, testableNetworkService.waitAndGetCount());
-	//
-	//		// Privacy changes to opt in
-	//		dispatchConfigurationResponseEvent(MobilePrivacyStatus.OPT_IN);
-	//		assertEquals(2, testableNetworkService.waitAndGetCount());
-	//		assertTrue(testableNetworkService.getItem(0).url.contains("http://server/event?"));
-	//		assertTrue(testableNetworkService.getItem(1).url.contains("http://server/event?"));
-	//
-	//		waitForThreadsWithFailIfTimedOut(1000);
-	//	}
+
+	@Ignore("fails when running in the suite")
+	@Test
+	public void testSubmitSignal_when_PrivacyUnknown_Then_PrivacyChangesToOptIN_ShouldSendTwoHits() throws Exception {
+		TestableNetworkRequest signalRequest = new TestableNetworkRequest("https://server/event", HttpMethod.GET);
+		testableNetworkService.setResponseConnectionFor(
+			signalRequest,
+			getMockConnection(
+				200,
+				"{\"uuid\":\"19994521975870785742420741570375407533\", \"stuff\":[{\"cv\":\"cv\",\"cn\":\"cn\"}]}"
+			)
+		);
+		testableNetworkService.setExpectedNetworkRequest(signalRequest, 2);
+
+		// Preset the config and shared Preferences
+		config.put("global.privacy", "optunknown");
+		mockUUIDInPersistence();
+		registerExtensions(config);
+
+		// Test
+		final HashMap<String, String> audienceProfileResponse1 = new HashMap<>();
+		final HashMap<String, String> audienceProfileResponse2 = new HashMap<>();
+		HashMap<String, String> data = new HashMap<>();
+		data.put("key1", "value1");
+
+		final CountDownLatch latch = new CountDownLatch(2);
+		Audience.signalWithData(
+			data,
+			profileData -> {
+				audienceProfileResponse1.putAll(profileData);
+				latch.countDown();
+			}
+		);
+
+		HashMap<String, String> data2 = new HashMap<>();
+		data2.put("key2", "value2");
+		Audience.signalWithData(
+			data2,
+			profileData -> {
+				audienceProfileResponse2.putAll(profileData);
+				latch.countDown();
+			}
+		);
+
+		latch.await(1, TimeUnit.SECONDS);
+		assertTrue(audienceProfileResponse1.isEmpty());
+		assertTrue(audienceProfileResponse2.isEmpty());
+
+		assertEquals(0, testableNetworkService.getReceivedNetworkRequestsMatching(signalRequest).size());
+
+		// Privacy changes to opt in
+		MobileCore.setPrivacyStatus(MobilePrivacyStatus.OPT_IN);
+		testableNetworkService.assertNetworkRequestCount();
+		List<TestableNetworkRequest> requests = testableNetworkService.getReceivedNetworkRequestsMatching(
+			signalRequest
+		);
+		assertEquals(2, requests.size());
+		assertTrue(requests.get(0).getUrl().contains("https://server/event?"));
+		assertTrue(requests.get(0).getUrl().contains("c_key1=value1"));
+		assertTrue(requests.get(1).getUrl().contains("https://server/event?"));
+		assertTrue(requests.get(1).getUrl().contains("c_key2=value2"));
+	}
 
 	@Test
 	public void testSubmitSignal_when_PrivacyUnknown_Then_PrivacyChangesToOptOUT_ShouldClearHits() throws Exception {
