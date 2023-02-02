@@ -38,7 +38,7 @@ import org.junit.rules.TestRule;
 import org.junit.runner.RunWith;
 
 @RunWith(AndroidJUnit4.class)
-public class AudienceModuleTest {
+public class AudienceFunctionalTests {
 
 	private final Map<String, Object> config = new HashMap<>();
 
@@ -299,8 +299,9 @@ public class AudienceModuleTest {
 	//		assertEquals(TestableNetworkService.NetworkRequestType.SYNC, testableNetworkService.getItem(0).type);
 	//	}
 	//
+	//
 	//	@Test
-	//	public void testSubmitSignal_then_LifecycleEventToAAM_then_IdentityUpdate_with_AAMForwardingEnabled_then_shouldSendRequestOnce()
+	//	public void testSubmitSignal_AndLifecycleEventToAAM_AndIdentityUpdate_AndAAMForwardingEnabled_then_shouldSendRequestOnce()
 	//		throws Exception {
 	//		// setup expectations
 	//		testableNetworkService.setExpectedCount(2);
@@ -348,130 +349,141 @@ public class AudienceModuleTest {
 	//		assertNull(testableNetworkService.getItem(0).requestProperty);
 	//		assertEquals(TestableNetworkService.NetworkRequestType.SYNC, testableNetworkService.getItem(0).type);
 	//	}
-	//
-	//	@Test
-	//	public void testSubmitSignal_then_LifecycleEventToAAM_then_ConfigUpdate_with_AAMForwardingDisabled_then_shouldSendRequestTwice()
-	//		throws Exception {
-	//		// setup expectations
-	//		testableNetworkService.setExpectedCount(2);
-	//		eventHub.ignoreAllStateChangeEvents();
-	//		eventHub.ignoreEvents(EventType.LIFECYCLE, EventSource.RESPONSE_CONTENT);
-	//
-	//		// dispatch Submit Event 1
-	//		HashMap<String, String> data = new HashMap<String, String>();
-	//		data.put("key1", "value1");
-	//		eventHub.dispatch(createAudienceRequestContentEventWithData(data, null));
-	//
-	//		// dispatch Lifecycle Event
-	//		eventHub.dispatch(createLifecycleResponseEvent());
-	//
-	//		waitForThreadsWithFailIfTimedOut(5000);
-	//
-	//		// Verify that no network call is made
-	//		assertEquals(0, testableNetworkService.waitAndGetCount());
-	//		testableNetworkService.setExpectedCount(2);
-	//
-	//		// configure
-	//		configureWithPrivacyAAMForwardingDisabled();
-	//
-	//		// Verify that two network calls are made
-	//		assertEquals(2, testableNetworkService.waitAndGetCount());
-	//		assertTrue(testableNetworkService.getItem(0).url.contains("http://server/event?"));
-	//		assertTrue(testableNetworkService.getItem(0).url.contains("c_key1=value1"));
-	//		assertTrue(testableNetworkService.getItem(0).url.contains("d_ptfm=mockPlatform"));
-	//		assertTrue(testableNetworkService.getItem(0).url.contains("d_dst=1"));
-	//		assertTrue(testableNetworkService.getItem(0).url.contains("d_rtbd=json"));
-	//		assertNull(testableNetworkService.getItem(0).connectPayload);
-	//		assertNull(testableNetworkService.getItem(0).requestProperty);
-	//		assertEquals(TestableNetworkService.NetworkRequestType.SYNC, testableNetworkService.getItem(0).type);
-	//
-	//		assertTrue(testableNetworkService.getItem(1).url.contains("http://server/event?"));
-	//		assertTrue(testableNetworkService.getItem(1).url.contains("c_contextDataKey=contextDataValue"));
-	//		assertTrue(testableNetworkService.getItem(1).url.contains("d_ptfm=mockPlatform"));
-	//		assertTrue(testableNetworkService.getItem(1).url.contains("d_dst=1"));
-	//		assertTrue(testableNetworkService.getItem(1).url.contains("d_rtbd=json"));
-	//		assertNull(testableNetworkService.getItem(1).connectPayload);
-	//		assertNull(testableNetworkService.getItem(1).requestProperty);
-	//		assertEquals(TestableNetworkService.NetworkRequestType.SYNC, testableNetworkService.getItem(1).type);
-	//	}
-	//
-	//	@Test
-	//	public void testLifecycleEvent_then_SubmitSignal_then_ConfigUpdate_with_then_shouldSendRequestTwice()
-	//		throws Exception {
-	//		// setup expectations
-	//		testableNetworkService.setExpectedCount(2);
-	//		eventHub.ignoreAllStateChangeEvents();
-	//		eventHub.ignoreEvents(EventType.LIFECYCLE, EventSource.RESPONSE_CONTENT);
-	//
-	//		// dispatch Lifecycle Event
-	//		eventHub.dispatch(createLifecycleResponseEvent());
-	//
-	//		// dispatch Submit Event 1
-	//		HashMap<String, String> data = new HashMap<String, String>();
-	//		data.put("key1", "value1");
-	//		eventHub.dispatch(createAudienceRequestContentEventWithData(data, null));
-	//
-	//		waitForThreadsWithFailIfTimedOut(5000);
-	//
-	//		// Verify that no network call is made
-	//		assertEquals(0, testableNetworkService.waitAndGetCount());
-	//		testableNetworkService.setExpectedCount(2);
-	//
-	//		// configure
-	//		providedValidConfigurationState();
-	//
-	//		// Verify that two network calls are made in order
-	//		assertEquals(2, testableNetworkService.waitAndGetCount());
-	//		assertTrue(testableNetworkService.getItem(0).url.contains("http://server/event?"));
-	//		assertTrue(testableNetworkService.getItem(0).url.contains("c_contextDataKey=contextDataValue"));
-	//		assertTrue(testableNetworkService.getItem(0).url.contains("d_ptfm=mockPlatform"));
-	//		assertTrue(testableNetworkService.getItem(0).url.contains("d_dst=1"));
-	//		assertTrue(testableNetworkService.getItem(0).url.contains("d_rtbd=json"));
-	//		assertNull(testableNetworkService.getItem(0).connectPayload);
-	//		assertNull(testableNetworkService.getItem(0).requestProperty);
-	//		assertEquals(TestableNetworkService.NetworkRequestType.SYNC, testableNetworkService.getItem(0).type);
-	//
-	//		assertTrue(testableNetworkService.getItem(1).url.contains("http://server/event?"));
-	//		assertTrue(testableNetworkService.getItem(1).url.contains("c_key1=value1"));
-	//		assertTrue(testableNetworkService.getItem(1).url.contains("d_ptfm=mockPlatform"));
-	//		assertTrue(testableNetworkService.getItem(1).url.contains("d_dst=1"));
-	//		assertTrue(testableNetworkService.getItem(1).url.contains("d_rtbd=json"));
-	//		assertNull(testableNetworkService.getItem(1).connectPayload);
-	//		assertNull(testableNetworkService.getItem(1).requestProperty);
-	//		assertEquals(TestableNetworkService.NetworkRequestType.SYNC, testableNetworkService.getItem(1).type);
-	//		waitForThreadsWithFailIfTimedOut(1000);
-	//	}
-	//
-	//	@Test
-	//	public void testSharedState_When_EverythingIsSet() throws Exception {
-	//		// setup expectations
-	//		eventHub.ignoreAllStateChangeEvents();
-	//		eventHub.ignoreEvents(EventType.LIFECYCLE, EventSource.RESPONSE_CONTENT);
-	//
-	//		// dispatch setter for dpid and dpuuid
-	//		eventHub.dispatch(createAudienceRequestIdentityEvent("testdpid", "testDpuuid"));
-	//
-	//		// Preset the shared state and shared Preferences
-	//		providedValidConfigurationState();
-	//		providedValidIdentityState();
-	//		mockUUIDInPersistence();
-	//		testableNetworkService.setDefaultResponse(
-	//			"{\"uuid\":\"19994521975870785742420741570375407533\", \"dests\":[{\"c\":\"http://someurl.com/forward\"}], \"stuff\":[{\"cv\":\"cv\",\"cn\":\"cn\"}]}"
-	//		);
-	//
-	//		// dispatch audience request event
-	//		eventHub.dispatch(createAudienceRequestContentEventWithData(sampleCustomerData(), null));
-	//		waitForThreadsWithFailIfTimedOut(5000);
-	//
-	//		// verify shared state
-	//		HashMap<String, String> aamProfileResponse = new HashMap<String, String>();
-	//		aamProfileResponse.put("cn", "cv");
-	//		EventData sharedState = getLastAudienceSharedState();
-	//		assertEquals(aamProfileResponse, sharedState.optStringMap("aamprofile", null));
-	//		assertEquals("testdpid", sharedState.optString("dpid", null));
-	//		assertEquals("testDpuuid", sharedState.optString("dpuuid", null));
-	//	}
-	//
+
+	@Ignore("fails when running the entire suite")
+	@Test
+	public void testSubmitSignal_AndLifecycleEventToAAM_AndConfigUpdateAAMForwardingDisabled_thenShouldSendTwoRequestsInCorrectOrder()
+		throws Exception {
+		// setup
+		TestableNetworkRequest signalRequest = new TestableNetworkRequest("https://server/event", HttpMethod.GET);
+		testableNetworkService.setExpectedNetworkRequest(signalRequest, 2);
+
+		config.put("global.privacy", "optunknown");
+		registerExtensions(config);
+
+		// dispatch signal
+		HashMap<String, String> data = new HashMap<>();
+		data.put("key1", "value1");
+		Audience.signalWithData(data, null);
+
+		// dispatch Lifecycle Event
+		MobileCore.dispatchEvent(createLifecycleResponseEvent());
+
+		// verify that no network call is made
+		assertEquals(0, testableNetworkService.getReceivedNetworkRequestsMatching(signalRequest).size());
+
+		// configure
+		config.put("global.privacy", "optedin");
+		config.put("analytics.aamForwardingEnabled", false);
+		MobileCore.updateConfiguration(config);
+
+		// verify that two network calls are made in order
+		testableNetworkService.assertNetworkRequestCount();
+		List<TestableNetworkRequest> requests = testableNetworkService.getReceivedNetworkRequestsMatching(
+			signalRequest
+		);
+		assertEquals(2, requests.size());
+		assertTrue(requests.get(0).getUrl().contains("https://server/event?"));
+		assertTrue(requests.get(0).getUrl().contains("c_key1=value1"));
+		assertTrue(requests.get(0).getUrl().contains("d_ptfm=android"));
+		assertTrue(requests.get(0).getUrl().contains("d_dst=1"));
+		assertTrue(requests.get(0).getUrl().contains("d_rtbd=json"));
+		assertNull(requests.get(0).getBody());
+		assertNull(requests.get(0).getHeaders());
+
+		assertTrue(requests.get(1).getUrl().contains("https://server/event?"));
+		assertTrue(requests.get(1).getUrl().contains("c_contextDataKey=contextDataValue"));
+		assertTrue(requests.get(1).getUrl().contains("d_ptfm=android"));
+		assertTrue(requests.get(1).getUrl().contains("d_dst=1"));
+		assertTrue(requests.get(1).getUrl().contains("d_rtbd=json"));
+		assertNull(requests.get(1).getBody());
+		assertNull(requests.get(1).getHeaders());
+	}
+
+	@Ignore("fails when running the entire suite")
+	@Test
+	public void testLifecycleEvent_AndSubmitSignal_AndConfigUpdate_thenShouldSendTwoRequestsInCorrectOrder()
+		throws InterruptedException {
+		// setup
+		TestableNetworkRequest signalRequest = new TestableNetworkRequest("https://server/event", HttpMethod.GET);
+		testableNetworkService.setExpectedNetworkRequest(signalRequest, 2);
+
+		config.put("global.privacy", "optunknown");
+		registerExtensions(config);
+
+		// dispatch Lifecycle Event
+		MobileCore.dispatchEvent(createLifecycleResponseEvent());
+
+		// dispatch signal
+		HashMap<String, String> data = new HashMap<>();
+		data.put("key1", "value1");
+		Audience.signalWithData(data, null);
+
+		// verify that no network call is made
+		assertEquals(0, testableNetworkService.getReceivedNetworkRequestsMatching(signalRequest).size());
+
+		// configure
+		config.put("global.privacy", "optedin");
+		MobileCore.updateConfiguration(config);
+
+		// verify that two network calls are made in order
+		testableNetworkService.assertNetworkRequestCount();
+		List<TestableNetworkRequest> requests = testableNetworkService.getReceivedNetworkRequestsMatching(
+			signalRequest
+		);
+		assertEquals(2, requests.size());
+		assertTrue(requests.get(0).getUrl().contains("https://server/event?"));
+		assertTrue(requests.get(0).getUrl().contains("c_contextDataKey=contextDataValue"));
+		assertTrue(requests.get(0).getUrl().contains("d_ptfm=android"));
+		assertTrue(requests.get(0).getUrl().contains("d_dst=1"));
+		assertTrue(requests.get(0).getUrl().contains("d_rtbd=json"));
+		assertNull(requests.get(0).getBody());
+		assertNull(requests.get(0).getHeaders());
+
+		assertTrue(requests.get(1).getUrl().contains("https://server/event?"));
+		assertTrue(requests.get(1).getUrl().contains("c_key1=value1"));
+		assertTrue(requests.get(1).getUrl().contains("d_ptfm=android"));
+		assertTrue(requests.get(1).getUrl().contains("d_dst=1"));
+		assertTrue(requests.get(1).getUrl().contains("d_rtbd=json"));
+		assertNull(requests.get(1).getBody());
+		assertNull(requests.get(1).getHeaders());
+	}
+
+	@Ignore("investigate: Cannot create com.adobe.module.audience shared state at version 4. More recent state exists.")
+	@Test
+	public void testSubmitSignal_WhenEverythingIsSetAndServerResponse_updatesSharedState() throws Exception {
+		// setup
+		TestableNetworkRequest signalRequest = new TestableNetworkRequest("https://server/event", HttpMethod.GET);
+		testableNetworkService.setResponseConnectionFor(
+			signalRequest,
+			getMockConnection(
+				200,
+				"{\"uuid\":\"19994521975870785742420741570375407533\", \"stuff\":[{\"cv\":\"cv\",\"cn\":\"cn\"}]}"
+			)
+		);
+		testableNetworkService.setExpectedNetworkRequest(signalRequest, 1);
+
+		// preset the config and shared Preferences
+		//mockUUIDInPersistence();
+		registerExtensions(config);
+
+		// test
+		Audience.signalWithData(sampleCustomerData(), null);
+
+		// verify shared state
+		testableNetworkService.assertNetworkRequestCount();
+		TestHelper.sleep(200);
+		Map<String, String> expectedProfile = new HashMap<>();
+		expectedProfile.put("cn", "cv");
+
+		Map<String, Object> sharedState = getLastAudienceSharedState();
+		assertNotNull(sharedState);
+		assertEquals(2, sharedState.size());
+		assertEquals(expectedProfile, DataReader.optStringMap(sharedState, "aamprofile", null));
+		assertEquals("testUUID", DataReader.optString(sharedState, "uuid", null));
+	}
+
+	// todo: move these tests in a separate file and mock serviceprovider
 	//	@Test
 	//	public void testSubmitSignal_when_LocalStorageService_NotInitialized_ShouldNotCrash() throws Exception {
 	//		// recreate eventHub with null DataStorageService.
