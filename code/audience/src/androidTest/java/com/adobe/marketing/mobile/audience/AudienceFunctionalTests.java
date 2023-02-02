@@ -19,7 +19,6 @@ import com.adobe.marketing.mobile.services.HttpConnecting;
 import com.adobe.marketing.mobile.services.HttpMethod;
 import com.adobe.marketing.mobile.services.ServiceProvider;
 import com.adobe.marketing.mobile.util.DataReader;
-import com.adobe.marketing.mobile.util.StringUtils;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -40,6 +39,11 @@ import org.junit.runner.RunWith;
 @RunWith(AndroidJUnit4.class)
 public class AudienceFunctionalTests {
 
+	private final Map<String, String> signalData = new HashMap<String, String>() {
+		{
+			put("key1", "value1");
+		}
+	};
 	private final Map<String, Object> config = new HashMap<>();
 
 	private TestableNetworkService testableNetworkService;
@@ -111,17 +115,15 @@ public class AudienceFunctionalTests {
 		final CountDownLatch latch = new CountDownLatch(1);
 
 		// Test
-		HashMap<String, String> data = new HashMap<>();
-		data.put("key1", "value1");
 		Audience.signalWithData(
-			data,
+			signalData,
 			profileData -> {
 				responseProfile.putAll(profileData);
 				latch.countDown();
 			}
 		);
 
-		// Verify
+		// verify
 		testableNetworkService.assertNetworkRequestCount();
 		latch.await(500, TimeUnit.MILLISECONDS);
 		assertTrue(responseProfile.isEmpty());
@@ -164,7 +166,7 @@ public class AudienceFunctionalTests {
 
 		MobileCore.dispatchEvent(createLifecycleResponseEvent());
 
-		// Verify
+		// verify
 		assertEquals(
 			0,
 			testableNetworkService
@@ -189,7 +191,7 @@ public class AudienceFunctionalTests {
 		// test
 		MobileCore.dispatchEvent(createLifecycleResponseEvent());
 
-		// Verify
+		// verify
 		testableNetworkService.assertNetworkRequestCount();
 		List<TestableNetworkRequest> networkRequests = testableNetworkService.getReceivedNetworkRequestsMatching(
 			new TestableNetworkRequest("https://server/event", HttpMethod.GET)
@@ -218,16 +220,16 @@ public class AudienceFunctionalTests {
 		registerExtensions(null);
 
 		// test
-		HashMap<String, String> data = new HashMap<>();
-		data.put("key1", "value1");
-		Audience.signalWithData(data, null);
+		Map<String, String> data1 = new HashMap<>();
+		data1.put("key1", "value1");
+		Audience.signalWithData(data1, null);
 
 		// dispatch Submit Event 2
 		HashMap<String, String> data2 = new HashMap<>();
 		data2.put("key2", "value2");
 		Audience.signalWithData(data2, null);
 
-		// Verify that no network call is made
+		// verify that no network call is made
 		List<TestableNetworkRequest> networkRequests = testableNetworkService.getReceivedNetworkRequestsMatching(
 			new TestableNetworkRequest("https://server/event", HttpMethod.GET)
 		);
@@ -237,7 +239,7 @@ public class AudienceFunctionalTests {
 		config.put("analytics.aamForwardingEnabled", false);
 		MobileCore.updateConfiguration(config);
 
-		// Verify that two network calls are made
+		// verify that two network calls are made
 		testableNetworkService.assertNetworkRequestCount();
 		networkRequests =
 			testableNetworkService.getReceivedNetworkRequestsMatching(
@@ -273,9 +275,7 @@ public class AudienceFunctionalTests {
 		registerExtensions(config);
 
 		// dispatch signal
-		HashMap<String, String> data = new HashMap<>();
-		data.put("key1", "value1");
-		Audience.signalWithData(data, null);
+		Audience.signalWithData(signalData, null);
 
 		// dispatch Lifecycle Event
 		MobileCore.dispatchEvent(createLifecycleResponseEvent());
@@ -307,9 +307,7 @@ public class AudienceFunctionalTests {
 		registerExtensions(config);
 
 		// dispatch signal
-		HashMap<String, String> data = new HashMap<>();
-		data.put("key1", "value1");
-		Audience.signalWithData(data, null);
+		Audience.signalWithData(signalData, null);
 
 		// dispatch Lifecycle Event
 		MobileCore.dispatchEvent(createLifecycleResponseEvent());
@@ -352,9 +350,7 @@ public class AudienceFunctionalTests {
 		MobileCore.dispatchEvent(createLifecycleResponseEvent());
 
 		// dispatch signal
-		HashMap<String, String> data = new HashMap<>();
-		data.put("key1", "value1");
-		Audience.signalWithData(data, null);
+		Audience.signalWithData(signalData, null);
 
 		// verify that no network call is made
 		assertEquals(0, testableNetworkService.getReceivedNetworkRequestsMatching(signalRequest).size());
@@ -405,7 +401,7 @@ public class AudienceFunctionalTests {
 		registerExtensions(config);
 
 		// test
-		Audience.signalWithData(sampleCustomerData(), null);
+		Audience.signalWithData(signalData, null);
 
 		// verify shared state
 		testableNetworkService.assertNetworkRequestCount();
@@ -466,7 +462,7 @@ public class AudienceFunctionalTests {
 	//		latch.await(2, TimeUnit.SECONDS);
 	//		waitForThreadsWithFailIfTimedOut(5000);
 	//
-	//		// Verify
+	//		// verify
 	//		List<Event> events = eventHub.getEvents();
 	//		assertEquals(3, events.size());
 	//		HashMap<String, String> aamProfile = (HashMap<String, String>) audienceResponse.get(RESPONSE_PROFILE_DATA);
@@ -535,7 +531,7 @@ public class AudienceFunctionalTests {
 	//		latch.await(2, TimeUnit.SECONDS);
 	//		waitForThreadsWithFailIfTimedOut(5000);
 	//
-	//		// Verify
+	//		// verify
 	//		// No network calls are made
 	//		assertEquals(0, testableNetworkService.waitAndGetCount());
 	//		assertTrue(
@@ -567,12 +563,12 @@ public class AudienceFunctionalTests {
 		// Test
 		final HashMap<String, String> audienceProfileResponse1 = new HashMap<>();
 		final HashMap<String, String> audienceProfileResponse2 = new HashMap<>();
-		HashMap<String, String> data = new HashMap<>();
-		data.put("key1", "value1");
+		Map<String, String> data1 = new HashMap<>();
+		data1.put("key1", "value1");
 
 		final CountDownLatch latch = new CountDownLatch(2);
 		Audience.signalWithData(
-			data,
+			data1,
 			profileData -> {
 				audienceProfileResponse1.putAll(profileData);
 				latch.countDown();
@@ -633,19 +629,17 @@ public class AudienceFunctionalTests {
 		// Test
 		final HashMap<String, String> audienceProfileResponse1 = new HashMap<>();
 		final HashMap<String, String> audienceProfileResponse2 = new HashMap<>();
-		HashMap<String, String> data = new HashMap<>();
-		data.put("key1", "value1");
 
 		final CountDownLatch latch = new CountDownLatch(2);
 		Audience.signalWithData(
-			data,
+			signalData,
 			profileData -> {
 				audienceProfileResponse1.putAll(profileData);
 				latch.countDown();
 			}
 		);
 		Audience.signalWithData(
-			data,
+			signalData,
 			profileData -> {
 				audienceProfileResponse2.putAll(profileData);
 				latch.countDown();
@@ -689,7 +683,7 @@ public class AudienceFunctionalTests {
 
 		MobileCore.dispatchEvent(createNonAAMRulesResponseEvent());
 
-		// Verify
+		// verify
 		assertTrue(
 			testableNetworkService
 				.getReceivedNetworkRequestsMatching(
@@ -700,9 +694,8 @@ public class AudienceFunctionalTests {
 	}
 
 	// =============================================================================
-	// Persistence Mocks
+	// Persistence mocks
 	// =============================================================================
-
 	private void mockUUIDInPersistence() {
 		TestPersistenceHelper.updatePersistence(
 			AudienceTestConstants.DataStoreKey.AUDIENCE_DATASTORE,
@@ -730,99 +723,11 @@ public class AudienceFunctionalTests {
 	}
 
 	// =============================================================================
-	// Mock Events
+	// Event and extension helpers
 	// =============================================================================
-
-	private Event createAudienceRequestIdentityEvent(final String dpid, final String dpuuid) {
-		final Map<String, Object> data = new HashMap<>();
-		data.put(AudienceConstants.EventDataKeys.Audience.DPID, StringUtils.isNullOrEmpty(dpid) ? "" : dpid);
-		data.put(AudienceConstants.EventDataKeys.Audience.DPUUID, StringUtils.isNullOrEmpty(dpuuid) ? "" : dpuuid);
-		final Event event = new Event.Builder(
-			"AudienceSetDataProviderIds",
-			EventType.AUDIENCEMANAGER,
-			EventSource.REQUEST_IDENTITY
-		)
-			.setEventData(data)
-			.build();
-		return event;
-	}
-
-	private Event createAudienceRequestIdentityEvent(final AdobeCallbackWithError<Map<String, Object>> callback) {
-		final Event event = new Event.Builder(
-			"AudienceGetDataProviderIds",
-			EventType.AUDIENCEMANAGER,
-			EventSource.REQUEST_IDENTITY
-		)
-			.build();
-
-		MobileCore.dispatchEventWithResponseCallback(
-			event,
-			500,
-			new AdobeCallbackWithError<Event>() {
-				@Override
-				public void fail(AdobeError adobeError) {
-					callback.fail(adobeError);
-				}
-
-				@Override
-				public void call(Event event) {
-					final Map<String, Object> eventData = event.getEventData();
-					callback.call(eventData);
-				}
-			}
-		);
-		return event;
-	}
-
-	private Event createAudienceRequestContentEventWithData(
-		final HashMap<String, String> data,
-		final AdobeCallbackWithError<Map<String, String>> callback
-	) {
-		final Event event = new Event.Builder(
-			"AudienceRequestContent",
-			EventType.AUDIENCEMANAGER,
-			EventSource.REQUEST_CONTENT
-		)
-			.setEventData(
-				new HashMap<String, Object>() {
-					{
-						put(AudienceConstants.EventDataKeys.Audience.VISITOR_TRAITS, data);
-					}
-				}
-			)
-			.build();
-
-		if (callback != null) {
-			MobileCore.dispatchEventWithResponseCallback(
-				event,
-				500,
-				new AdobeCallbackWithError<Event>() {
-					@Override
-					public void fail(AdobeError adobeError) {
-						callback.fail(adobeError);
-					}
-
-					@Override
-					public void call(final Event e) {
-						final Map<String, Object> eventData = e.getEventData();
-						callback.call(
-							DataReader.optStringMap(
-								eventData,
-								AudienceConstants.EventDataKeys.Audience.VISITOR_PROFILE,
-								null
-							)
-						);
-					}
-				}
-			);
-		}
-
-		return event;
-	}
-
 	private Event createLifecycleResponseEvent() {
 		Map<String, Object> eventData = new HashMap<>();
-		HashMap<String, String> data = new HashMap<>();
+		Map<String, String> data = new HashMap<>();
 		data.put("contextDataKey", "contextDataValue");
 		eventData.put("lifecyclecontextdata", data);
 		final Event event = new Event.Builder(
@@ -835,32 +740,14 @@ public class AudienceFunctionalTests {
 		return event;
 	}
 
-	private Event createAAMRulesResponseEvent() {
-		Map<String, Object> eventData = new HashMap<>();
-		HashMap<String, String> data = new HashMap<>();
-		data.put("RulesTraitKey", "RulesTraitValue");
-		eventData.put("audience_manager_data", data);
-		final Event event = new Event.Builder("Rules Event", EventType.RULES_ENGINE, EventSource.RESPONSE_CONTENT)
-			.setEventData(eventData)
-			.build();
-		return event;
-	}
-
 	private Event createNonAAMRulesResponseEvent() {
 		Map<String, Object> eventData = new HashMap<>();
-		HashMap<String, String> data = new HashMap<>();
+		Map<String, String> data = new HashMap<>();
 		data.put("RulesTraitKey", "RulesTraitValue");
 		eventData.put("non_audience_manager_data", data);
-		final Event event = new Event.Builder("Rules Event", EventType.RULES_ENGINE, EventSource.RESPONSE_CONTENT)
+		return new Event.Builder("Rules Event", EventType.RULES_ENGINE, EventSource.RESPONSE_CONTENT)
 			.setEventData(eventData)
 			.build();
-		return event;
-	}
-
-	private HashMap<String, String> sampleCustomerData() {
-		HashMap<String, String> data = new HashMap<>();
-		data.put("customerDataKey", "customerDataValue");
-		return data;
 	}
 
 	private Map<String, Object> getLastAudienceSharedState() {
@@ -871,24 +758,6 @@ public class AudienceFunctionalTests {
 		}
 
 		return null;
-	}
-
-	void dispatchConfigurationResponseEvent(final MobilePrivacyStatus status) {
-		Map<String, Object> config = new HashMap<>();
-		config.put("audience.server", "server");
-		config.put("global.privacy", status.getValue());
-		config.put("audience.timeout", 5);
-		config.put("analytics.aamForwardingEnabled", true);
-		final Event event = new Event.Builder(
-			"Configuration Response Event",
-			EventType.CONFIGURATION,
-			EventSource.RESPONSE_CONTENT
-		)
-			.setEventData(config)
-			.build();
-		// todo: set shared state
-		//eventHub.createSharedState("com.adobe.module.configuration", eventHub.getAllEventsCount(), config);
-		MobileCore.dispatchEvent(event);
 	}
 
 	void registerExtensions(final Map<String, Object> config) {
