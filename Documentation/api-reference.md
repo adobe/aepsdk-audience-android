@@ -22,12 +22,23 @@ To get the version of the Audience extension, use the following code sample:
 
 #### Java
 
+##### Syntax
+```java
+static @NonNull String extensionVersion()
+```
+
+##### Example
 ```java
 String audienceExtensionVersion = Audience.extensionVersion();
 ```
 
 #### Kotlin
+##### Syntax
+```kotlin
+fun extensionVersion(): String
+```
 
+##### Example
 ```kotlin
 val audienceExtensionVersion: String = Audience.extensionVersion()
 ```
@@ -51,6 +62,12 @@ Audience.getVisitorProfile(new AdobeCallback<Map<String, String>>() {
 
 #### Kotlin
 
+##### Syntax
+```kotlin
+fun getVisitorProfile(adobeCallback: AdobeCallback<Map<String, String?>?>)
+```
+
+##### Example
 ```kotlin
 Audience.getVisitorProfile { visitorProfile ->
     // provide code to process the visitorProfile
@@ -61,18 +78,30 @@ Audience.getVisitorProfile { visitorProfile ->
 ## registerExtension
 
 > **Warning**
-> Deprecated as of 2.0.0. Use the [MobileCore.registerExtensions API](https://github.com/adobe/aepsdk-core-android) instead.
+> Deprecated as of 2.0.0. Use the [MobileCore.registerExtensions API](https://github.com/adobe/aepsdk-core-android/blob/main/Documentation/MobileCore/api-reference.md) instead.
 
 Registers the Audience extension with `MobileCore`.
 
 #### Java
 
+##### Syntax
+```java
+public static void registerExtension()
+```
+
+##### Example
 ```java
 Audience.registerExtension();
 ```
 
 #### Kotlin
 
+##### Syntax
+```kotlin
+fun registerExtension()
+```
+
+##### Example
 ```kotlin
 Audience.registerExtension()
 ```
@@ -83,14 +112,24 @@ This API helps you reset the Audience Manager UUID and purges the current visito
 
 #### Java
 
-**Example**
+##### Syntax
+```java
+public static void reset()
+```
 
+##### Example
 ```java
 Audience.reset();
 ```
 
 #### Kotlin
 
+##### Syntax
+```kotlin
+fun reset()
+```
+
+##### Example
 ```kotlin
 Audience.reset()
 ```
@@ -103,16 +142,19 @@ If available, the ECID and other custom identifiers for the same visitor are sen
 
 For more information about the UUID and other Audience Manager identifiers, see the [index of IDs in Audience Manager](https://experienceleague.adobe.com/docs/audience-manager/user-guide/reference/ids-in-aam.html).
 
-**Syntax**
+#### Java
 
+##### Syntax
 ```java
-public static void signalWithData(final Map<String, String> data, final AdobeCallback<Map<String, String>> callback)
+public static void signalWithData(
+		@NonNull final Map<String, String> data,
+		@Nullable final AdobeCallback<Map<String, String>> adobeCallback
+	)
 ```
-
 * `data` is the traits data for the current visitor.
 * `callback` is the void method that is invoked with the visitor's profile as a parameter.
 
-#### Java
+##### Example
 
 ```java
 final Map<String, String> traits = new HashMap<String, String>() {{
@@ -130,6 +172,14 @@ Audience.signalWithData(traits, new AdobeCallback<Map<String, String>>() {
 
 #### Kotlin
 
+##### Syntax
+```kotlin
+fun signalWithData(
+        data: Map<String, String?>,
+        adobeCallback: AdobeCallback<Map<String, String?>?>?)
+```
+
+##### Example
 ```kotlin
 val traits: Map<String, String?> = mapOf(
     "trait1" to "value1",
