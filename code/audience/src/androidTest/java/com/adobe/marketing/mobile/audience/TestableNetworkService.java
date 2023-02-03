@@ -21,8 +21,6 @@ import com.adobe.marketing.mobile.services.Log;
 import com.adobe.marketing.mobile.services.NetworkCallback;
 import com.adobe.marketing.mobile.services.NetworkRequest;
 import com.adobe.marketing.mobile.services.Networking;
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -48,35 +46,7 @@ public class TestableNetworkService implements Networking {
 		executorService = Executors.newCachedThreadPool();
 	}
 
-	private static final HttpConnecting defaultResponse = new HttpConnecting() {
-		@Override
-		public InputStream getInputStream() {
-			return new ByteArrayInputStream("".getBytes());
-		}
-
-		@Override
-		public InputStream getErrorStream() {
-			return null;
-		}
-
-		@Override
-		public int getResponseCode() {
-			return 200;
-		}
-
-		@Override
-		public String getResponseMessage() {
-			return "";
-		}
-
-		@Override
-		public String getResponsePropertyValue(String responsePropertyKey) {
-			return null;
-		}
-
-		@Override
-		public void close() {}
-	};
+	private static final HttpConnecting defaultResponse = new MockConnection(200, "");
 
 	public void reset() {
 		Log.trace(LOG_TAG, LOG_SOURCE, "Reset received and expected network requests.");

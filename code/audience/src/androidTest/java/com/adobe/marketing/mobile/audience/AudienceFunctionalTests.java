@@ -71,7 +71,7 @@ public class AudienceFunctionalTests {
 	@After
 	public void tearDown() {
 		TestPersistenceHelper.resetKnownPersistence();
-		testableNetworkService.reset();
+		TestHelper.resetKnownDatabases();
 		config.clear();
 	}
 
@@ -105,7 +105,6 @@ public class AudienceFunctionalTests {
 		assertEquals("visitorValue", actualVisitorProfile.get("visitorKey"));
 	}
 
-	@Ignore("to investigate, fails when running the entire suite")
 	@Test
 	public void testSubmitSignal_when_NetworkHasUnrecoverableError_thenCallbackCalledWithEmptyProfile()
 		throws Exception {
@@ -180,7 +179,6 @@ public class AudienceFunctionalTests {
 		);
 	}
 
-	@Ignore("to investigate, fails when running the entire suite")
 	@Test
 	public void testLifecycleResponseEvent_AndAAMForwardingDisabled_thenShouldSendRequest() throws Exception {
 		// setup
@@ -268,7 +266,6 @@ public class AudienceFunctionalTests {
 		assertNull(networkRequests.get(1).getHeaders());
 	}
 
-	@Ignore("fails in suite")
 	@Test
 	public void testSubmitSignal_AndLifecycleResponseEvent_AndConfigWithAAMForwardingEnabled_thenShouldSendSignalAndIgnoreLifecycle()
 		throws Exception {
@@ -300,7 +297,6 @@ public class AudienceFunctionalTests {
 		assertNull(requests.get(0).getHeaders());
 	}
 
-	@Ignore("fails when running the entire suite")
 	@Test
 	public void testSubmitSignal_AndLifecycleResponseEvent_AndConfigWithAAMForwardingDisabled_thenShouldSendTwoRequestsInCorrectOrder()
 		throws Exception {
@@ -340,7 +336,6 @@ public class AudienceFunctionalTests {
 		assertNull(requests.get(1).getHeaders());
 	}
 
-	@Ignore("fails when running the entire suite")
 	@Test
 	public void testLifecycleEvent_AndSubmitSignal_AndConfigUpdate_thenShouldSendTwoRequestsInCorrectOrder()
 		throws InterruptedException {
@@ -421,7 +416,6 @@ public class AudienceFunctionalTests {
 		assertEquals("testUUID", DataReader.optString(sharedState, "uuid", null));
 	}
 
-	@Ignore("fails when running in the suite")
 	@Test
 	public void testSubmitSignal_when_PrivacyUnknown_Then_PrivacyChangesToOptIN_ShouldSendTwoHits() throws Exception {
 		TestableNetworkRequest signalRequest = new TestableNetworkRequest("https://server/event", HttpMethod.GET);
