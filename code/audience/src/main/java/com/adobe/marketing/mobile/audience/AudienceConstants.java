@@ -155,7 +155,6 @@ class AudienceConstants {
 
 			// response keys
 			static final String VISITOR_PROFILE = "aamprofile";
-			static final String AUDIENCE_IDS = "audienceids";
 			static final String UUID = "uuid";
 			//opted out response key
 			static final String OPTED_OUT_HIT_SENT = "optedouthitsent";
@@ -189,7 +188,6 @@ class AudienceConstants {
 			static final class VisitorID {
 
 				static final String ID = "ID";
-				static final String ID_ORIGIN = "ID_ORIGIN"; // todo: check this usage
 				static final String ID_TYPE = "ID_TYPE";
 				static final String STATE = "STATE";
 
