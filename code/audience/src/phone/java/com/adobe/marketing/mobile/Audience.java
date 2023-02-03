@@ -162,7 +162,7 @@ public final class Audience {
 		Log.debug(
 			LOG_TAG,
 			LOG_SOURCE,
-			"Audience Profile data was submitted: %s",
+			"Audience event was submitted for signalWithData: %s",
 			data != null ? data.toString() : "no data"
 		);
 		if (adobeCallback == null) {

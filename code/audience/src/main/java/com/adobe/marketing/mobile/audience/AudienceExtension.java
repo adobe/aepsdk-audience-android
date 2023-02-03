@@ -224,7 +224,7 @@ public final class AudienceExtension extends Extension {
 		getApi()
 			.registerEventListener(EventType.LIFECYCLE, EventSource.RESPONSE_CONTENT, this::handleLifecycleResponse);
 
-		Log.trace(LOG_TAG, LOG_SOURCE, "Dispatching Audience shared state");
+		Log.trace(LOG_TAG, LOG_SOURCE, "Setting bootup Audience shared state.");
 		shareStateForEvent(null);
 		deleteDeprecatedV1HitDatabase();
 	}
@@ -315,7 +315,8 @@ public final class AudienceExtension extends Extension {
 	 * @param event {@link Event} containing the Analytics event
 	 * @see #processResponse(String, Event)
 	 */
-	private void handleAnalyticsResponse(@NonNull final Event event) {
+	@VisibleForTesting
+	void handleAnalyticsResponse(@NonNull final Event event) {
 		if (!serverSideForwardingToAam(event)) {
 			Log.trace(
 				LOG_TAG,
@@ -335,7 +336,10 @@ public final class AudienceExtension extends Extension {
 			return;
 		}
 
+		Log.trace(LOG_TAG, LOG_SOURCE, "AAM forwarding is enabled, handling Analytics response: %s", response);
+
 		processResponse(response, event);
+		shareStateForEvent(event);
 	}
 
 	/**
@@ -481,9 +485,9 @@ public final class AudienceExtension extends Extension {
 		final Map<String, String> returnedMap = processStuffArray(jsonResponse);
 
 		if (returnedMap.size() > 0) {
-			Log.trace(LOG_TAG, LOG_SOURCE, "Response received from Audience Manager server - %s", returnedMap);
+			Log.trace(LOG_TAG, LOG_SOURCE, "Response received from server: %s", returnedMap);
 		} else {
-			Log.trace(LOG_TAG, LOG_SOURCE, "Response received from Audience Manager server was empty.");
+			Log.trace(LOG_TAG, LOG_SOURCE, "Response received from server was empty.");
 		}
 
 		// save profile in defaults
@@ -541,7 +545,7 @@ public final class AudienceExtension extends Extension {
 			AudienceConstants.EventDataKeys.Configuration.MODULE_NAME,
 			event
 		);
-		if (configSharedState.getStatus() != SharedStateStatus.SET) {
+		if (configSharedState == null || configSharedState.getStatus() != SharedStateStatus.SET) {
 			Log.trace(
 				LOG_TAG,
 				LOG_SOURCE,
