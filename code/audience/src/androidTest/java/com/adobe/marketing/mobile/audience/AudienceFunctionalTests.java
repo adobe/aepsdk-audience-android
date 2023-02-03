@@ -1,5 +1,5 @@
 /*
-  Copyright 2020 Adobe. All rights reserved.
+  Copyright 2023 Adobe. All rights reserved.
   This file is licensed to you under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License. You may obtain a copy
   of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -356,8 +356,7 @@ public class AudienceFunctionalTests {
 		assertEquals(0, testableNetworkService.getReceivedNetworkRequestsMatching(signalRequest).size());
 
 		// configure
-		config.put("global.privacy", "optedin");
-		MobileCore.updateConfiguration(config);
+		MobileCore.setPrivacyStatus(MobilePrivacyStatus.OPT_IN);
 
 		// verify that two network calls are made in order
 		testableNetworkService.assertNetworkRequestCount();
@@ -396,8 +395,7 @@ public class AudienceFunctionalTests {
 		);
 		testableNetworkService.setExpectedNetworkRequest(signalRequest, 1);
 
-		// preset the config and shared Preferences
-		//mockUUIDInPersistence();
+		// preset the config
 		registerExtensions(config);
 
 		// test
