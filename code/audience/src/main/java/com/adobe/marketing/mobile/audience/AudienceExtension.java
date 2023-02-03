@@ -610,7 +610,9 @@ public final class AudienceExtension extends Extension {
 
 		// prepare shared state for this asynchronous processing of this event
 		SharedStateResolver ssResolver = getApi().createPendingSharedState(event);
-		pendingSharedStates.put(event.getUniqueIdentifier(), ssResolver);
+		if (ssResolver != null) {
+			pendingSharedStates.put(event.getUniqueIdentifier(), ssResolver);
+		}
 
 		Map<String, String> signalData;
 
