@@ -155,7 +155,7 @@ For more information about the UUID and other Audience Manager identifiers, see 
 public static void signalWithData(
 		@NonNull final Map<String, String> data,
 		@Nullable final AdobeCallback<Map<String, String>> adobeCallback
-	)
+	);
 ```
 * `data` is the traits data for the current visitor.
 * `callback` is the void method that is invoked with the visitor's profile as a parameter.
