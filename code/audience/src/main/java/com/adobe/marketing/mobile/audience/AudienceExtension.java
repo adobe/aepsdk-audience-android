@@ -60,23 +60,6 @@ import org.json.JSONObject;
  *     <li>The Audience extension has a database to store impending network requests, which enables profile updates to
  *     still be collected and reported once the user's device comes back online.</li>
  * </ol>
- *
- * The AudienceExtension listens for the following {@link Event}s:
- * <ol>
- *   <li>{@link EventType#ANALYTICS} - {@link EventSource#RESPONSE_CONTENT}</li>
- *   <li>{@link EventType#AUDIENCEMANAGER} - {@link EventSource#REQUEST_CONTENT}</li>
- *   <li>{@link EventType#AUDIENCEMANAGER} - {@link EventSource#REQUEST_IDENTITY}</li>
- *   <li>{@link EventType#AUDIENCEMANAGER} - {@link EventSource#REQUEST_RESET}</li>
- *   <li>{@link EventType#CONFIGURATION} - {@link EventSource#RESPONSE_CONTENT}</li>
- *   <li>{@link EventType#GENERIC_IDENTITY} - {@link EventSource#REQUEST_RESET}</li>
- *   <li>{@link EventType#LIFECYCLE} - {@link EventSource#RESPONSE_CONTENT}</li>
- *</ol>
- *
- * The AudienceExtension dispatches the following {@code Event}s:
- * <ol>
- *   <li>{@link EventType#AUDIENCEMANAGER} - {@link EventSource#RESPONSE_CONTENT}</li>
- *   <li>{@link EventType#AUDIENCEMANAGER} - {@link EventSource#RESPONSE_IDENTITY}</li>
- * </ol>
  */
 public final class AudienceExtension extends Extension {
 
@@ -200,6 +183,18 @@ public final class AudienceExtension extends Extension {
 		return com.adobe.marketing.mobile.Audience.extensionVersion();
 	}
 
+	/**
+	 * The Audience extension listens for the following {@link Event}s:
+	 * <ol>
+	 *   <li>{@link EventType#ANALYTICS} - {@link EventSource#RESPONSE_CONTENT}</li>
+	 *   <li>{@link EventType#AUDIENCEMANAGER} - {@link EventSource#REQUEST_CONTENT}</li>
+	 *   <li>{@link EventType#AUDIENCEMANAGER} - {@link EventSource#REQUEST_IDENTITY}</li>
+	 *   <li>{@link EventType#AUDIENCEMANAGER} - {@link EventSource#REQUEST_RESET}</li>
+	 *   <li>{@link EventType#CONFIGURATION} - {@link EventSource#RESPONSE_CONTENT}</li>
+	 *   <li>{@link EventType#GENERIC_IDENTITY} - {@link EventSource#REQUEST_RESET}</li>
+	 *   <li>{@link EventType#LIFECYCLE} - {@link EventSource#RESPONSE_CONTENT}</li>
+	 *</ol>
+	 */
 	@Override
 	protected void onRegistered() {
 		getApi()
@@ -265,6 +260,15 @@ public final class AudienceExtension extends Extension {
 	//endregion
 
 	//region Event listeners
+
+	/**
+	 * Processes the new configuration data from the Configuration Response events.
+	 * If the {@link AudienceConstants.EventDataKeys.Configuration#GLOBAL_CONFIG_PRIVACY} value is
+	 * {@code MobilePrivacyStatus#OPT_OUT} then we send out an opt-out hit to the Audience manager server,
+	 * along with resetting the Audience Manager ids.
+	 *
+	 * @param event {@link Event} containing the Configuration event
+	 */
 	@VisibleForTesting
 	void handleConfigurationResponse(@NonNull final Event event) {
 		// check privacy status. if not found, .UNKNOWN privacy status will be used
@@ -305,6 +309,12 @@ public final class AudienceExtension extends Extension {
 		shareStateForEvent(event);
 	}
 
+	/**
+	 * Processes Analytics Response events containing the server response payload.
+	 *
+	 * @param event {@link Event} containing the Analytics event
+	 * @see #processResponse(String, Event)
+	 */
 	private void handleAnalyticsResponse(@NonNull final Event event) {
 		if (!serverSideForwardingToAam(event)) {
 			Log.trace(
@@ -341,7 +351,8 @@ public final class AudienceExtension extends Extension {
 	}
 
 	/**
-	 * Handles the getVisitorProfile API by dispatching a response content event containing the visitor profile stored in the {@link AudienceState}.
+	 * Handles the getVisitorProfile API by dispatching a response event containing the visitor profile stored in the {@link AudienceState}.
+	 * Dispatches events with {@link EventType#AUDIENCEMANAGER} - {@link EventSource#RESPONSE_IDENTITY}.
 	 *
 	 * @param event the event coming from the getVisitorProfile API invocation
 	 */
@@ -519,6 +530,12 @@ public final class AudienceExtension extends Extension {
 		pendingSharedStates.remove(event.getUniqueIdentifier());
 	}
 
+	/**
+	 * Extracts the {@link AudienceConstants.EventDataKeys.Configuration#ANALYTICS_CONFIG_AAMFORWARDING}
+	 * key from config shared state and returns its status
+	 * @param event current {@link Event} being processed
+	 * @return true if Analytics server-side forwarding is enabled, false otherwise
+	 */
 	private boolean serverSideForwardingToAam(final Event event) {
 		final SharedStateResult configSharedState = getSharedStateForExtension(
 			AudienceConstants.EventDataKeys.Configuration.MODULE_NAME,
@@ -647,8 +664,8 @@ public final class AudienceExtension extends Extension {
 	}
 
 	/**
-	 * Invokes the dispatcher passing the current visitor {@code profile} and {@code event} to dispatch {@code AUDIENCEMANAGER},
-	 * {@code RESPONSE_CONTENT} event.
+	 * Invokes the dispatcher passing the current visitor {@code profile} and {@code event} to dispatch the response for.
+	 * Dispatches events with {@link EventType#AUDIENCEMANAGER} - {@link EventSource#RESPONSE_CONTENT}.
 	 *
 	 * @param profile {@code Map<String, String>} containing the user's profile
 	 * @param event request {@link Event} object to be used for dispatching the paired response event;
