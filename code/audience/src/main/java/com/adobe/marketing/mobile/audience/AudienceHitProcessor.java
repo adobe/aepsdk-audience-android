@@ -112,7 +112,7 @@ class AudienceHitProcessor implements HitProcessing {
 			return;
 		}
 
-		boolean processingComplete;
+		final boolean processingComplete;
 		if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
 			final String response = StreamUtils.readAsString(connection.getInputStream());
 
