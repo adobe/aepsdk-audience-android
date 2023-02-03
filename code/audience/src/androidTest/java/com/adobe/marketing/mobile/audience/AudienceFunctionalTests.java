@@ -35,7 +35,6 @@ import java.util.concurrent.TimeUnit;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestRule;
@@ -381,7 +380,6 @@ public class AudienceFunctionalTests {
 		assertNull(requests.get(1).getHeaders());
 	}
 
-	@Ignore("investigate: Cannot create com.adobe.module.audience shared state at version 4. More recent state exists.")
 	@Test
 	public void testSubmitSignal_WhenEverythingIsSetAndServerResponse_updatesSharedState() throws Exception {
 		// setup
@@ -395,7 +393,6 @@ public class AudienceFunctionalTests {
 		);
 		testableNetworkService.setExpectedNetworkRequest(signalRequest, 1);
 
-		// preset the config
 		registerExtensions(config);
 
 		// test
@@ -411,7 +408,7 @@ public class AudienceFunctionalTests {
 		assertNotNull(sharedState);
 		assertEquals(2, sharedState.size());
 		assertEquals(expectedProfile, DataReader.optStringMap(sharedState, "aamprofile", null));
-		assertEquals("testUUID", DataReader.optString(sharedState, "uuid", null));
+		assertEquals("19994521975870785742420741570375407533", DataReader.optString(sharedState, "uuid", null));
 	}
 
 	@Test
