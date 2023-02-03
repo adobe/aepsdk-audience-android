@@ -377,7 +377,7 @@ public final class AudienceExtension extends Extension {
 	}
 
 	/**
-	 * Processes Lifecycle Response content and sends a signal to Audience Manager if aam forwarding is disabled.
+	 * Processes Lifecycle Response content and sends a signal to Audience Manager if AAM forwarding is disabled.
 	 *
 	 * The Audience Manager shared state will be updated on Lifecycle Start events.
 	 *
@@ -534,7 +534,7 @@ public final class AudienceExtension extends Extension {
 	 * Extracts the {@link AudienceConstants.EventDataKeys.Configuration#ANALYTICS_CONFIG_AAMFORWARDING}
 	 * key from config shared state and returns its status
 	 * @param event current {@link Event} being processed
-	 * @return true if Analytics server-side forwarding is enabled, false otherwise
+	 * @return true if server-side forwarding is enabled, false otherwise
 	 */
 	private boolean serverSideForwardingToAam(final Event event) {
 		final SharedStateResult configSharedState = getSharedStateForExtension(
