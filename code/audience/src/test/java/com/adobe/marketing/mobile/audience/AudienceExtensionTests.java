@@ -11,6 +11,7 @@
 
 package com.adobe.marketing.mobile.audience;
 
+import static com.adobe.marketing.mobile.audience.AudienceTestConstants.EventDataKeys.Analytics.ANALYTICS_SERVER_RESPONSE_KEY;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -423,6 +424,65 @@ public class AudienceExtensionTests {
 		assertNotNull(aamSharedState);
 		assertEquals(0, aamSharedState.size());
 		assertEquals(testEvent.getUniqueIdentifier(), eventCaptor.getValue().getUniqueIdentifier());
+	}
+
+	@Test
+	public void testHandleAnalyticsResponse_whenAAMForwardingEnabled_updatesLocalAndSharedState() {
+		Map<String, Object> eventData = new HashMap<>();
+		eventData.put(
+			ANALYTICS_SERVER_RESPONSE_KEY,
+			"{" +
+			"'uuid':'12345', " +
+			"'stuff':[{'cn':'cookieName', 'cv':'key1=value1'}], " +
+			"'dests':[{'c':'https://www.adobe.com'}]}"
+		);
+		Event testEvent = getAnalyticsResponseEvent(eventData);
+
+		Map<String, Object> fakeConfig = getFakeConfigEventData();
+		fakeConfig.put(AudienceTestConstants.EventDataKeys.Configuration.ANALYTICS_CONFIG_AAMFORWARDING, true);
+		mockConfigSharedState(new SharedStateResult(SharedStateStatus.SET, fakeConfig));
+
+		// test
+		audience.handleAnalyticsResponse(testEvent);
+
+		Map<String, String> visitorProfile = new HashMap<>();
+		visitorProfile.put("cookieName", "key1=value1");
+
+		//verifytedata
+		verify(mockState).setUuid(eq("12345"));
+		verify(mockState).setVisitorProfile(eq(visitorProfile));
+		verifyNoInteractions(mockDataQueue);
+
+		ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+		verify(mockExtensionApi).createSharedState(any(), eventCaptor.capture());
+		assertEquals(EventType.ANALYTICS, eventCaptor.getValue().getType());
+		assertEquals(EventSource.RESPONSE_CONTENT, eventCaptor.getValue().getSource());
+	}
+
+	@Test
+	public void testHandleAnalyticsResponse_whenAAMForwardingDisabled_ignoresEvent() {
+		Map<String, Object> eventData = new HashMap<>();
+		eventData.put(
+			ANALYTICS_SERVER_RESPONSE_KEY,
+			"{" +
+			"'uuid':'12345', " +
+			"'stuff':[{'cn':'cookieName', 'cv':'key1=value1'}], " +
+			"'dests':[{'c':'https://www.adobe.com'}]}"
+		);
+		Event testEvent = getAnalyticsResponseEvent(eventData);
+
+		Map<String, Object> fakeConfig = getFakeConfigEventData();
+		fakeConfig.put(AudienceTestConstants.EventDataKeys.Configuration.ANALYTICS_CONFIG_AAMFORWARDING, false);
+		mockConfigSharedState(new SharedStateResult(SharedStateStatus.SET, fakeConfig));
+
+		// test
+		audience.handleAnalyticsResponse(testEvent);
+
+		//verify
+		verify(mockState, never()).setUuid(any(String.class));
+		verify(mockState, never()).setVisitorProfile(any());
+		verifyNoInteractions(mockDataQueue);
+		verify(mockExtensionApi, never()).createSharedState(any(), any(Event.class));
 	}
 
 	@Test
@@ -1303,6 +1363,12 @@ public class AudienceExtensionTests {
 
 	private Event getLifecycleEvent(final Map<String, Object> eventData) {
 		return new Event.Builder("TEST", EventType.LIFECYCLE, EventSource.RESPONSE_CONTENT)
+			.setEventData(eventData)
+			.build();
+	}
+
+	private Event getAnalyticsResponseEvent(final Map<String, Object> eventData) {
+		return new Event.Builder("TestAnalyticsResponse", EventType.ANALYTICS, EventSource.RESPONSE_CONTENT)
 			.setEventData(eventData)
 			.build();
 	}

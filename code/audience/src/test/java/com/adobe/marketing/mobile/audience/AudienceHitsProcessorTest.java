@@ -112,6 +112,7 @@ public class AudienceHitsProcessorTest {
 		ArgumentCaptor<Event> requestEventCaptor = ArgumentCaptor.forClass(Event.class);
 		verify(mockNetworkResponseHandler).complete(eq(""), requestEventCaptor.capture());
 		assertEqualEvents(mockAAMEvent, requestEventCaptor.getValue());
+		verify(mockConnection).close();
 	}
 
 	@Test
@@ -126,6 +127,7 @@ public class AudienceHitsProcessorTest {
 		networkCallbackCaptor.getValue().call(mockConnection);
 
 		verify(mockNetworkResponseHandler, never()).complete(any(), any()); // response handler not called
+		verify(mockConnection).close();
 	}
 
 	@Test
@@ -140,6 +142,7 @@ public class AudienceHitsProcessorTest {
 		networkCallbackCaptor.getValue().call(mockConnection);
 
 		verify(mockNetworkResponseHandler, never()).complete(any(), any()); // response handler not called
+		verify(mockConnection).close();
 	}
 
 	@Test
@@ -154,6 +157,7 @@ public class AudienceHitsProcessorTest {
 		networkCallbackCaptor.getValue().call(mockConnection);
 
 		verify(mockNetworkResponseHandler, never()).complete(any(), any()); // response handler not called
+		verify(mockConnection).close();
 	}
 
 	@Test
@@ -171,6 +175,7 @@ public class AudienceHitsProcessorTest {
 		ArgumentCaptor<Event> requestEventCaptor = ArgumentCaptor.forClass(Event.class);
 		verify(mockNetworkResponseHandler).complete(isNull(), requestEventCaptor.capture());
 		assertEqualEvents(mockAAMEvent, requestEventCaptor.getValue());
+		verify(mockConnection).close();
 	}
 
 	@Test
