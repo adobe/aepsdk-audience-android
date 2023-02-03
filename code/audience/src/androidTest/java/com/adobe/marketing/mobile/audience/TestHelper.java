@@ -25,8 +25,11 @@ import com.adobe.marketing.mobile.Event;
 import com.adobe.marketing.mobile.Extension;
 import com.adobe.marketing.mobile.LoggingMode;
 import com.adobe.marketing.mobile.MobileCore;
+import com.adobe.marketing.mobile.MobileCoreHelper;
+import com.adobe.marketing.mobile.services.DataQueue;
 import com.adobe.marketing.mobile.services.Log;
-import java.util.Collections;
+import com.adobe.marketing.mobile.services.ServiceProvider;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +44,14 @@ public class TestHelper {
 	private static final int WAIT_EVENT_TIMEOUT_MS = 2000;
 	private static final long WAIT_SHARED_STATE_MS = 5000;
 	private static final long REGISTRATION_TIMEOUT_MS = TimeUnit.SECONDS.toMillis(2);
+
+	private static final ArrayList<String> knownDatabases = new ArrayList<String>() {
+		{
+			add(AudienceTestConstants.Database.AUDIENCE);
+			add(AudienceTestConstants.Database.IDENTITY);
+		}
+	};
+
 	static Application defaultApplication;
 
 	/**
@@ -76,10 +87,8 @@ public class TestHelper {
 					} finally {
 						// After test execution
 						Log.debug(LOG_TAG, "SetupCoreRule", "Finished '" + description.getMethodName() + "'");
-						// waitForThreads(5000); // wait to allow thread to run after test execution
-						// todo: resetSDK();
+						MobileCoreHelper.resetSDK();
 						TestPersistenceHelper.resetKnownPersistence();
-						//resetTestExpectations();
 					}
 				}
 			};
@@ -104,38 +113,6 @@ public class TestHelper {
 		final ADBCountDownLatch latch = new ADBCountDownLatch(1);
 		MobileCore.registerExtensions(extensions, o -> latch.countDown());
 		latch.await(REGISTRATION_TIMEOUT_MS, TimeUnit.MILLISECONDS);
-	}
-
-	/**
-	 * Returns the {@code Event}(s) dispatched through the Event Hub, or empty if none was found.
-	 * @param type the event type as in the expectation
-	 * @param source the event source as in the expectation
-	 * @return list of events with the provided {@code type} and {@code source}, or empty if none was dispatched
-	 * @throws InterruptedException
-	 * @throws IllegalArgumentException if {@code type} or {@code source} are null or empty strings
-	 */
-	public static List<Event> getDispatchedEventsWith(final String type, final String source)
-		throws InterruptedException {
-		return getDispatchedEventsWith(type, source, WAIT_EVENT_TIMEOUT_MS);
-	}
-
-	/**
-	 * Returns the {@code Event}(s) dispatched through the Event Hub, or empty if none was found.
-	 * @param type the event type as in the expectation
-	 * @param source the event source as in the expectation
-	 * @param timeout how long should this method wait for the expected event, in milliseconds.
-	 * @return list of events with the provided {@code type} and {@code source}, or empty if none was dispatched
-	 * @throws InterruptedException
-	 * @throws IllegalArgumentException if {@code type} or {@code source} are null or empty strings
-	 */
-	public static List<Event> getDispatchedEventsWith(final String type, final String source, int timeout)
-		throws InterruptedException {
-		MonitorExtension.EventSpec eventSpec = new MonitorExtension.EventSpec(source, type);
-		Map<MonitorExtension.EventSpec, List<Event>> receivedEvents = MonitorExtension.getReceivedEvents();
-
-		sleep(timeout);
-
-		return receivedEvents.containsKey(eventSpec) ? receivedEvents.get(eventSpec) : Collections.emptyList();
 	}
 
 	/**
@@ -200,6 +177,16 @@ public class TestHelper {
 			Thread.sleep(milliseconds);
 		} catch (Exception e) {
 			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Clears known databases; used for full cleanup between tests
+	 */
+	public static void resetKnownDatabases() {
+		for (String database : knownDatabases) {
+			DataQueue db = ServiceProvider.getInstance().getDataQueueService().getDataQueue(database);
+			db.clear();
 		}
 	}
 

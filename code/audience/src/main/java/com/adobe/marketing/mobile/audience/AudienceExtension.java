@@ -27,6 +27,7 @@ import com.adobe.marketing.mobile.SharedStateResolution;
 import com.adobe.marketing.mobile.SharedStateResult;
 import com.adobe.marketing.mobile.SharedStateStatus;
 import com.adobe.marketing.mobile.services.DataQueue;
+import com.adobe.marketing.mobile.services.DataQueuing;
 import com.adobe.marketing.mobile.services.DeviceInforming;
 import com.adobe.marketing.mobile.services.HttpMethod;
 import com.adobe.marketing.mobile.services.Log;
@@ -79,7 +80,7 @@ public final class AudienceExtension extends Extension {
 	private static final String LOG_SOURCE = "AudienceExtension";
 
 	private final AudienceState internalState;
-	private final PersistentHitQueue hitQueue;
+	private PersistentHitQueue hitQueue;
 
 	@VisibleForTesting
 	final AudienceNetworkResponseHandler networkResponseHandler;
@@ -144,8 +145,13 @@ public final class AudienceExtension extends Extension {
 		this.internalState = audienceState != null ? audienceState : new AudienceState();
 		networkResponseHandler = new NetworkResponseHandler(internalState);
 		if (hitQueue == null) {
-			final DataQueue dataQueue = ServiceProvider.getInstance().getDataQueueService().getDataQueue(getName());
-			this.hitQueue = new PersistentHitQueue(dataQueue, new AudienceHitProcessor(networkResponseHandler));
+			final DataQueuing dataQueueService = ServiceProvider.getInstance().getDataQueueService();
+			if (dataQueueService != null) {
+				final DataQueue dataQueue = dataQueueService.getDataQueue(getName());
+				if (dataQueue != null) {
+					this.hitQueue = new PersistentHitQueue(dataQueue, new AudienceHitProcessor(networkResponseHandler));
+				}
+			}
 		} else {
 			this.hitQueue = hitQueue;
 		}
@@ -258,11 +264,16 @@ public final class AudienceExtension extends Extension {
 		final MobilePrivacyStatus privacyStatus = MobilePrivacyStatus.fromString(
 			DataReader.optString(eventData, AudienceConstants.EventDataKeys.Configuration.GLOBAL_CONFIG_PRIVACY, "")
 		);
-		internalState.setMobilePrivacyStatus(privacyStatus);
-		hitQueue.handlePrivacyChange(privacyStatus);
 
+		// first send the optout hit for uuid
 		if (privacyStatus.equals(MobilePrivacyStatus.OPT_OUT)) {
 			sendOptOutHit(eventData);
+		}
+
+		// handle the privacy change and clear all identifiers
+		internalState.setMobilePrivacyStatus(privacyStatus);
+		if (hitQueue != null) {
+			hitQueue.handlePrivacyChange(privacyStatus);
 		}
 		shareStateForEvent(event);
 	}
@@ -277,7 +288,7 @@ public final class AudienceExtension extends Extension {
 	@VisibleForTesting
 	void handleResetIdentities(@NonNull final Event event) {
 		Log.debug(LOG_TAG, LOG_SOURCE, "Resetting stored Audience Manager identities and visitor profile.");
-		if (EventType.GENERIC_IDENTITY.equals(event.getType())) {
+		if (EventType.GENERIC_IDENTITY.equals(event.getType()) && hitQueue != null) {
 			hitQueue.clear();
 		}
 

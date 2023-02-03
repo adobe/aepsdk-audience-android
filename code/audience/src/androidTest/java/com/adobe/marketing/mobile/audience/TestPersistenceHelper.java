@@ -24,7 +24,9 @@ public class TestPersistenceHelper {
 	private static final ArrayList<String> knownDatastoreName = new ArrayList<String>() {
 		{
 			add(AudienceTestConstants.DataStoreKey.AUDIENCE_DATASTORE);
+			add(AudienceTestConstants.DataStoreKey.IDENTITY_DATASTORE);
 			add(AudienceTestConstants.DataStoreKey.CONFIG_DATASTORE);
+			add(AudienceTestConstants.DataStoreKey.LIFECYCLE_DATASTORE);
 		}
 	};
 
@@ -65,7 +67,7 @@ public class TestPersistenceHelper {
 	}
 
 	/**
-	 * Clears the Configuration and Consent extension's persisted data
+	 * Clears the persisted data for the known extensions
 	 */
 	public static void resetKnownPersistence() {
 		for (String eachDatastore : knownDatastoreName) {

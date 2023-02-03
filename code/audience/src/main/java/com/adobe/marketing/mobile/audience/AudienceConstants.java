@@ -25,8 +25,6 @@ class AudienceConstants {
 	static final String LOG_TAG = FRIENDLY_EXTENSION_NAME;
 
 	// destination variable keys
-	static final String AUDIENCE_MANAGER_DATA_PROVIDER_ID_KEY = "d_dpid";
-	static final String AUDIENCE_MANAGER_DATA_PROVIDER_USER_ID_KEY = "d_dpuuid";
 	static final String AUDIENCE_MANAGER_USER_ID_KEY = "d_uuid";
 	static final String MARKETING_CLOUD_ORG_ID = "d_orgid";
 	static final String VISITOR_ID_MID_KEY = "d_mid";
@@ -152,16 +150,12 @@ class AudienceConstants {
 
 		static final class Audience {
 
-			static final String MODULE_NAME = "com.adobe.module.audience";
-
 			// request keys
 			static final String VISITOR_TRAITS = "aamtraits";
 
 			// response keys
 			static final String VISITOR_PROFILE = "aamprofile";
 			static final String AUDIENCE_IDS = "audienceids";
-			static final String DPID = "dpid";
-			static final String DPUUID = "dpuuid";
 			static final String UUID = "uuid";
 			//opted out response key
 			static final String OPTED_OUT_HIT_SENT = "optedouthitsent";
@@ -195,7 +189,7 @@ class AudienceConstants {
 			static final class VisitorID {
 
 				static final String ID = "ID";
-				static final String ID_ORIGIN = "ID_ORIGIN";
+				static final String ID_ORIGIN = "ID_ORIGIN"; // todo: check this usage
 				static final String ID_TYPE = "ID_TYPE";
 				static final String STATE = "STATE";
 
