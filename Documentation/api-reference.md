@@ -24,7 +24,7 @@ To get the version of the Audience extension, use the following code sample:
 
 ##### Syntax
 ```java
-static @NonNull String extensionVersion()
+static @NonNull String extensionVersion();
 ```
 
 ##### Example
@@ -51,6 +51,12 @@ When an `AdobeCallbackWithError` is provided, an `AdobeError` can be returned in
 
 #### Java
 
+##### Syntax
+```java
+public static void getVisitorProfile(@NonNull final AdobeCallback<Map<String, String>> adobeCallback);
+```
+
+##### Example
 ```java
 Audience.getVisitorProfile(new AdobeCallback<Map<String, String>>() {
     @Override
@@ -86,7 +92,7 @@ Registers the Audience extension with `MobileCore`.
 
 ##### Syntax
 ```java
-public static void registerExtension()
+public static void registerExtension();
 ```
 
 ##### Example
@@ -155,7 +161,6 @@ public static void signalWithData(
 * `callback` is the void method that is invoked with the visitor's profile as a parameter.
 
 ##### Example
-
 ```java
 final Map<String, String> traits = new HashMap<String, String>() {{
     put("trait1", "value1");
