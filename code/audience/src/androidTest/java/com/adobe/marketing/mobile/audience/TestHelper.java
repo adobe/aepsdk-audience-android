@@ -13,6 +13,7 @@ package com.adobe.marketing.mobile.audience;
 
 import static com.adobe.marketing.mobile.audience.AudienceTestConstants.LOG_TAG;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import android.app.Application;
 import android.app.Instrumentation;
@@ -106,12 +107,26 @@ public class TestHelper {
 		final List<Class<? extends Extension>> extensions,
 		@Nullable final Map<String, Object> configuration
 	) throws InterruptedException {
-		if (configuration != null) {
-			MobileCore.updateConfiguration(configuration);
-		}
-
 		final ADBCountDownLatch latch = new ADBCountDownLatch(1);
-		MobileCore.registerExtensions(extensions, o -> latch.countDown());
+
+		MobileCore.registerExtensions(
+			extensions,
+			o -> {
+				if (configuration != null) {
+					MobileCore.updateConfiguration(configuration);
+					final ADBCountDownLatch configSyncLatch = new ADBCountDownLatch(1);
+					MobileCore.getPrivacyStatus(mobilePrivacyStatus -> {
+						configSyncLatch.countDown();
+					});
+					try {
+						configSyncLatch.await(500, TimeUnit.MILLISECONDS);
+					} catch (InterruptedException e) {
+						fail("Failed to set up config");
+					}
+				}
+				latch.countDown();
+			}
+		);
 		latch.await(REGISTRATION_TIMEOUT_MS, TimeUnit.MILLISECONDS);
 	}
 
