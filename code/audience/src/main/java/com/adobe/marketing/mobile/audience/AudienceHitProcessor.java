@@ -112,12 +112,13 @@ class AudienceHitProcessor implements HitProcessing {
 			return;
 		}
 
+		boolean processingComplete;
 		if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
 			final String response = StreamUtils.readAsString(connection.getInputStream());
 
 			// pass the response back to handler, delete hit
 			networkResponseHandler.complete(response, requestEvent);
-			processingResult.complete(true);
+			processingComplete = true;
 		} else if (!NetworkingConstants.RECOVERABLE_ERROR_CODES.contains(connection.getResponseCode())) {
 			// unrecoverable error. delete the hit from the database and continue
 			Log.warning(
@@ -131,9 +132,12 @@ class AudienceHitProcessor implements HitProcessing {
 			networkResponseHandler.complete(null, requestEvent);
 
 			// delete the current request and move on to the next
-			processingResult.complete(true);
+			processingComplete = true;
 		} else {
-			processingResult.complete(false); // recoverable error code, will retry later
+			processingComplete = false; // recoverable error code, will retry later
 		}
+
+		connection.close();
+		processingResult.complete(processingComplete);
 	}
 }
