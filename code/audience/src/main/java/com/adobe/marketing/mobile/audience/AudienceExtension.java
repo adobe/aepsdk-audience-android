@@ -315,7 +315,8 @@ public final class AudienceExtension extends Extension {
 	 * @param event {@link Event} containing the Analytics event
 	 * @see #processResponse(String, Event)
 	 */
-	private void handleAnalyticsResponse(@NonNull final Event event) {
+	@VisibleForTesting
+	void handleAnalyticsResponse(@NonNull final Event event) {
 		if (!serverSideForwardingToAam(event)) {
 			Log.trace(
 				LOG_TAG,
@@ -336,6 +337,7 @@ public final class AudienceExtension extends Extension {
 		}
 
 		processResponse(response, event);
+		shareStateForEvent(event);
 	}
 
 	/**
@@ -541,7 +543,7 @@ public final class AudienceExtension extends Extension {
 			AudienceConstants.EventDataKeys.Configuration.MODULE_NAME,
 			event
 		);
-		if (configSharedState.getStatus() != SharedStateStatus.SET) {
+		if (configSharedState == null || configSharedState.getStatus() != SharedStateStatus.SET) {
 			Log.trace(
 				LOG_TAG,
 				LOG_SOURCE,
