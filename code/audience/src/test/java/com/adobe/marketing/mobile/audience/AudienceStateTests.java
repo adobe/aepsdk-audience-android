@@ -19,12 +19,15 @@ import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.adobe.marketing.mobile.Event;
 import com.adobe.marketing.mobile.MobilePrivacyStatus;
+import com.adobe.marketing.mobile.services.DataStoring;
 import com.adobe.marketing.mobile.services.NamedCollection;
+import com.adobe.marketing.mobile.services.ServiceProvider;
 import com.adobe.marketing.mobile.util.DataReader;
 import java.util.Collections;
 import java.util.HashMap;
@@ -34,6 +37,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -55,10 +60,41 @@ public class AudienceStateTests {
 	@Mock
 	NamedCollection mockNamedCollection;
 
+	@Mock
+	private ServiceProvider mockServiceProvider;
+
+	@Mock
+	private DataStoring mockDataStoreService;
+
 	@Before
 	public void setup() {
 		audienceState = new AudienceState(mockNamedCollection);
 		audienceState.setMobilePrivacyStatus(MobilePrivacyStatus.OPT_IN);
+	}
+
+	@Test
+	public void testConstructor_whenNullDataStoreService_doesNotCrash() {
+		final MockedStatic<ServiceProvider> mockedStaticServiceProvider = Mockito.mockStatic(ServiceProvider.class);
+		mockedStaticServiceProvider.when(ServiceProvider::getInstance).thenReturn(mockServiceProvider);
+		when(mockServiceProvider.getDataStoreService()).thenReturn(null);
+		audienceState = new AudienceState(null);
+
+		// reset mocks
+		mockedStaticServiceProvider.close();
+		reset(mockServiceProvider);
+	}
+
+	@Test
+	public void testConstructor_whenNullNamedCollectionService_doesNotCrash() {
+		final MockedStatic<ServiceProvider> mockedStaticServiceProvider = Mockito.mockStatic(ServiceProvider.class);
+		mockedStaticServiceProvider.when(ServiceProvider::getInstance).thenReturn(mockServiceProvider);
+		when(mockServiceProvider.getDataStoreService()).thenReturn(mockDataStoreService);
+		when(mockDataStoreService.getNamedCollection(any())).thenReturn(null);
+		audienceState = new AudienceState(null);
+
+		// reset mocks
+		mockedStaticServiceProvider.close();
+		reset(mockServiceProvider);
 	}
 
 	// ============================================================

@@ -15,6 +15,7 @@ import static com.adobe.marketing.mobile.audience.AudienceConstants.LOG_TAG;
 
 import androidx.annotation.VisibleForTesting;
 import com.adobe.marketing.mobile.MobilePrivacyStatus;
+import com.adobe.marketing.mobile.services.DataStoring;
 import com.adobe.marketing.mobile.services.Log;
 import com.adobe.marketing.mobile.services.NamedCollection;
 import com.adobe.marketing.mobile.services.ServiceProvider;
@@ -47,17 +48,20 @@ class AudienceState {
 	 * Constructor.
 	 */
 	AudienceState() {
-		this(
-			ServiceProvider
-				.getInstance()
-				.getDataStoreService()
-				.getNamedCollection(AudienceConstants.AUDIENCE_MANAGER_SHARED_PREFS_DATA_STORE)
-		);
+		this(null);
 	}
 
 	@VisibleForTesting
 	AudienceState(final NamedCollection namedCollection) {
-		this.localStorage = namedCollection;
+		if (namedCollection == null) {
+			DataStoring dataStoreService = ServiceProvider.getInstance().getDataStoreService();
+			this.localStorage =
+				dataStoreService != null
+					? dataStoreService.getNamedCollection(AudienceConstants.AUDIENCE_MANAGER_SHARED_PREFS_DATA_STORE)
+					: null;
+		} else {
+			this.localStorage = namedCollection;
+		}
 	}
 
 	// ========================================================

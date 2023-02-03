@@ -37,17 +37,11 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.2.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
 
-    implementation 'com.adobe.marketing.mobile:core:2.0.0-SNAPSHOT'
-    implementation ('com.adobe.marketing.mobile:identity:2.0.0-SNAPSHOT') {
-        transitive = false
-    }
-    implementation ('com.adobe.marketing.mobile:lifecycle:2.0.0-SNAPSHOT') {
-        transitive = false
-    }
-    implementation ('com.adobe.marketing.mobile:analytics:2.0.0-SNAPSHOT') {
-        transitive = false
-    }
-    implementation ('com.adobe.marketing.mobile:assurance:2.0.0-SNAPSHOT') {
+    implementation 'com.adobe.marketing.mobile:core:2.+'
+    implementation 'com.adobe.marketing.mobile:identity:2.+'
+    implementation 'com.adobe.marketing.mobile:lifecycle:2.+'
+    implementation 'com.adobe.marketing.mobile:assurance:2.+'
+    implementation ('com.adobe.marketing.mobile:analytics:2.+') {
         transitive = false
     }
 }

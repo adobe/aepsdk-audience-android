@@ -581,6 +581,7 @@ public class AudienceExtensionTests {
 		audience.handleLifecycleResponse(lifecycleEvent);
 
 		// verify
+		verify(mockExtensionApi).createPendingSharedState(any(Event.class));
 		ArgumentCaptor<DataEntity> entityCaptor = ArgumentCaptor.forClass(DataEntity.class);
 		verify(mockDataQueue).queue(entityCaptor.capture());
 		AudienceDataEntity audienceEntity = AudienceDataEntity.fromDataEntity(entityCaptor.getValue());
@@ -628,11 +629,33 @@ public class AudienceExtensionTests {
 
 		// verify
 		verify(mockExtensionApi, never()).dispatch(any(Event.class));
+		verify(mockExtensionApi).createPendingSharedState(any(Event.class));
 		ArgumentCaptor<DataEntity> entityCaptor = ArgumentCaptor.forClass(DataEntity.class);
 		verify(mockDataQueue).queue(entityCaptor.capture());
 		AudienceDataEntity audienceEntity = AudienceDataEntity.fromDataEntity(entityCaptor.getValue());
 		assertTrue(audienceEntity.getUrl().startsWith("https://server/event?"));
 		assertTrue(audienceEntity.getUrl().contains("d_orgid=testExperience@adobeorg"));
+	}
+
+	@Test
+	public void testHandleAudienceRequestContent_whenNullDataQueue_doesNotCrash() {
+		// setup
+		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData());
+
+		final Map<String, Object> fakeConfigData = getFakeConfigEventData();
+		fakeConfigData.put(
+			AudienceTestConstants.EventDataKeys.Configuration.EXPERIENCE_CLOUD_ORGID,
+			"testExperience@adobeorg"
+		);
+		mockConfigSharedState(new SharedStateResult(SharedStateStatus.SET, fakeConfigData));
+
+		// test
+		when(mockServiceProvider.getDataQueueService()).thenReturn(null);
+		audience = new AudienceExtension(mockExtensionApi, mockState, null);
+		audience.handleAudienceRequestContent(event);
+
+		// verify
+		verify(mockExtensionApi, never()).dispatch(any(Event.class));
 	}
 
 	@Test

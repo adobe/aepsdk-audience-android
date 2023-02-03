@@ -24,9 +24,11 @@ import com.adobe.marketing.mobile.Extension;
 import com.adobe.marketing.mobile.ExtensionApi;
 import com.adobe.marketing.mobile.MobilePrivacyStatus;
 import com.adobe.marketing.mobile.SharedStateResolution;
+import com.adobe.marketing.mobile.SharedStateResolver;
 import com.adobe.marketing.mobile.SharedStateResult;
 import com.adobe.marketing.mobile.SharedStateStatus;
 import com.adobe.marketing.mobile.services.DataQueue;
+import com.adobe.marketing.mobile.services.DataQueuing;
 import com.adobe.marketing.mobile.services.DeviceInforming;
 import com.adobe.marketing.mobile.services.HttpMethod;
 import com.adobe.marketing.mobile.services.Log;
@@ -43,6 +45,8 @@ import java.net.HttpURLConnection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -79,7 +83,8 @@ public final class AudienceExtension extends Extension {
 	private static final String LOG_SOURCE = "AudienceExtension";
 
 	private final AudienceState internalState;
-	private final PersistentHitQueue hitQueue;
+	private PersistentHitQueue hitQueue;
+	private ConcurrentMap<String, SharedStateResolver> pendingSharedStates;
 
 	@VisibleForTesting
 	final AudienceNetworkResponseHandler networkResponseHandler;
@@ -106,6 +111,7 @@ public final class AudienceExtension extends Extension {
 					LOG_SOURCE,
 					"Not dispatching Audience hit response since resetIdentities API was called after queuing this hit."
 				);
+				resolveShareStateForEvent(requestEvent);
 				return;
 			}
 
@@ -113,12 +119,14 @@ public final class AudienceExtension extends Extension {
 
 			if (StringUtils.isNullOrEmpty(responsePayload)) {
 				Log.debug(LOG_TAG, LOG_SOURCE, "Null/empty response from server, nothing to process.");
+				resolveShareStateForEvent(requestEvent);
 				dispatchAudienceResponseContent(profile, requestEvent);
 				return;
 			}
 
 			// process the response from the AAM server and share the shared state
 			profile = processResponse(responsePayload, requestEvent);
+			resolveShareStateForEvent(requestEvent);
 
 			// if profile is empty, there was a json error in the response, don't dispatch a generic event
 			if (profile != null && !profile.isEmpty()) {
@@ -141,11 +149,17 @@ public final class AudienceExtension extends Extension {
 		final PersistentHitQueue hitQueue
 	) {
 		super(extensionApi);
+		this.pendingSharedStates = new ConcurrentHashMap<>();
 		this.internalState = audienceState != null ? audienceState : new AudienceState();
 		networkResponseHandler = new NetworkResponseHandler(internalState);
 		if (hitQueue == null) {
-			final DataQueue dataQueue = ServiceProvider.getInstance().getDataQueueService().getDataQueue(getName());
-			this.hitQueue = new PersistentHitQueue(dataQueue, new AudienceHitProcessor(networkResponseHandler));
+			final DataQueuing dataQueueService = ServiceProvider.getInstance().getDataQueueService();
+			if (dataQueueService != null) {
+				final DataQueue dataQueue = dataQueueService.getDataQueue(getName());
+				if (dataQueue != null) {
+					this.hitQueue = new PersistentHitQueue(dataQueue, new AudienceHitProcessor(networkResponseHandler));
+				}
+			}
 		} else {
 			this.hitQueue = hitQueue;
 		}
@@ -258,11 +272,16 @@ public final class AudienceExtension extends Extension {
 		final MobilePrivacyStatus privacyStatus = MobilePrivacyStatus.fromString(
 			DataReader.optString(eventData, AudienceConstants.EventDataKeys.Configuration.GLOBAL_CONFIG_PRIVACY, "")
 		);
-		internalState.setMobilePrivacyStatus(privacyStatus);
-		hitQueue.handlePrivacyChange(privacyStatus);
 
+		// first send the optout hit for uuid
 		if (privacyStatus.equals(MobilePrivacyStatus.OPT_OUT)) {
 			sendOptOutHit(eventData);
+		}
+
+		// handle the privacy change and clear all identifiers
+		internalState.setMobilePrivacyStatus(privacyStatus);
+		if (hitQueue != null) {
+			hitQueue.handlePrivacyChange(privacyStatus);
 		}
 		shareStateForEvent(event);
 	}
@@ -277,7 +296,7 @@ public final class AudienceExtension extends Extension {
 	@VisibleForTesting
 	void handleResetIdentities(@NonNull final Event event) {
 		Log.debug(LOG_TAG, LOG_SOURCE, "Resetting stored Audience Manager identities and visitor profile.");
-		if (EventType.GENERIC_IDENTITY.equals(event.getType())) {
+		if (EventType.GENERIC_IDENTITY.equals(event.getType()) && hitQueue != null) {
 			hitQueue.clear();
 		}
 
@@ -355,7 +374,7 @@ public final class AudienceExtension extends Extension {
 	 */
 	@VisibleForTesting
 	void handleLifecycleResponse(@NonNull final Event event) {
-		// if aam forwarding is enabled, we don't need to send anything
+		// if aam forwarding is enabled, we don't need to send lifecycle hit
 		if (serverSideForwardingToAam(event)) {
 			Log.trace(
 				LOG_TAG,
@@ -371,30 +390,7 @@ public final class AudienceExtension extends Extension {
 			return;
 		}
 
-		// send a signal
-		final Map<String, String> tempLifecycleData = DataReader.optStringMap(
-			eventData,
-			AudienceConstants.EventDataKeys.Lifecycle.LIFECYCLE_CONTEXT_DATA,
-			null
-		);
-		final Map<String, String> lifecycleContextData = getLifecycleDataForAudience(tempLifecycleData);
-
-		final Map<String, Object> newEventData = new HashMap<String, Object>() {
-			{
-				put(AudienceConstants.EventDataKeys.Audience.VISITOR_TRAITS, lifecycleContextData);
-			}
-		};
-
-		final Event newCurrentEvent = new Event.Builder(
-			"Audience Manager Profile",
-			EventType.AUDIENCEMANAGER,
-			EventSource.RESPONSE_CONTENT
-		)
-			.setEventData(newEventData)
-			.build();
-
-		// TODO: set timestamp and event number???
-		submitSignal(newCurrentEvent);
+		submitSignal(event);
 	}
 
 	//endregion
@@ -484,17 +480,43 @@ public final class AudienceExtension extends Extension {
 		// Setting the visitor profile may fail if the AudienceState's current privacy is opt-out
 		internalState.setVisitorProfile(returnedMap);
 
-		shareStateForEvent(event);
-
 		return returnedMap;
 	}
 
+	/**
+	 * Retrieves last set shared state for the given extension name
+	 * @param extensionName shared state owner for which to get the shared state
+	 * @param event current event
+	 * @return {@link SharedStateResult}
+	 */
 	private SharedStateResult getSharedStateForExtension(final String extensionName, final Event event) {
 		return getApi().getSharedState(extensionName, event, false, SharedStateResolution.LAST_SET);
 	}
 
+	/**
+	 * Creates a shared state for the provided event with current state data
+	 * @param event the event for which to create the state
+	 */
 	private void shareStateForEvent(final Event event) {
 		getApi().createSharedState(internalState.getStateData(), event);
+	}
+
+	/**
+	 * Resolves the previously set pending shared state for the given event with current state data
+	 * @param event the event for which to resolve the state
+	 */
+	private void resolveShareStateForEvent(final Event event) {
+		if (event == null) {
+			return;
+		}
+
+		SharedStateResolver resolver = pendingSharedStates.get(event.getUniqueIdentifier());
+		if (resolver == null) {
+			return;
+		}
+
+		resolver.resolve(internalState.getStateData());
+		pendingSharedStates.remove(event.getUniqueIdentifier());
 	}
 
 	private boolean serverSideForwardingToAam(final Event event) {
@@ -586,9 +608,40 @@ public final class AudienceExtension extends Extension {
 			return;
 		}
 
+		// prepare shared state for this asynchronous processing of this event
+		SharedStateResolver ssResolver = getApi().createPendingSharedState(event);
+		if (ssResolver != null) {
+			pendingSharedStates.put(event.getUniqueIdentifier(), ssResolver);
+		}
+
+		Map<String, String> signalData;
+
+		// if the event is a lifecycle event, convert the lifecycle keys to audience manager keys
+		if (EventType.LIFECYCLE.equals(event.getType())) {
+			Log.debug(LOG_TAG, LOG_SOURCE, "Lifecycle response event found, processing context data.");
+
+			final Map<String, String> tempLifecycleData = DataReader.optStringMap(
+				event.getEventData(),
+				AudienceConstants.EventDataKeys.Lifecycle.LIFECYCLE_CONTEXT_DATA,
+				null
+			);
+
+			signalData = getLifecycleDataForAudience(tempLifecycleData);
+		} else {
+			final Map<String, Object> customerEventData = event.getEventData();
+			signalData =
+				customerEventData == null
+					? null
+					: DataReader.optStringMap(
+						customerEventData,
+						AudienceConstants.EventDataKeys.Audience.VISITOR_TRAITS,
+						null
+					);
+		}
+
 		// generate the url to send
-		final String requestUrl = buildSignalUrl(server, event);
-		Log.debug(LOG_TAG, LOG_SOURCE, "Queuing request - %s", requestUrl);
+		final String requestUrl = buildSignalUrl(server, signalData, event);
+		Log.debug(LOG_TAG, LOG_SOURCE, "Queuing hit for url: %s", requestUrl);
 		AudienceDataEntity entity = new AudienceDataEntity(event, requestUrl, timeout);
 		hitQueue.queue(entity.toDataEntity());
 	}
@@ -767,21 +820,16 @@ public final class AudienceExtension extends Extension {
 	 * Customer provided KVPs are added as URL parameters to be used as traits for the signal.
 	 *
 	 * @param server {@link String} containing name of the server
-	 * @param event {@link Event} instance
+	 * @param signalData to convert in custom url variables
+	 * @param event current {@link Event} for which to retrieve required shared states
 	 * @return {@code String} representation of the URL to be used
 	 */
-	private String buildSignalUrl(final String server, final Event event) {
-		// get traits from event
-		final Map<String, Object> customerEventData = event.getEventData();
-		final Map<String, String> customerData = customerEventData == null
-			? null
-			: DataReader.optStringMap(customerEventData, AudienceConstants.EventDataKeys.Audience.VISITOR_TRAITS, null);
-
+	private String buildSignalUrl(final String server, final Map<String, String> signalData, final Event event) {
 		final String urlString = new URLBuilder()
 			.enableSSL(true)
 			.setServer(server)
 			.addPath(AudienceConstants.AUDIENCE_MANAGER_EVENT_PATH)
-			.addQuery(getCustomUrlVariables(customerData), URLBuilder.EncodeType.NONE)
+			.addQuery(getCustomUrlVariables(signalData), URLBuilder.EncodeType.NONE)
 			.addQuery(getDataProviderUrlVariables(event), URLBuilder.EncodeType.NONE)
 			.addQuery(getPlatformSuffix(), URLBuilder.EncodeType.NONE)
 			.addQuery(AudienceConstants.AUDIENCE_MANAGER_URL_PARAM_DST, URLBuilder.EncodeType.NONE)
