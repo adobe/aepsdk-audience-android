@@ -224,7 +224,7 @@ public final class AudienceExtension extends Extension {
 		getApi()
 			.registerEventListener(EventType.LIFECYCLE, EventSource.RESPONSE_CONTENT, this::handleLifecycleResponse);
 
-		Log.trace(LOG_TAG, LOG_SOURCE, "Dispatching Audience shared state");
+		Log.trace(LOG_TAG, LOG_SOURCE, "Setting bootup Audience shared state.");
 		shareStateForEvent(null);
 		deleteDeprecatedV1HitDatabase();
 	}
@@ -335,6 +335,8 @@ public final class AudienceExtension extends Extension {
 			Log.trace(LOG_TAG, LOG_SOURCE, "Ignoring Analytics response event - the response is null or empty.");
 			return;
 		}
+
+		Log.trace(LOG_TAG, LOG_SOURCE, "AAM forwarding is enabled, handling Analytics response: %s", response);
 
 		processResponse(response, event);
 		shareStateForEvent(event);
@@ -483,9 +485,9 @@ public final class AudienceExtension extends Extension {
 		final Map<String, String> returnedMap = processStuffArray(jsonResponse);
 
 		if (returnedMap.size() > 0) {
-			Log.trace(LOG_TAG, LOG_SOURCE, "Response received from Audience Manager server - %s", returnedMap);
+			Log.trace(LOG_TAG, LOG_SOURCE, "Response received from server: %s", returnedMap);
 		} else {
-			Log.trace(LOG_TAG, LOG_SOURCE, "Response received from Audience Manager server was empty.");
+			Log.trace(LOG_TAG, LOG_SOURCE, "Response received from server was empty.");
 		}
 
 		// save profile in defaults
