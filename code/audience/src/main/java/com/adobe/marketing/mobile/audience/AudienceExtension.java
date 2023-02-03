@@ -94,7 +94,7 @@ public final class AudienceExtension extends Extension {
 					LOG_SOURCE,
 					"Not dispatching Audience hit response since resetIdentities API was called after queuing this hit."
 				);
-				resolveShareStateForEvent(requestEvent);
+				resolveSharedStateForEvent(requestEvent);
 				return;
 			}
 
@@ -102,14 +102,14 @@ public final class AudienceExtension extends Extension {
 
 			if (StringUtils.isNullOrEmpty(responsePayload)) {
 				Log.debug(LOG_TAG, LOG_SOURCE, "Null/empty response from server, nothing to process.");
-				resolveShareStateForEvent(requestEvent);
+				resolveSharedStateForEvent(requestEvent);
 				dispatchAudienceResponseContent(profile, requestEvent);
 				return;
 			}
 
 			// process the response from the AAM server and share the shared state
 			profile = processResponse(responsePayload, requestEvent);
-			resolveShareStateForEvent(requestEvent);
+			resolveSharedStateForEvent(requestEvent);
 
 			// if profile is empty, there was a json error in the response, don't dispatch a generic event
 			if (profile != null && !profile.isEmpty()) {
@@ -516,7 +516,7 @@ public final class AudienceExtension extends Extension {
 	 * Resolves the previously set pending shared state for the given event with current state data
 	 * @param event the event for which to resolve the state
 	 */
-	private void resolveShareStateForEvent(final Event event) {
+	private void resolveSharedStateForEvent(final Event event) {
 		if (event == null) {
 			return;
 		}
