@@ -14,13 +14,18 @@ package com.adobe.marketing.mobile.audience;
 import static org.junit.Assert.*;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
-import com.adobe.marketing.mobile.*;
-import com.adobe.marketing.mobile.services.HttpConnecting;
+import com.adobe.marketing.mobile.AdobeCallbackWithError;
+import com.adobe.marketing.mobile.AdobeError;
+import com.adobe.marketing.mobile.Audience;
+import com.adobe.marketing.mobile.Event;
+import com.adobe.marketing.mobile.EventSource;
+import com.adobe.marketing.mobile.EventType;
+import com.adobe.marketing.mobile.Identity;
+import com.adobe.marketing.mobile.MobileCore;
+import com.adobe.marketing.mobile.MobilePrivacyStatus;
 import com.adobe.marketing.mobile.services.HttpMethod;
 import com.adobe.marketing.mobile.services.ServiceProvider;
 import com.adobe.marketing.mobile.util.DataReader;
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -105,7 +110,7 @@ public class AudienceFunctionalTests {
 	public void testSubmitSignal_when_NetworkHasUnrecoverableError_thenCallbackCalledWithEmptyProfile()
 		throws Exception {
 		TestableNetworkRequest signalRequest = new TestableNetworkRequest("https://server/event", HttpMethod.GET);
-		testableNetworkService.setResponseConnectionFor(signalRequest, getMockConnection(404, null));
+		testableNetworkService.setResponseConnectionFor(signalRequest, new MockConnection(404, null));
 		testableNetworkService.setExpectedNetworkRequest(signalRequest, 1);
 
 		mockUUIDInPersistence();
@@ -389,7 +394,7 @@ public class AudienceFunctionalTests {
 		TestableNetworkRequest signalRequest = new TestableNetworkRequest("https://server/event", HttpMethod.GET);
 		testableNetworkService.setResponseConnectionFor(
 			signalRequest,
-			getMockConnection(
+			new MockConnection(
 				200,
 				"{\"uuid\":\"19994521975870785742420741570375407533\", \"stuff\":[{\"cv\":\"cv\",\"cn\":\"cn\"}]}"
 			)
@@ -416,139 +421,13 @@ public class AudienceFunctionalTests {
 		assertEquals("testUUID", DataReader.optString(sharedState, "uuid", null));
 	}
 
-	// todo: move these tests in a separate file and mock serviceprovider
-	//	@Test
-	//	public void testSubmitSignal_when_LocalStorageService_NotInitialized_ShouldNotCrash() throws Exception {
-	//		// recreate eventHub with null DataStorageService.
-	//		final CountDownLatch latch = new CountDownLatch(1);
-	//
-	//		eventHub.shutdown();
-	//		platformServices = new ModuleTestPlatformServices();
-	//		platformServices.setFakeLocalStorageService(null);
-	//		eventHub = new MockEventHubModuleTest("eventhub", platformServices);
-	//		eventHub.registerModule(AudienceExtension.class);
-	//
-	//		systemInfoService = (MockSystemInfoService) platformServices.getSystemInfoService();
-	//		systemInfoService.networkConnectionStatus = SystemInfoService.ConnectionStatus.CONNECTED;
-	//		testableNetworkService = (TestableNetworkService) platformServices.getNetworkService();
-	//		loggingService = (FakeLoggingService) platformServices.getLoggingService();
-	//		Log.setLoggingService(loggingService);
-	//		Log.setLogLevel(LoggingMode.VERBOSE);
-	//
-	//		// Setup
-	//		eventHub.setExpectedEventCount(3);
-	//		eventHub.ignoreEvents(EventType.HUB, EventSource.SHARED_STATE);
-	//		final HashMap<String, Object> audienceResponse = new HashMap<String, Object>();
-	//		testableNetworkService.setExpectedCount(2);
-	//		testableNetworkService.setDefaultResponse(
-	//			"{\"uuid\":\"19994521975870785742420741570375407533\", \"dests\":[{\"c\":\"http://www.google.com\"}], \"stuff\":[{\"cv\":\"cv\",\"cn\":\"cn\"}]}"
-	//		);
-	//
-	//		// Preset the shared state and shared Preferences
-	//		providedValidConfigurationState();
-	//		providedValidIdentityState();
-	//
-	//		// Test
-	//		HashMap<String, String> data = new HashMap<String, String>();
-	//		data.put("key1", "value1");
-	//		AdobeCallback<HashMap<String, String>> callback = new AdobeCallback<HashMap<String, String>>() {
-	//			@Override
-	//			public void call(HashMap<String, String> profileData) {
-	//				audienceResponse.put(RESPONSE_PROFILE_DATA, profileData);
-	//				latch.countDown();
-	//			}
-	//		};
-	//		eventHub.dispatch(createAudienceRequestContentEventWithData(data, callback));
-	//		latch.await(2, TimeUnit.SECONDS);
-	//		waitForThreadsWithFailIfTimedOut(5000);
-	//
-	//		// verify
-	//		List<Event> events = eventHub.getEvents();
-	//		assertEquals(3, events.size());
-	//		HashMap<String, String> aamProfile = (HashMap<String, String>) audienceResponse.get(RESPONSE_PROFILE_DATA);
-	//		assertEquals("cv", aamProfile.get("cn"));
-	//
-	//		assertTrue(
-	//			loggingService.containsErrorLog(
-	//				"Audience Manager",
-	//				"LocalStorage service was not initialized, unable to retrieve uuid from persistence"
-	//			)
-	//		);
-	//		assertTrue(
-	//			loggingService.containsErrorLog(
-	//				"Audience Manager",
-	//				"LocalStorage service was not initialized, unable to update uuid in persistence"
-	//			)
-	//		);
-	//		assertTrue(
-	//			loggingService.containsErrorLog(
-	//				"Audience Manager",
-	//				"LocalStorage service was not initialized, unable to update visitor profile in persistence"
-	//			)
-	//		);
-	//	}
-	//
-	//	@Test
-	//	public void testSubmitSignal_when_DatabaseService_NotInitialized_ShouldNotCrash() throws Exception {
-	//		// recreate eventHub with null DataStorageService.
-	//		eventHub.shutdown();
-	//		platformServices = new ModuleTestPlatformServices();
-	//		platformServices.setMockStructuredDataService(null);
-	//		loggingService = (FakeLoggingService) platformServices.getLoggingService();
-	//		Log.setLoggingService(loggingService);
-	//		Log.setLogLevel(LoggingMode.VERBOSE);
-	//		eventHub = new MockEventHubModuleTest("eventhub", platformServices);
-	//		eventHub.registerModule(AudienceExtension.class);
-	//		systemInfoService = (MockSystemInfoService) platformServices.getSystemInfoService();
-	//		systemInfoService.networkConnectionStatus = SystemInfoService.ConnectionStatus.CONNECTED;
-	//		testableNetworkService = (TestableNetworkService) platformServices.getNetworkService();
-	//
-	//		// Setup
-	//		eventHub.setExpectedEventCount(3);
-	//		eventHub.ignoreEvents(EventType.HUB, EventSource.SHARED_STATE);
-	//		final HashMap<String, Object> audienceResponse = new HashMap<String, Object>();
-	//		final CountDownLatch latch = new CountDownLatch(1);
-	//		testableNetworkService.setExpectedCount(2);
-	//		testableNetworkService.setDefaultResponse(
-	//			"{\"uuid\":\"19994521975870785742420741570375407533\", \"dests\":[{\"c\":\"http://www.google.com\"}], \"stuff\":[{\"cv\":\"cv\",\"cn\":\"cn\"}]}"
-	//		);
-	//
-	//		// Preset the shared state and shared Preferences
-	//		providedValidConfigurationState();
-	//		providedValidIdentityState();
-	//
-	//		// Test
-	//		HashMap<String, String> data = new HashMap<String, String>();
-	//		data.put("key1", "value1");
-	//		AdobeCallback<HashMap<String, String>> callback = new AdobeCallback<HashMap<String, String>>() {
-	//			@Override
-	//			public void call(HashMap<String, String> profileData) {
-	//				audienceResponse.put(RESPONSE_PROFILE_DATA, profileData);
-	//				latch.countDown();
-	//			}
-	//		};
-	//		eventHub.dispatch(createAudienceRequestContentEventWithData(data, callback));
-	//		latch.await(2, TimeUnit.SECONDS);
-	//		waitForThreadsWithFailIfTimedOut(5000);
-	//
-	//		// verify
-	//		// No network calls are made
-	//		assertEquals(0, testableNetworkService.waitAndGetCount());
-	//		assertTrue(
-	//			loggingService.containsErrorLog(
-	//				"Audience Manager",
-	//				"Database Service is not available, AAM dispatchers and Listeners will not be registered"
-	//			)
-	//		);
-	//	}
-
 	@Ignore("fails when running in the suite")
 	@Test
 	public void testSubmitSignal_when_PrivacyUnknown_Then_PrivacyChangesToOptIN_ShouldSendTwoHits() throws Exception {
 		TestableNetworkRequest signalRequest = new TestableNetworkRequest("https://server/event", HttpMethod.GET);
 		testableNetworkService.setResponseConnectionFor(
 			signalRequest,
-			getMockConnection(
+			new MockConnection(
 				200,
 				"{\"uuid\":\"19994521975870785742420741570375407533\", \"stuff\":[{\"cv\":\"cv\",\"cn\":\"cn\"}]}"
 			)
@@ -609,7 +488,7 @@ public class AudienceFunctionalTests {
 		TestableNetworkRequest signalRequest = new TestableNetworkRequest("https://server/event", HttpMethod.GET);
 		testableNetworkService.setResponseConnectionFor(
 			signalRequest,
-			getMockConnection(
+			new MockConnection(
 				200,
 				"{\"uuid\":\"19994521975870785742420741570375407533\", \"stuff\":[{\"cv\":\"cv\",\"cn\":\"cn\"}]}"
 			)
@@ -769,40 +648,5 @@ public class AudienceFunctionalTests {
 		} catch (InterruptedException e) {
 			fail("Unexpected InterruptedException thrown on registerExtensions");
 		}
-	}
-
-	HttpConnecting getMockConnection(final int responseCode, final String payload) {
-		return new HttpConnecting() {
-			@Override
-			public InputStream getInputStream() {
-				if (payload != null) {
-					return new ByteArrayInputStream(payload.getBytes());
-				}
-				return null;
-			}
-
-			@Override
-			public InputStream getErrorStream() {
-				return null;
-			}
-
-			@Override
-			public int getResponseCode() {
-				return responseCode;
-			}
-
-			@Override
-			public String getResponseMessage() {
-				return null;
-			}
-
-			@Override
-			public String getResponsePropertyValue(String s) {
-				return null;
-			}
-
-			@Override
-			public void close() {}
-		};
 	}
 }

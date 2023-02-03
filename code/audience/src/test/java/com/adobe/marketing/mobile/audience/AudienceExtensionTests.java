@@ -636,6 +636,27 @@ public class AudienceExtensionTests {
 	}
 
 	@Test
+	public void testHandleAudienceRequestContent_whenNullDataQueue_doesNotCrash() {
+		// setup
+		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData());
+
+		final Map<String, Object> fakeConfigData = getFakeConfigEventData();
+		fakeConfigData.put(
+			AudienceTestConstants.EventDataKeys.Configuration.EXPERIENCE_CLOUD_ORGID,
+			"testExperience@adobeorg"
+		);
+		mockConfigSharedState(new SharedStateResult(SharedStateStatus.SET, fakeConfigData));
+
+		// test
+		when(mockServiceProvider.getDataQueueService()).thenReturn(null);
+		audience = new AudienceExtension(mockExtensionApi, mockState, null);
+		audience.handleAudienceRequestContent(event);
+
+		// verify
+		verify(mockExtensionApi, never()).dispatch(any(Event.class));
+	}
+
+	@Test
 	public void testHandleAudienceRequestContent_whenPrivacyOptOut_dispatchesResponse() throws Exception {
 		// setup
 		final Event event = getSubmitSignalEvent(getFakeAamTraitsEventData());
