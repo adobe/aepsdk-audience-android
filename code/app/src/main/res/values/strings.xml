@@ -1,0 +1,33 @@
+<!--
+    Copyright 2023 Adobe. All rights reserved.
+    This file is licensed to you under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License. You may obtain a copy
+    of the License at http://www.apache.org/licenses/LICENSE-2.0
+    Unless required by applicable law or agreed to in writing, software distributed under
+    the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTATIONS
+    OF ANY KIND, either express or implied. See the License for the specific language
+    governing permissions and limitations under the License.
+-->
+
+<resources>
+    <string name="app_name">AudienceTestApp</string>
+    <string name="btn_track_state">trackState</string>
+    <string name="btn_track_action">trackAction</string>
+    <string name="btn_getsdkidentities">getSDKIdentities</string>
+    <string name="btn_setadid">setAdvertisingId</string>
+    <string name="btn_privacyoptin">OPT-IN</string>
+    <string name="btn_privacyoptout">OPT-OUT</string>
+    <string name="btn_privacyunknown">UNKNOWN</string>
+    <string name="btn_reset">reset</string>
+    <string name="btn_getvisitorprofile">getVisitorProfile</string>
+    <string name="btn_submit_signal">submitSignal</string>
+    <string name="btn_connect_assurance_session">Connect</string>
+    <string name="btn_connect_to_assurance">Connect to Assurance</string>
+    <string name="title_enter_assurance_session_url">Enter the Assurance Session URL:</string>
+    <string name="et_hint_assurance_id">Paste your Assurance session ID here</string>
+    <string name="no_data">No data available</string>
+    <string name="tv_track">Track with Analytics</string>
+    <string name="tv_audience">Audience</string>
+    <string name="tv_mobilecore">Mobile Core</string>
+    <string name="tv_privacystatus">Privacy status</string>
+</resources>
