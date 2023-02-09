@@ -33,10 +33,6 @@ String audienceExtensionVersion = Audience.extensionVersion();
 ```
 
 #### Kotlin
-##### Syntax
-```kotlin
-fun extensionVersion(): String
-```
 
 ##### Example
 ```kotlin
@@ -68,11 +64,6 @@ Audience.getVisitorProfile(new AdobeCallback<Map<String, String>>() {
 
 #### Kotlin
 
-##### Syntax
-```kotlin
-fun getVisitorProfile(adobeCallback: AdobeCallback<Map<String, String?>?>)
-```
-
 ##### Example
 ```kotlin
 Audience.getVisitorProfile { visitorProfile ->
@@ -102,11 +93,6 @@ Audience.registerExtension();
 
 #### Kotlin
 
-##### Syntax
-```kotlin
-fun registerExtension()
-```
-
 ##### Example
 ```kotlin
 Audience.registerExtension()
@@ -129,11 +115,6 @@ Audience.reset();
 ```
 
 #### Kotlin
-
-##### Syntax
-```kotlin
-fun reset()
-```
 
 ##### Example
 ```kotlin
@@ -176,13 +157,6 @@ Audience.signalWithData(traits, new AdobeCallback<Map<String, String>>() {
 ```
 
 #### Kotlin
-
-##### Syntax
-```kotlin
-fun signalWithData(
-        data: Map<String, String?>,
-        adobeCallback: AdobeCallback<Map<String, String?>?>?)
-```
 
 ##### Example
 ```kotlin
