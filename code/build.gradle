@@ -26,9 +26,9 @@ moduleVersion=rootProject.moduleVersion
 
 ext {
     // android config
-    minSdkVersion = 19
-    targetSdkVersion = 33
-    compileSdkVersion = 33
+    minSdk = 19
+    targetSdk = 33
+    compileSdk = 33
     versionCode = 1
     versionName = "2.0.0"
 

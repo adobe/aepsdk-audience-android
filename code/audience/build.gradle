@@ -19,11 +19,11 @@ jacoco {
 android {
     namespace 'com.adobe.marketing.mobile.audience'
 
-    compileSdk rootProject.ext.compileSdkVersion
+    compileSdk rootProject.ext.compileSdk
 
     defaultConfig {
-        minSdkVersion rootProject.ext.minSdkVersion
-        targetSdkVersion rootProject.ext.targetSdkVersion
+        minSdk rootProject.ext.minSdk
+        targetSdk rootProject.ext.targetSdk
 
         testInstrumentationRunner rootProject.ext.testInstrumentationRunner
     }
