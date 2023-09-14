@@ -26,9 +26,9 @@ moduleVersion=rootProject.moduleVersion
 
 ext {
     // android config
-    minSdkVersion = 19
-    targetSdkVersion = 33
-    compileSdkVersion = 33
+    minSdk = 19
+    targetSdk = 33
+    compileSdk = 33
     versionCode = 1
     versionName = "2.0.0"
 
@@ -44,6 +44,6 @@ ext {
     jacocoVersion = "0.8.8"
 }
 
-task clean(type: Delete) {
+tasks.register('clean', Delete) {
     delete rootProject.buildDir
 }
