@@ -17,7 +17,6 @@ import com.adobe.marketing.mobile.audience.AudienceExtension;
 import com.adobe.marketing.mobile.services.Log;
 import com.adobe.marketing.mobile.util.DataReader;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public final class Audience {
@@ -25,11 +24,10 @@ public final class Audience {
 	private static final String LOG_TAG = "Audience";
 	private static final String LOG_SOURCE = "Audience";
 
-	private static final String EXTENSION_VERSION = "2.0.0";
+	private static final String EXTENSION_VERSION = "3.0.0";
 	private static final int CALLBACK_TIMEOUT_MILLIS = 5000;
 
-	@NonNull
-	public static final Class<? extends Extension> EXTENSION = AudienceExtension.class;
+	@NonNull public static final Class<? extends Extension> EXTENSION = AudienceExtension.class;
 
 	private Audience() {}
 
@@ -40,31 +38,6 @@ public final class Audience {
 	 */
 	public static @NonNull String extensionVersion() {
 		return EXTENSION_VERSION;
-	}
-
-	/**
-	 * Registers the Audience extension with the {@code MobileCore}.
-	 * <p>
-	 * This will allow the extension to send and receive events to and from the SDK.
-	 *
-	 * @deprecated as of 2.0.0, use {@link com.adobe.marketing.mobile.MobileCore#registerExtensions(List, AdobeCallback)} with Audience.EXTENSION instead.
-	 */
-	@SuppressWarnings("deprecation")
-	@Deprecated
-	public static void registerExtension() {
-		MobileCore.registerExtension(
-			AudienceExtension.class,
-			extensionError -> {
-				if (extensionError != null) {
-					Log.error(
-						LOG_TAG,
-						LOG_SOURCE,
-						"There was an error registering the Audience extension: %s",
-						extensionError.getErrorName()
-					);
-				}
-			}
-		);
 	}
 
 	/**

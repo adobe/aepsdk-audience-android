@@ -155,8 +155,7 @@ public final class AudienceExtension extends Extension {
 	 *
 	 * @return A {@link String} extension name for Audience
 	 */
-	@NonNull
-	@Override
+	@NonNull @Override
 	protected String getName() {
 		return EXTENSION_NAME;
 	}
@@ -166,8 +165,7 @@ public final class AudienceExtension extends Extension {
 	 *
 	 * @return A {@link String} friendly extension name for Audience
 	 */
-	@NonNull
-	@Override
+	@NonNull @Override
 	protected String getFriendlyName() {
 		return FRIENDLY_EXTENSION_NAME;
 	}
@@ -177,8 +175,7 @@ public final class AudienceExtension extends Extension {
 	 *
 	 * @return A {@link String} representing the extension version
 	 */
-	@NonNull
-	@Override
+	@NonNull @Override
 	protected String getVersion() {
 		return com.adobe.marketing.mobile.Audience.extensionVersion();
 	}

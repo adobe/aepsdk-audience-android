@@ -28,7 +28,6 @@ import com.adobe.marketing.mobile.Audience;
 import com.adobe.marketing.mobile.Event;
 import com.adobe.marketing.mobile.EventSource;
 import com.adobe.marketing.mobile.EventType;
-import com.adobe.marketing.mobile.ExtensionErrorCallback;
 import com.adobe.marketing.mobile.MobileCore;
 import com.adobe.marketing.mobile.util.DataReader;
 import java.io.FileInputStream;
@@ -74,24 +73,6 @@ public class AudiencePublicAPITests {
 		assertNotNull(moduleVersion);
 
 		assertEquals(moduleVersion, Audience.extensionVersion());
-	}
-
-	@SuppressWarnings({ "deprecation", "rawtypes" })
-	@Test
-	public void testRegisterExtension_registersWithMobileCore() {
-		Audience.registerExtension();
-
-		final ArgumentCaptor<Class> extensionClassCaptor = ArgumentCaptor.forClass(Class.class);
-		final ArgumentCaptor<ExtensionErrorCallback> callbackCaptor = ArgumentCaptor.forClass(
-			ExtensionErrorCallback.class
-		);
-		mockCore.verify(
-			() -> MobileCore.registerExtension(extensionClassCaptor.capture(), callbackCaptor.capture()),
-			times(1)
-		);
-
-		assertEquals(AudienceExtension.class, extensionClassCaptor.getValue());
-		assertNotNull(callbackCaptor.getValue());
 	}
 
 	@Test

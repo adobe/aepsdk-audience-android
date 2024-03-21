@@ -46,8 +46,7 @@ public class MonitorExtension extends Extension {
 		super(extensionApi);
 	}
 
-	@NonNull
-	@Override
+	@NonNull @Override
 	protected String getName() {
 		return "MonitorExtension";
 	}

@@ -81,8 +81,7 @@ class AudienceDataEntity {
 	 * Serializes this to a {@code DataEntity}.
 	 * @return serialized {@code AudienceDataEntity} or null if it could not be serialized.
 	 */
-	@Nullable
-	DataEntity toDataEntity() {
+	@Nullable DataEntity toDataEntity() {
 		try {
 			JSONObject serializedEntity = new JSONObject();
 			serializedEntity.put(EVENT_KEY, new JSONObject(EventCoder.encode(this.event)));
@@ -111,8 +110,7 @@ class AudienceDataEntity {
 	 * @return a deserialized {@code AudienceDataEntity} instance or null if it
 	 * could not be deserialized to an {@code AudienceDataEntity}
 	 */
-	@Nullable
-	static AudienceDataEntity fromDataEntity(@NotNull final DataEntity dataEntity) {
+	@Nullable static AudienceDataEntity fromDataEntity(@NotNull final DataEntity dataEntity) {
 		String entity = dataEntity.getData();
 		if (entity == null || entity.isEmpty()) {
 			return null;
