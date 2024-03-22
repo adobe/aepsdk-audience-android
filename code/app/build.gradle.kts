@@ -32,7 +32,7 @@ configure<com.diffplug.gradle.spotless.SpotlessExtension> {
 }
 
 android {
-    namespace = "com.adobe.marketing.mobile.audience.testapp.java"
+    namespace = "com.adobe.audiencetestapp"
 
     defaultConfig {
         applicationId = "com.adobe.marketing.tester"
@@ -71,8 +71,17 @@ dependencies {
     implementation(project(":audience"))
 
     implementation("com.adobe.marketing.mobile:core:$mavenCoreVersion-SNAPSHOT")
-    implementation("com.adobe.marketing.mobile:edgeconsent:2.0.0") {
-        exclude(group = "com.adobe.marketing.mobile", module = "edge")
+    implementation("com.adobe.marketing.mobile:identity:3.0.0-SNAPSHOT"){
+        exclude(group = "com.adobe.marketing.mobile", module = "core")
     }
-    implementation("com.adobe.marketing.mobile:assurance:2.2.1")
+
+    implementation("com.adobe.marketing.mobile:lifecycle:3.0.0-SNAPSHOT"){
+        exclude(group = "com.adobe.marketing.mobile", module = "core")
+    }
+    implementation("com.adobe.marketing.mobile:analytics:3.0.0-SNAPSHOT"){
+        exclude(group = "com.adobe.marketing.mobile", module = "core")
+    }
+    implementation("com.adobe.marketing.mobile:assurance:3.0.0-SNAPSHOT"){
+        exclude(group = "com.adobe.marketing.mobile", module = "core")
+    }
 }
