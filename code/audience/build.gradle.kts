@@ -15,12 +15,11 @@ plugins {
 }
 
 val mavenCoreVersion: String by project
+val functionalTestIdentityVersion: String by project
 
 aepLibrary {
     namespace = "com.adobe.marketing.mobile.audience"
     enableSpotless = true
-    enableSpotlessPrettierForJava = true
-    enableDokkaDoc = true
 
     publishing {
         gitRepoName = "aepsdk-audience-android"
@@ -32,7 +31,5 @@ dependencies {
     // Stop using SNAPSHOT after Core release.
     implementation("com.adobe.marketing.mobile:core:$mavenCoreVersion-SNAPSHOT")
 
-    testImplementation("org.json:json:20180813")
-
-    androidTestImplementation("com.adobe.marketing.mobile:identity:3.0.0-SNAPSHOT")
+    androidTestImplementation("com.adobe.marketing.mobile:identity:$functionalTestIdentityVersion-SNAPSHOT")
 }

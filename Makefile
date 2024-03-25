@@ -74,9 +74,6 @@ assemble-phone-release:
 assemble-app:
 	(./code/gradlew -p code/$(TEST-APP-FOLDER-NAME-JAVA) assemble)
 
-ci-publish-maven-local-jitpack:
-	(./code/gradlew -p code/$(EXTENSION-LIBRARY-FOLDER-NAME) publishReleasePublicationToMavenLocal -Pjitpack  -x signReleasePublication)
-
 ci-publish-staging:
 	(./code/gradlew -p code/$(EXTENSION-LIBRARY-FOLDER-NAME) publishReleasePublicationToSonatypeRepository)
 

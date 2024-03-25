@@ -25,7 +25,7 @@ parameters:
     default: v1
   build-path:
     type: string
-    default: code/edge/build
+    default: code/audience/build
 
 # Workflows orchestrate a set of jobs to be run;
 workflows:
@@ -47,7 +47,7 @@ jobs:
     # List of available Android Docker images: https://circleci.com/developer/images/image/cimg/android#image-tags
     executor:
       name: android/android-docker
-      tag: 2024.01.1-node
+      tag: 2024.01.1
 
     steps:
       - checkout
@@ -78,7 +78,7 @@ jobs:
     # List of available Android Docker images: https://circleci.com/developer/images/image/cimg/android#image-tags
     executor:
       name: android/android-docker
-      tag: 2024.01.1-node
+      tag: 2024.01.1
 
     steps:
       - checkout
@@ -92,7 +92,7 @@ jobs:
           name: Javadoc
           command: make javadoc
       - store_artifacts:
-          path: << pipeline.parameters.build-path >>/dokka/javadoc
+          path: << pipeline.parameters.build-path >>/docs/javadoc
 
       - run:
           name: Assemble Phone
@@ -126,7 +126,7 @@ jobs:
     # list of available Android machine images: https://circleci.com/developer/machine/image/android#image-tags
     executor:
       name: android/android-machine
-      resource-class: large
+      resource-class: medium
       tag: 2024.01.1
     steps:
       - checkout
