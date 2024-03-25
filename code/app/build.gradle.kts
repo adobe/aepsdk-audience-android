@@ -19,6 +19,16 @@ plugins {
 
 val mavenCoreVersion: String by project
 
+configure<com.diffplug.gradle.spotless.SpotlessExtension> {
+    java {
+        toggleOffOn("format:off", "format:on")
+        target("src/*/java/**/*.java")
+        removeUnusedImports()
+        endWithNewline()
+        licenseHeader(BuildConstants.ADOBE_LICENSE_HEADER)
+    }
+}
+
 android {
     namespace = "com.adobe.audiencetestapp"
 
