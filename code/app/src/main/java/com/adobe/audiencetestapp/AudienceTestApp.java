@@ -25,39 +25,37 @@ import java.util.HashMap;
 
 public class AudienceTestApp extends Application {
 
-	public static final String LOG_TAG = "AudienceTestApp";
-	// TODO: Set up the Environment File ID from your mobile property for the preferred environment configured in Data Collection UI
-	private final String ENVIRONMENT_FILE_ID = "";
+    public static final String LOG_TAG = "AudienceTestApp";
+    // TODO: Set up the Environment File ID from your mobile property for the preferred environment
+    // configured in Data Collection UI
+    private final String ENVIRONMENT_FILE_ID = "";
 
-	@Override
-	public void onCreate() {
-		super.onCreate();
-		MobileCore.setApplication(this);
-		MobileCore.setLogLevel(LoggingMode.VERBOSE);
-		MobileCore.configureWithAppID(ENVIRONMENT_FILE_ID);
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        MobileCore.setApplication(this);
+        MobileCore.setLogLevel(LoggingMode.VERBOSE);
+        MobileCore.configureWithAppID(ENVIRONMENT_FILE_ID);
 
-		MobileCore.registerExtensions(
-			Arrays.asList(
-				Identity.EXTENSION,
-				Audience.EXTENSION,
-				Lifecycle.EXTENSION,
-				Analytics.EXTENSION,
-				Assurance.EXTENSION
-			),
-			o -> {
-				Log.d(LOG_TAG, "Mobile SDK was initialized");
-				// testWithAAMForwardingForAnalytics(false);
-			}
-		);
-	}
+        MobileCore.registerExtensions(
+                Arrays.asList(
+                        Identity.EXTENSION,
+                        Audience.EXTENSION,
+                        Lifecycle.EXTENSION,
+                        Analytics.EXTENSION,
+                        Assurance.EXTENSION),
+                o -> {
+                    Log.d(LOG_TAG, "Mobile SDK was initialized");
+                    // testWithAAMForwardingForAnalytics(false);
+                });
+    }
 
-	private void testWithAAMForwardingForAnalytics(final boolean aamForwardingEnabled) {
-		MobileCore.updateConfiguration(
-			new HashMap<String, Object>() {
-				{
-					put("analytics.aamForwardingEnabled", aamForwardingEnabled);
-				}
-			}
-		);
-	}
+    private void testWithAAMForwardingForAnalytics(final boolean aamForwardingEnabled) {
+        MobileCore.updateConfiguration(
+                new HashMap<String, Object>() {
+                    {
+                        put("analytics.aamForwardingEnabled", aamForwardingEnabled);
+                    }
+                });
+    }
 }

@@ -23,8 +23,11 @@ configure<com.diffplug.gradle.spotless.SpotlessExtension> {
     java {
         toggleOffOn("format:off", "format:on")
         target("src/*/java/**/*.java")
+        importOrder()
         removeUnusedImports()
+        googleJavaFormat(BuildConstants.Versions.GOOGLE_JAVA_FORMAT).aosp().reflowLongStrings()
         endWithNewline()
+        formatAnnotations()
         licenseHeader(BuildConstants.ADOBE_LICENSE_HEADER)
     }
 }
