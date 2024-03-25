@@ -17,9 +17,9 @@ import org.junit.Test;
 
 public class AudienceConstantsTest {
 
-	@Test
-	public void thisIsAStaticClassAndThisTestIsForCodeCoverageToBeHappy() throws Exception {
-		AudienceConstants instance = new AudienceConstants();
-		assertNotNull(instance);
-	}
+    @Test
+    public void thisIsAStaticClassAndThisTestIsForCodeCoverageToBeHappy() throws Exception {
+        AudienceConstants instance = new AudienceConstants();
+        assertNotNull(instance);
+    }
 }

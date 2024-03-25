@@ -11,15 +11,11 @@
 
 package com.adobe.marketing.mobile;
 
-/**
- * Helper class for testing to access methods provided in Core
- */
+/** Helper class for testing to access methods provided in Core */
 public class MobileCoreHelper {
 
-	/**
-	 * Wrapper around {@link MobileCore#resetSDK()}
-	 */
-	public static void resetSDK() {
-		MobileCore.resetSDK();
-	}
+    /** Wrapper around {@link MobileCore#resetSDK()} */
+    public static void resetSDK() {
+        MobileCore.resetSDK();
+    }
 }

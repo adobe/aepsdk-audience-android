@@ -13,51 +13,51 @@ package com.adobe.marketing.mobile.audience;
 
 public class AudienceTestConstants {
 
-	public static final String LOG_TAG = "AudienceTests";
+    public static final String LOG_TAG = "AudienceTests";
 
-	public static final String UUID_KEY = "uuid";
-	public static final String VISITOR_PROFILE_KEY = "aamprofile";
-	public static final String RESPONSE_PROFILE_DATA = "profileDataKey";
+    public static final String UUID_KEY = "uuid";
+    public static final String VISITOR_PROFILE_KEY = "aamprofile";
+    public static final String RESPONSE_PROFILE_DATA = "profileDataKey";
 
-	public static class EventType {
+    public static class EventType {
 
-		static final String MONITOR = "com.adobe.functional.eventType.monitor";
+        static final String MONITOR = "com.adobe.functional.eventType.monitor";
 
-		private EventType() {}
-	}
+        private EventType() {}
+    }
 
-	public static class EventSource {
+    public static class EventSource {
 
-		// Used by Monitor Extension
-		static final String SHARED_STATE_REQUEST = "com.adobe.eventSource.sharedStateRequest";
-		static final String SHARED_STATE_RESPONSE = "com.adobe.eventSource.sharedStateResponse";
-		static final String UNREGISTER = "com.adobe.eventSource.unregister";
+        // Used by Monitor Extension
+        static final String SHARED_STATE_REQUEST = "com.adobe.eventSource.sharedStateRequest";
+        static final String SHARED_STATE_RESPONSE = "com.adobe.eventSource.sharedStateResponse";
+        static final String UNREGISTER = "com.adobe.eventSource.unregister";
 
-		private EventSource() {}
-	}
+        private EventSource() {}
+    }
 
-	public static class EventDataKey {
+    public static class EventDataKey {
 
-		static final String STATE_OWNER = "stateowner";
+        static final String STATE_OWNER = "stateowner";
 
-		private EventDataKey() {}
-	}
+        private EventDataKey() {}
+    }
 
-	static final class DataStoreKey {
+    static final class DataStoreKey {
 
-		public static final String CONFIG_DATASTORE = "AdobeMobile_ConfigState";
-		public static final String AUDIENCE_DATASTORE = "AAMDataStore";
-		public static final String IDENTITY_DATASTORE = "visitorIDServiceDataStore";
-		public static final String LIFECYCLE_DATASTORE = "AdobeMobile_Lifecycle";
+        public static final String CONFIG_DATASTORE = "AdobeMobile_ConfigState";
+        public static final String AUDIENCE_DATASTORE = "AAMDataStore";
+        public static final String IDENTITY_DATASTORE = "visitorIDServiceDataStore";
+        public static final String LIFECYCLE_DATASTORE = "AdobeMobile_Lifecycle";
 
-		private DataStoreKey() {}
-	}
+        private DataStoreKey() {}
+    }
 
-	static final class Database {
+    static final class Database {
 
-		public static final String AUDIENCE = "com.adobe.module.audience";
-		public static final String IDENTITY = "com.adobe.module.identity";
+        public static final String AUDIENCE = "com.adobe.module.audience";
+        public static final String IDENTITY = "com.adobe.module.identity";
 
-		private Database() {}
-	}
+        private Database() {}
+    }
 }

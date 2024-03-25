@@ -32,183 +32,190 @@ import java.util.concurrent.TimeUnit;
 
 public class TestableNetworkService implements Networking {
 
-	private static final String LOG_SOURCE = "FunctionalTestNetworkService";
-	private final Map<TestableNetworkRequest, List<TestableNetworkRequest>> receivedTestableNetworkRequests;
-	private final Map<TestableNetworkRequest, HttpConnecting> responseMatchers;
-	private final Map<TestableNetworkRequest, ADBCountDownLatch> expectedTestableNetworkRequests;
-	private final ExecutorService executorService; // simulating the async network service
-	private Integer delayedResponse = 0;
+    private static final String LOG_SOURCE = "FunctionalTestNetworkService";
+    private final Map<TestableNetworkRequest, List<TestableNetworkRequest>>
+            receivedTestableNetworkRequests;
+    private final Map<TestableNetworkRequest, HttpConnecting> responseMatchers;
+    private final Map<TestableNetworkRequest, ADBCountDownLatch> expectedTestableNetworkRequests;
+    private final ExecutorService executorService; // simulating the async network service
+    private Integer delayedResponse = 0;
 
-	public TestableNetworkService() {
-		receivedTestableNetworkRequests = new HashMap<>();
-		responseMatchers = new HashMap<>();
-		expectedTestableNetworkRequests = new HashMap<>();
-		executorService = Executors.newCachedThreadPool();
-	}
+    public TestableNetworkService() {
+        receivedTestableNetworkRequests = new HashMap<>();
+        responseMatchers = new HashMap<>();
+        expectedTestableNetworkRequests = new HashMap<>();
+        executorService = Executors.newCachedThreadPool();
+    }
 
-	private static final HttpConnecting defaultResponse = new MockConnection(200, "");
+    private static final HttpConnecting defaultResponse = new MockConnection(200, "");
 
-	public void reset() {
-		Log.trace(LOG_TAG, LOG_SOURCE, "Reset received and expected network requests.");
-		receivedTestableNetworkRequests.clear();
-		responseMatchers.clear();
-		expectedTestableNetworkRequests.clear();
-		delayedResponse = 0;
-	}
+    public void reset() {
+        Log.trace(LOG_TAG, LOG_SOURCE, "Reset received and expected network requests.");
+        receivedTestableNetworkRequests.clear();
+        responseMatchers.clear();
+        expectedTestableNetworkRequests.clear();
+        delayedResponse = 0;
+    }
 
-	public void setResponseConnectionFor(
-		final TestableNetworkRequest request,
-		final HttpConnecting responseConnection
-	) {
-		responseMatchers.put(request, responseConnection);
-	}
+    public void setResponseConnectionFor(
+            final TestableNetworkRequest request, final HttpConnecting responseConnection) {
+        responseMatchers.put(request, responseConnection);
+    }
 
-	public void setExpectedNetworkRequest(final TestableNetworkRequest request, final int count) {
-		expectedTestableNetworkRequests.put(request, new ADBCountDownLatch(count));
-	}
+    public void setExpectedNetworkRequest(final TestableNetworkRequest request, final int count) {
+        expectedTestableNetworkRequests.put(request, new ADBCountDownLatch(count));
+    }
 
-	public Map<TestableNetworkRequest, ADBCountDownLatch> getExpectedNetworkRequests() {
-		return expectedTestableNetworkRequests;
-	}
+    public Map<TestableNetworkRequest, ADBCountDownLatch> getExpectedNetworkRequests() {
+        return expectedTestableNetworkRequests;
+    }
 
-	public List<TestableNetworkRequest> getReceivedNetworkRequestsMatching(final TestableNetworkRequest request) {
-		for (Map.Entry<TestableNetworkRequest, List<TestableNetworkRequest>> requests : receivedTestableNetworkRequests.entrySet()) {
-			if (requests.getKey().equals(request)) {
-				return requests.getValue();
-			}
-		}
+    public List<TestableNetworkRequest> getReceivedNetworkRequestsMatching(
+            final TestableNetworkRequest request) {
+        for (Map.Entry<TestableNetworkRequest, List<TestableNetworkRequest>> requests :
+                receivedTestableNetworkRequests.entrySet()) {
+            if (requests.getKey().equals(request)) {
+                return requests.getValue();
+            }
+        }
 
-		return Collections.emptyList();
-	}
+        return Collections.emptyList();
+    }
 
-	public boolean isNetworkRequestExpected(final TestableNetworkRequest request) {
-		return expectedTestableNetworkRequests.containsKey(request);
-	}
+    public boolean isNetworkRequestExpected(final TestableNetworkRequest request) {
+        return expectedTestableNetworkRequests.containsKey(request);
+    }
 
-	public boolean awaitFor(final TestableNetworkRequest request, final int timeoutMillis) throws InterruptedException {
-		for (Map.Entry<TestableNetworkRequest, ADBCountDownLatch> expected : expectedTestableNetworkRequests.entrySet()) {
-			if (expected.getKey().equals(request)) {
-				return expected.getValue().await(timeoutMillis, TimeUnit.MILLISECONDS);
-			}
-		}
+    public boolean awaitFor(final TestableNetworkRequest request, final int timeoutMillis)
+            throws InterruptedException {
+        for (Map.Entry<TestableNetworkRequest, ADBCountDownLatch> expected :
+                expectedTestableNetworkRequests.entrySet()) {
+            if (expected.getKey().equals(request)) {
+                return expected.getValue().await(timeoutMillis, TimeUnit.MILLISECONDS);
+            }
+        }
 
-		return true;
-	}
+        return true;
+    }
 
-	public void enableDelayedResponse(final Integer delaySec) {
-		if (delaySec < 0) {
-			return;
-		}
+    public void enableDelayedResponse(final Integer delaySec) {
+        if (delaySec < 0) {
+            return;
+        }
 
-		delayedResponse = delaySec;
-	}
+        delayedResponse = delaySec;
+    }
 
-	/**
-	 * Asserts that the correct number of network requests were being sent, based on the previously set expectations.
-	 * @throws InterruptedException
-	 * @see #setExpectedNetworkRequest(TestableNetworkRequest, int)
-	 */
-	public void assertNetworkRequestCount() throws InterruptedException {
-		Map<TestableNetworkRequest, ADBCountDownLatch> expectedNetworkRequests = getExpectedNetworkRequests();
+    /**
+     * Asserts that the correct number of network requests were being sent, based on the previously
+     * set expectations.
+     *
+     * @throws InterruptedException
+     * @see #setExpectedNetworkRequest(TestableNetworkRequest, int)
+     */
+    public void assertNetworkRequestCount() throws InterruptedException {
+        Map<TestableNetworkRequest, ADBCountDownLatch> expectedNetworkRequests =
+                getExpectedNetworkRequests();
 
-		if (expectedNetworkRequests.isEmpty()) {
-			fail(
-				"There are no network request expectations set, use this API after calling setExpectationNetworkRequest"
-			);
-			return;
-		}
+        if (expectedNetworkRequests.isEmpty()) {
+            fail(
+                    "There are no network request expectations set, use this API after calling"
+                            + " setExpectationNetworkRequest");
+            return;
+        }
 
-		for (Map.Entry<TestableNetworkRequest, ADBCountDownLatch> expectedRequest : expectedNetworkRequests.entrySet()) {
-			boolean awaitResult = expectedRequest.getValue().await(5, TimeUnit.SECONDS);
-			assertTrue(
-				"Time out waiting for network request with URL '" +
-				expectedRequest.getKey().getUrl() +
-				"' and method '" +
-				expectedRequest.getKey().getMethod().name() +
-				"'",
-				awaitResult
-			);
-			int expectedCount = expectedRequest.getValue().getInitialCount();
-			int receivedCount = expectedRequest.getValue().getCurrentCount();
-			String message = String.format(
-				"Expected %d network requests for URL %s (%s), but received %d",
-				expectedCount,
-				expectedRequest.getKey().getUrl(),
-				expectedRequest.getKey().getMethod(),
-				receivedCount
-			);
-			assertEquals(message, expectedCount, receivedCount);
-		}
-	}
+        for (Map.Entry<TestableNetworkRequest, ADBCountDownLatch> expectedRequest :
+                expectedNetworkRequests.entrySet()) {
+            boolean awaitResult = expectedRequest.getValue().await(5, TimeUnit.SECONDS);
+            assertTrue(
+                    "Time out waiting for network request with URL '"
+                            + expectedRequest.getKey().getUrl()
+                            + "' and method '"
+                            + expectedRequest.getKey().getMethod().name()
+                            + "'",
+                    awaitResult);
+            int expectedCount = expectedRequest.getValue().getInitialCount();
+            int receivedCount = expectedRequest.getValue().getCurrentCount();
+            String message =
+                    String.format(
+                            "Expected %d network requests for URL %s (%s), but received %d",
+                            expectedCount,
+                            expectedRequest.getKey().getUrl(),
+                            expectedRequest.getKey().getMethod(),
+                            receivedCount);
+            assertEquals(message, expectedCount, receivedCount);
+        }
+    }
 
-	@Override
-	public void connectAsync(NetworkRequest networkRequest, NetworkCallback resultCallback) {
-		Log.trace(
-			LOG_TAG,
-			LOG_SOURCE,
-			"Received connectUrlAsync to URL '%s' and HttpMethod '%s'.",
-			networkRequest.getUrl(),
-			networkRequest.getMethod().name()
-		);
+    @Override
+    public void connectAsync(NetworkRequest networkRequest, NetworkCallback resultCallback) {
+        Log.trace(
+                LOG_TAG,
+                LOG_SOURCE,
+                "Received connectUrlAsync to URL '%s' and HttpMethod '%s'.",
+                networkRequest.getUrl(),
+                networkRequest.getMethod().name());
 
-		executorService.submit(() -> {
-			HttpConnecting response = setNetworkRequest(
-				new TestableNetworkRequest(
-					networkRequest.getUrl(),
-					networkRequest.getMethod(),
-					networkRequest.getBody(),
-					networkRequest.getHeaders(),
-					networkRequest.getConnectTimeout(),
-					networkRequest.getReadTimeout()
-				)
-			);
+        executorService.submit(
+                () -> {
+                    HttpConnecting response =
+                            setNetworkRequest(
+                                    new TestableNetworkRequest(
+                                            networkRequest.getUrl(),
+                                            networkRequest.getMethod(),
+                                            networkRequest.getBody(),
+                                            networkRequest.getHeaders(),
+                                            networkRequest.getConnectTimeout(),
+                                            networkRequest.getReadTimeout()));
 
-			if (resultCallback != null) {
-				if (delayedResponse > 0) {
-					try {
-						Thread.sleep(delayedResponse * 1000);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
-				}
+                    if (resultCallback != null) {
+                        if (delayedResponse > 0) {
+                            try {
+                                Thread.sleep(delayedResponse * 1000);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                        }
 
-				resultCallback.call(response == null ? defaultResponse : response);
-			}
-		});
-	}
+                        resultCallback.call(response == null ? defaultResponse : response);
+                    }
+                });
+    }
 
-	/**
-	 * Add the network request to the list of received requests. Returns the matching response, or
-	 * the default response if no matching response was found.
-	 */
-	private HttpConnecting setNetworkRequest(TestableNetworkRequest networkRequest) {
-		if (!receivedTestableNetworkRequests.containsKey(networkRequest)) {
-			receivedTestableNetworkRequests.put(networkRequest, new ArrayList<>());
-		}
+    /**
+     * Add the network request to the list of received requests. Returns the matching response, or
+     * the default response if no matching response was found.
+     */
+    private HttpConnecting setNetworkRequest(TestableNetworkRequest networkRequest) {
+        if (!receivedTestableNetworkRequests.containsKey(networkRequest)) {
+            receivedTestableNetworkRequests.put(networkRequest, new ArrayList<>());
+        }
 
-		receivedTestableNetworkRequests.get(networkRequest).add(networkRequest);
+        receivedTestableNetworkRequests.get(networkRequest).add(networkRequest);
 
-		HttpConnecting response = getMatchedResponse(networkRequest);
-		countDownExpected(networkRequest);
+        HttpConnecting response = getMatchedResponse(networkRequest);
+        countDownExpected(networkRequest);
 
-		return response == null ? defaultResponse : response;
-	}
+        return response == null ? defaultResponse : response;
+    }
 
-	private void countDownExpected(final TestableNetworkRequest request) {
-		for (Map.Entry<TestableNetworkRequest, ADBCountDownLatch> expected : expectedTestableNetworkRequests.entrySet()) {
-			if (expected.getKey().equals(request)) {
-				expected.getValue().countDown();
-			}
-		}
-	}
+    private void countDownExpected(final TestableNetworkRequest request) {
+        for (Map.Entry<TestableNetworkRequest, ADBCountDownLatch> expected :
+                expectedTestableNetworkRequests.entrySet()) {
+            if (expected.getKey().equals(request)) {
+                expected.getValue().countDown();
+            }
+        }
+    }
 
-	private HttpConnecting getMatchedResponse(final TestableNetworkRequest request) {
-		for (Map.Entry<TestableNetworkRequest, HttpConnecting> responses : responseMatchers.entrySet()) {
-			if (responses.getKey().equals(request)) {
-				return responses.getValue();
-			}
-		}
+    private HttpConnecting getMatchedResponse(final TestableNetworkRequest request) {
+        for (Map.Entry<TestableNetworkRequest, HttpConnecting> responses :
+                responseMatchers.entrySet()) {
+            if (responses.getKey().equals(request)) {
+                return responses.getValue();
+            }
+        }
 
-		return null;
-	}
+        return null;
+    }
 }
