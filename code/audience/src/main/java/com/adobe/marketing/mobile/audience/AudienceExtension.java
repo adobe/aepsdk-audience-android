@@ -716,7 +716,11 @@ public final class AudienceExtension extends Extension {
             AudienceDataEntity entity = new AudienceDataEntity(event, requestUrl, timeout);
             hitQueue.queue(entity.toDataEntity());
         } else {
-            Log.warning(LOG_TAG, LOG_SOURCE, "submitSignal : drop the invalid url.");
+            Log.warning(
+                    LOG_TAG,
+                    LOG_SOURCE,
+                    "submitSignal - Dropping request with event id '%s' because URL is invalid",
+                    event.getUniqueIdentifier());
         }
     }
 
@@ -807,9 +811,8 @@ public final class AudienceExtension extends Extension {
                                     Log.trace(
                                             LOG_TAG,
                                             LOG_SOURCE,
-                                            "processDestsArray - Failed to send the optOut hit with"
-                                                + " connection status because the connection  is"
-                                                + " null(device is offline).");
+                                            "sendOptOutHit - Failed to send the opt-out hit because"
+                                                + " the connection is null (network is offline).");
                                     return;
                                 }
 
@@ -1193,9 +1196,9 @@ public final class AudienceExtension extends Extension {
                                             Log.trace(
                                                     LOG_TAG,
                                                     LOG_SOURCE,
-                                                    "processDestsArray - Failed to process dest"
-                                                        + " because the connection  is null(device"
-                                                        + " is offline).");
+                                                    "processDestsArray - Failed to forward"
+                                                        + " destinations because the connection is"
+                                                        + " null (network is offline).");
                                             return;
                                         }
 
