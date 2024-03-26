@@ -79,7 +79,7 @@ public class AudienceHitsProcessorTest {
     public void testProcessHit_whenConnectionNull_doesNotRetry() {
         AudienceDataEntity dataEntity = new AudienceDataEntity(mockAAMEvent, "serverName2.com", 3);
 
-        audienceHitProcessor.processHit(dataEntity.toDataEntity(), Assert::assertTrue);
+        audienceHitProcessor.processHit(dataEntity.toDataEntity(), Assert::assertFalse);
 
         ArgumentCaptor<NetworkCallback> networkCallbackCaptor =
                 ArgumentCaptor.forClass(NetworkCallback.class);

@@ -710,8 +710,14 @@ public final class AudienceExtension extends Extension {
         // generate the url to send
         final String requestUrl = buildSignalUrl(server, signalData, event);
         Log.debug(LOG_TAG, LOG_SOURCE, "Queuing hit for url: %s", requestUrl);
-        AudienceDataEntity entity = new AudienceDataEntity(event, requestUrl, timeout);
-        hitQueue.queue(entity.toDataEntity());
+
+        // URLBuilder will return null, if the final URL is invalid. Drop the hit in that case.
+        if (requestUrl != null) {
+            AudienceDataEntity entity = new AudienceDataEntity(event, requestUrl, timeout);
+            hitQueue.queue(entity.toDataEntity());
+        } else {
+            Log.warning(LOG_TAG, LOG_SOURCE, "submitSignal : drop the invalid url.");
+        }
     }
 
     /**
@@ -798,6 +804,12 @@ public final class AudienceExtension extends Extension {
                             networkRequest,
                             connection -> {
                                 if (connection == null) {
+                                    Log.trace(
+                                            LOG_TAG,
+                                            LOG_SOURCE,
+                                            "processDestsArray - Failed to send the optOut hit with"
+                                                + " connection status because the connection  is"
+                                                + " null(device is offline).");
                                     return;
                                 }
 
@@ -1178,6 +1190,12 @@ public final class AudienceExtension extends Extension {
                                     request,
                                     connection -> {
                                         if (connection == null) {
+                                            Log.trace(
+                                                    LOG_TAG,
+                                                    LOG_SOURCE,
+                                                    "processDestsArray - Failed to process dest"
+                                                        + " because the connection  is null(device"
+                                                        + " is offline).");
                                             return;
                                         }
 
