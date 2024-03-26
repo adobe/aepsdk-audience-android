@@ -8,7 +8,6 @@ Refer to the [Getting started guide](./getting-started.md)
 
 - [extensionVersion](#extensionversion)
 - [getVisitorProfile](#getvisitorprofile)
-- [registerExtension](#registerextension)
 - [reset](#reset)
 - [signalWithData](#signalwithdata)
 
@@ -70,32 +69,6 @@ Audience.getVisitorProfile { visitorProfile ->
     // provide code to process the visitorProfile
 }
 
-```
-
-## registerExtension
-
-> **Warning**
-> Deprecated as of 2.0.0. Use the [MobileCore.registerExtensions API](https://github.com/adobe/aepsdk-core-android/blob/main/Documentation/MobileCore/api-reference.md) instead.
-
-Registers the Audience extension with `MobileCore`.
-
-#### Java
-
-##### Syntax
-```java
-public static void registerExtension();
-```
-
-##### Example
-```java
-Audience.registerExtension();
-```
-
-#### Kotlin
-
-##### Example
-```kotlin
-Audience.registerExtension()
 ```
 
 ## reset

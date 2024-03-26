@@ -28,7 +28,6 @@ import com.adobe.marketing.mobile.Audience;
 import com.adobe.marketing.mobile.Event;
 import com.adobe.marketing.mobile.EventSource;
 import com.adobe.marketing.mobile.EventType;
-import com.adobe.marketing.mobile.ExtensionErrorCallback;
 import com.adobe.marketing.mobile.MobileCore;
 import com.adobe.marketing.mobile.util.DataReader;
 import java.io.FileInputStream;
@@ -48,192 +47,169 @@ import org.mockito.junit.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class AudiencePublicAPITests {
 
-	private static final String GRADLE_PROPERTIES_PATH = "../gradle.properties";
-	private static final String PROPERTY_MODULE_VERSION = "moduleVersion";
+    private static final String GRADLE_PROPERTIES_PATH = "../gradle.properties";
+    private static final String PROPERTY_MODULE_VERSION = "moduleVersion";
 
-	private MockedStatic<MobileCore> mockCore;
+    private MockedStatic<MobileCore> mockCore;
 
-	@Before
-	public void setup() {
-		mockCore = mockStatic(MobileCore.class);
-	}
+    @Before
+    public void setup() {
+        mockCore = mockStatic(MobileCore.class);
+    }
 
-	@After
-	public void tearDown() {
-		mockCore.close();
-	}
+    @After
+    public void tearDown() {
+        mockCore.close();
+    }
 
-	@Test
-	public void testExtensionVersion_verifyModuleVersionInPropertiesFile_asEqual() {
-		Properties properties = loadProperties(GRADLE_PROPERTIES_PATH);
+    @Test
+    public void testExtensionVersion_verifyModuleVersionInPropertiesFile_asEqual() {
+        Properties properties = loadProperties(GRADLE_PROPERTIES_PATH);
 
-		assertNotNull(Audience.extensionVersion());
-		assertFalse(Audience.extensionVersion().isEmpty());
+        assertNotNull(Audience.extensionVersion());
+        assertFalse(Audience.extensionVersion().isEmpty());
 
-		String moduleVersion = properties.getProperty(PROPERTY_MODULE_VERSION);
-		assertNotNull(moduleVersion);
+        String moduleVersion = properties.getProperty(PROPERTY_MODULE_VERSION);
+        assertNotNull(moduleVersion);
 
-		assertEquals(moduleVersion, Audience.extensionVersion());
-	}
+        assertEquals(moduleVersion, Audience.extensionVersion());
+    }
 
-	@SuppressWarnings({ "deprecation", "rawtypes" })
-	@Test
-	public void testRegisterExtension_registersWithMobileCore() {
-		Audience.registerExtension();
+    @Test
+    public void testGetVisitorProfile_whenNullCallback_doesNotDispatchRequest() {
+        Audience.getVisitorProfile(null);
 
-		final ArgumentCaptor<Class> extensionClassCaptor = ArgumentCaptor.forClass(Class.class);
-		final ArgumentCaptor<ExtensionErrorCallback> callbackCaptor = ArgumentCaptor.forClass(
-			ExtensionErrorCallback.class
-		);
-		mockCore.verify(
-			() -> MobileCore.registerExtension(extensionClassCaptor.capture(), callbackCaptor.capture()),
-			times(1)
-		);
+        mockCore.verify(
+                () ->
+                        MobileCore.dispatchEventWithResponseCallback(
+                                any(Event.class), anyLong(), any(AdobeCallbackWithError.class)),
+                never());
+        mockCore.verify(() -> MobileCore.dispatchEvent(any(Event.class)), never());
+    }
 
-		assertEquals(AudienceExtension.class, extensionClassCaptor.getValue());
-		assertNotNull(callbackCaptor.getValue());
-	}
+    @Test
+    public void testGetVisitorProfile_dispatchesAudienceIdentityRequest() {
+        Audience.getVisitorProfile(returnedVisitorProfile -> {});
 
-	@Test
-	public void testGetVisitorProfile_whenNullCallback_doesNotDispatchRequest() {
-		Audience.getVisitorProfile(null);
+        final ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+        mockCore.verify(
+                () ->
+                        MobileCore.dispatchEventWithResponseCallback(
+                                eventCaptor.capture(),
+                                eq(5000L),
+                                any(AdobeCallbackWithError.class)),
+                times(1));
+        assertEquals("AudienceRequestIdentity", eventCaptor.getValue().getName());
+        assertEquals(EventType.AUDIENCEMANAGER, eventCaptor.getValue().getType());
+        assertEquals(EventSource.REQUEST_IDENTITY, eventCaptor.getValue().getSource());
+    }
 
-		mockCore.verify(
-			() ->
-				MobileCore.dispatchEventWithResponseCallback(
-					any(Event.class),
-					anyLong(),
-					any(AdobeCallbackWithError.class)
-				),
-			never()
-		);
-		mockCore.verify(() -> MobileCore.dispatchEvent(any(Event.class)), never());
-	}
+    @Test
+    public void testSignalWithData_whenValidData_dispatchesAudienceContentRequest() {
+        Map<String, String> sData = new HashMap<>();
+        sData.put("key1", "value1");
+        sData.put("key2", "value2");
+        Audience.signalWithData(sData, null);
 
-	@Test
-	public void testGetVisitorProfile_dispatchesAudienceIdentityRequest() {
-		Audience.getVisitorProfile(returnedVisitorProfile -> {});
+        final ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+        mockCore.verify(() -> MobileCore.dispatchEvent(eventCaptor.capture()), times(1));
+        assertEquals("AudienceRequestContent", eventCaptor.getValue().getName());
+        assertEquals(EventType.AUDIENCEMANAGER, eventCaptor.getValue().getType());
+        assertEquals(EventSource.REQUEST_CONTENT, eventCaptor.getValue().getSource());
 
-		final ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
-		mockCore.verify(
-			() ->
-				MobileCore.dispatchEventWithResponseCallback(
-					eventCaptor.capture(),
-					eq(5000L),
-					any(AdobeCallbackWithError.class)
-				),
-			times(1)
-		);
-		assertEquals("AudienceRequestIdentity", eventCaptor.getValue().getName());
-		assertEquals(EventType.AUDIENCEMANAGER, eventCaptor.getValue().getType());
-		assertEquals(EventSource.REQUEST_IDENTITY, eventCaptor.getValue().getSource());
-	}
+        assertEquals(1, eventCaptor.getValue().getEventData().size());
+        Map<String, String> traits =
+                DataReader.optStringMap(eventCaptor.getValue().getEventData(), "aamtraits", null);
+        assertNotNull(traits);
+        assertEquals(sData, traits);
+    }
 
-	@Test
-	public void testSignalWithData_whenValidData_dispatchesAudienceContentRequest() {
-		Map<String, String> sData = new HashMap<>();
-		sData.put("key1", "value1");
-		sData.put("key2", "value2");
-		Audience.signalWithData(sData, null);
+    @Test
+    public void testSignalWithData_whenEmptyData_dispatchesAudienceContentRequest() {
+        Audience.signalWithData(new HashMap<>(), null);
 
-		final ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
-		mockCore.verify(() -> MobileCore.dispatchEvent(eventCaptor.capture()), times(1));
-		assertEquals("AudienceRequestContent", eventCaptor.getValue().getName());
-		assertEquals(EventType.AUDIENCEMANAGER, eventCaptor.getValue().getType());
-		assertEquals(EventSource.REQUEST_CONTENT, eventCaptor.getValue().getSource());
+        final ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+        mockCore.verify(() -> MobileCore.dispatchEvent(eventCaptor.capture()), times(1));
+        assertEquals("AudienceRequestContent", eventCaptor.getValue().getName());
+        assertEquals(EventType.AUDIENCEMANAGER, eventCaptor.getValue().getType());
+        assertEquals(EventSource.REQUEST_CONTENT, eventCaptor.getValue().getSource());
 
-		assertEquals(1, eventCaptor.getValue().getEventData().size());
-		Map<String, String> traits = DataReader.optStringMap(eventCaptor.getValue().getEventData(), "aamtraits", null);
-		assertNotNull(traits);
-		assertEquals(sData, traits);
-	}
+        assertEquals(1, eventCaptor.getValue().getEventData().size());
+        Map<String, String> traits =
+                DataReader.optStringMap(eventCaptor.getValue().getEventData(), "aamtraits", null);
+        assertNotNull(traits);
+        assertEquals(0, traits.size());
+    }
 
-	@Test
-	public void testSignalWithData_whenEmptyData_dispatchesAudienceContentRequest() {
-		Audience.signalWithData(new HashMap<>(), null);
+    @Test
+    public void
+            testSignalWithData_whenCalledWithCallback_dispatchesAudienceContentRequestWithResponseCallback() {
+        Map<String, String> sData = new HashMap<>();
+        sData.put("key1", "value1");
+        sData.put("key2", "value2");
+        Audience.signalWithData(
+                sData,
+                new AdobeCallbackWithError<Map<String, String>>() {
+                    @Override
+                    public void fail(AdobeError adobeError) {}
 
-		final ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
-		mockCore.verify(() -> MobileCore.dispatchEvent(eventCaptor.capture()), times(1));
-		assertEquals("AudienceRequestContent", eventCaptor.getValue().getName());
-		assertEquals(EventType.AUDIENCEMANAGER, eventCaptor.getValue().getType());
-		assertEquals(EventSource.REQUEST_CONTENT, eventCaptor.getValue().getSource());
+                    @Override
+                    public void call(Map<String, String> stringStringMap) {}
+                });
 
-		assertEquals(1, eventCaptor.getValue().getEventData().size());
-		Map<String, String> traits = DataReader.optStringMap(eventCaptor.getValue().getEventData(), "aamtraits", null);
-		assertNotNull(traits);
-		assertEquals(0, traits.size());
-	}
+        final ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+        mockCore.verify(
+                () ->
+                        MobileCore.dispatchEventWithResponseCallback(
+                                eventCaptor.capture(),
+                                eq(5000L),
+                                any(AdobeCallbackWithError.class)),
+                times(1));
+        mockCore.verify(() -> MobileCore.dispatchEvent(any(Event.class)), never());
+        assertEquals("AudienceRequestContent", eventCaptor.getValue().getName());
+        assertEquals(EventType.AUDIENCEMANAGER, eventCaptor.getValue().getType());
+        assertEquals(EventSource.REQUEST_CONTENT, eventCaptor.getValue().getSource());
 
-	@Test
-	public void testSignalWithData_whenCalledWithCallback_dispatchesAudienceContentRequestWithResponseCallback() {
-		Map<String, String> sData = new HashMap<>();
-		sData.put("key1", "value1");
-		sData.put("key2", "value2");
-		Audience.signalWithData(
-			sData,
-			new AdobeCallbackWithError<Map<String, String>>() {
-				@Override
-				public void fail(AdobeError adobeError) {}
+        assertEquals(1, eventCaptor.getValue().getEventData().size());
+        Map<String, String> traits =
+                DataReader.optStringMap(eventCaptor.getValue().getEventData(), "aamtraits", null);
+        assertNotNull(traits);
+        assertEquals(sData, traits);
+    }
 
-				@Override
-				public void call(Map<String, String> stringStringMap) {}
-			}
-		);
+    @Test
+    public void testReset_dispatchesAudienceResetRequest() {
+        Audience.reset();
 
-		final ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
-		mockCore.verify(
-			() ->
-				MobileCore.dispatchEventWithResponseCallback(
-					eventCaptor.capture(),
-					eq(5000L),
-					any(AdobeCallbackWithError.class)
-				),
-			times(1)
-		);
-		mockCore.verify(() -> MobileCore.dispatchEvent(any(Event.class)), never());
-		assertEquals("AudienceRequestContent", eventCaptor.getValue().getName());
-		assertEquals(EventType.AUDIENCEMANAGER, eventCaptor.getValue().getType());
-		assertEquals(EventSource.REQUEST_CONTENT, eventCaptor.getValue().getSource());
+        final ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+        mockCore.verify(() -> MobileCore.dispatchEvent(eventCaptor.capture()), times(1));
 
-		assertEquals(1, eventCaptor.getValue().getEventData().size());
-		Map<String, String> traits = DataReader.optStringMap(eventCaptor.getValue().getEventData(), "aamtraits", null);
-		assertNotNull(traits);
-		assertEquals(sData, traits);
-	}
+        assertEquals("AudienceRequestReset", eventCaptor.getValue().getName());
+        assertEquals(EventType.AUDIENCEMANAGER, eventCaptor.getValue().getType());
+        assertEquals(EventSource.REQUEST_RESET, eventCaptor.getValue().getSource());
+        assertNull(eventCaptor.getValue().getEventData());
+    }
 
-	@Test
-	public void testReset_dispatchesAudienceResetRequest() {
-		Audience.reset();
+    private Properties loadProperties(final String filepath) {
+        Properties properties = new Properties();
+        InputStream input = null;
 
-		final ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
-		mockCore.verify(() -> MobileCore.dispatchEvent(eventCaptor.capture()), times(1));
+        try {
+            input = new FileInputStream(filepath);
 
-		assertEquals("AudienceRequestReset", eventCaptor.getValue().getName());
-		assertEquals(EventType.AUDIENCEMANAGER, eventCaptor.getValue().getType());
-		assertEquals(EventSource.REQUEST_RESET, eventCaptor.getValue().getSource());
-		assertNull(eventCaptor.getValue().getEventData());
-	}
+            properties.load(input);
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (input != null) {
+                try {
+                    input.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
 
-	private Properties loadProperties(final String filepath) {
-		Properties properties = new Properties();
-		InputStream input = null;
-
-		try {
-			input = new FileInputStream(filepath);
-
-			properties.load(input);
-		} catch (IOException e) {
-			e.printStackTrace();
-		} finally {
-			if (input != null) {
-				try {
-					input.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-		}
-
-		return properties;
-	}
+        return properties;
+    }
 }
