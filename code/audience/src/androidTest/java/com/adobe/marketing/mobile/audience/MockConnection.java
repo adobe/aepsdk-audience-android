@@ -17,42 +17,42 @@ import java.io.InputStream;
 
 public class MockConnection implements HttpConnecting {
 
-	private final int responseCode;
-	private final String payload;
+    private final int responseCode;
+    private final String payload;
 
-	MockConnection(final int responseCode, final String payload) {
-		this.responseCode = responseCode;
-		this.payload = payload;
-	}
+    MockConnection(final int responseCode, final String payload) {
+        this.responseCode = responseCode;
+        this.payload = payload;
+    }
 
-	@Override
-	public InputStream getInputStream() {
-		if (payload != null) {
-			return new ByteArrayInputStream(payload.getBytes());
-		}
-		return null;
-	}
+    @Override
+    public InputStream getInputStream() {
+        if (payload != null) {
+            return new ByteArrayInputStream(payload.getBytes());
+        }
+        return null;
+    }
 
-	@Override
-	public InputStream getErrorStream() {
-		return null;
-	}
+    @Override
+    public InputStream getErrorStream() {
+        return null;
+    }
 
-	@Override
-	public int getResponseCode() {
-		return responseCode;
-	}
+    @Override
+    public int getResponseCode() {
+        return responseCode;
+    }
 
-	@Override
-	public String getResponseMessage() {
-		return null;
-	}
+    @Override
+    public String getResponseMessage() {
+        return null;
+    }
 
-	@Override
-	public String getResponsePropertyValue(String s) {
-		return null;
-	}
+    @Override
+    public String getResponsePropertyValue(String s) {
+        return null;
+    }
 
-	@Override
-	public void close() {}
+    @Override
+    public void close() {}
 }
