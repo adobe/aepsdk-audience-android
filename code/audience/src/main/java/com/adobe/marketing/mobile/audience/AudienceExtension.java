@@ -719,7 +719,7 @@ public final class AudienceExtension extends Extension {
             Log.warning(
                     LOG_TAG,
                     LOG_SOURCE,
-                    "submitSignal - Dropping request with event id '%s' because URL is invalid",
+                    "submitSignal - Dropping request with event id '%s' because URL is invalid.",
                     event.getUniqueIdentifier());
         }
     }
