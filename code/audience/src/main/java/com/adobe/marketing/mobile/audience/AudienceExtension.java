@@ -710,8 +710,18 @@ public final class AudienceExtension extends Extension {
         // generate the url to send
         final String requestUrl = buildSignalUrl(server, signalData, event);
         Log.debug(LOG_TAG, LOG_SOURCE, "Queuing hit for url: %s", requestUrl);
-        AudienceDataEntity entity = new AudienceDataEntity(event, requestUrl, timeout);
-        hitQueue.queue(entity.toDataEntity());
+
+        // URLBuilder will return null, if the final URL is invalid. Drop the hit in that case.
+        if (requestUrl != null) {
+            AudienceDataEntity entity = new AudienceDataEntity(event, requestUrl, timeout);
+            hitQueue.queue(entity.toDataEntity());
+        } else {
+            Log.warning(
+                    LOG_TAG,
+                    LOG_SOURCE,
+                    "submitSignal - Dropping request with event id '%s' because URL is invalid.",
+                    event.getUniqueIdentifier());
+        }
     }
 
     /**
@@ -798,6 +808,11 @@ public final class AudienceExtension extends Extension {
                             networkRequest,
                             connection -> {
                                 if (connection == null) {
+                                    Log.trace(
+                                            LOG_TAG,
+                                            LOG_SOURCE,
+                                            "sendOptOutHit - Failed to send the opt-out hit because"
+                                                + " the connection is null (network is offline).");
                                     return;
                                 }
 
@@ -1178,6 +1193,12 @@ public final class AudienceExtension extends Extension {
                                     request,
                                     connection -> {
                                         if (connection == null) {
+                                            Log.trace(
+                                                    LOG_TAG,
+                                                    LOG_SOURCE,
+                                                    "processDestsArray - Failed to forward"
+                                                        + " destinations because the connection is"
+                                                        + " null (network is offline).");
                                             return;
                                         }
 

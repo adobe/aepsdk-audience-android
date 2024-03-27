@@ -107,12 +107,12 @@ class AudienceHitProcessor implements HitProcessing {
             Log.warning(
                     LOG_TAG,
                     LOG_SOURCE,
-                    "AAM could not process response connection because it was null, discarding"
-                            + " hit.");
+                    "AAM could not process network connection because it was null, Will retry"
+                            + " later.");
 
             // calls handler to update the shared state and notifies listeners accordingly
             networkResponseHandler.complete(null, requestEvent);
-            processingResult.complete(true);
+            processingResult.complete(false); // the device is offline, will retry later
             return;
         }
 
