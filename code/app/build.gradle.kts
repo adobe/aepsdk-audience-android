@@ -33,10 +33,10 @@ configure<com.diffplug.gradle.spotless.SpotlessExtension> {
 }
 
 android {
-    namespace = "com.adobe.audiencetestapp"
+    namespace = "com.adobe.marketing.mobile.audience.testapp"
 
     defaultConfig {
-        applicationId = "com.adobe.marketing.tester"
+        applicationId = "com.adobe.marketing.mobile.audience.testapp"
         minSdk = BuildConstants.Versions.MIN_SDK_VERSION
         compileSdk = BuildConstants.Versions.COMPILE_SDK_VERSION
         targetSdk = BuildConstants.Versions.TARGET_SDK_VERSION

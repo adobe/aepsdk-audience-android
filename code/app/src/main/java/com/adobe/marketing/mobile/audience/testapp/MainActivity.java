@@ -9,9 +9,7 @@
   governing permissions and limitations under the License.
 */
 
-package com.adobe.audiencetestapp;
-
-import static com.adobe.audiencetestapp.AudienceTestApp.LOG_TAG;
+package com.adobe.marketing.mobile.audience.testapp;
 
 import android.app.Activity;
 import android.app.Application;
@@ -50,7 +48,7 @@ public class MainActivity extends AppCompatActivity {
 
         if (data != null) {
             Assurance.startSession(data.toString());
-            Log.d(LOG_TAG, "Deep link received " + data);
+            Log.d(AudienceTestApp.LOG_TAG, "Deep link received " + data);
         }
 
         enableLifecycle();
@@ -101,7 +99,7 @@ public class MainActivity extends AppCompatActivity {
     public void getSDKIdentities(View view) {
         MobileCore.getSdkIdentities(
                 s -> {
-                    Log.d(LOG_TAG, "SDKIdentities received: " + s);
+                    Log.d(AudienceTestApp.LOG_TAG, "SDKIdentities received: " + s);
                     updateTvData(view, s);
                 });
     }
@@ -109,14 +107,14 @@ public class MainActivity extends AppCompatActivity {
     public void submitSignal(View view) {
         HashMap<String, String> map = new HashMap<>();
         map.put("mykey", "myvalue");
-        Audience.signalWithData(map, value -> Log.d(LOG_TAG, "stuff"));
+        Audience.signalWithData(map, value -> Log.d(AudienceTestApp.LOG_TAG, "stuff"));
     }
 
     public void getVisitorProfile(View view) {
         Audience.getVisitorProfile(
                 value -> {
                     final String visitorProfile = value != null ? value.toString() : "null";
-                    Log.d(LOG_TAG, "Visitor profile received: " + visitorProfile);
+                    Log.d(AudienceTestApp.LOG_TAG, "Visitor profile received: " + visitorProfile);
                     updateTvData(view, visitorProfile);
                 });
     }
