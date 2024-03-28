@@ -16,10 +16,10 @@ The test app needs to be configured with the following extensions before it can 
 
 ## Validation with Assurance
 
-Configure a new Assurance session by setting the Base URL to `audiencetestapp://main` and launch Assurance in the test app by running the following command in your terminal:
+Configure a new Assurance session by setting the Base URL to `testapp://main` and launch Assurance in the test app by running the following command in your terminal:
 
 ```bash
-$ adb shell am start -W -a  android.intent.action.VIEW -d "audiencetestapp://main?adb_validation_sessionid=ADD_YOUR_SESSION_ID_HERE" com.adobe.audiencetestapp
+$ adb shell am start -W -a  android.intent.action.VIEW -d "testapp://main?adb_validation_sessionid=ADD_YOUR_SESSION_ID_HERE" com.adobe.marketing.mobile.audience.testapp
 ```
 
 > **Note**
