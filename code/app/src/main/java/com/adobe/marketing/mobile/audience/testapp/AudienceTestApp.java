@@ -9,7 +9,7 @@
   governing permissions and limitations under the License.
 */
 
-package com.adobe.audiencetestapp;
+package com.adobe.marketing.mobile.audience.testapp;
 
 import android.app.Application;
 import android.util.Log;
