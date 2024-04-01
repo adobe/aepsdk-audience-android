@@ -71,18 +71,9 @@ configurations.configureEach {
 dependencies {
     implementation(project(":audience"))
 
-    implementation("com.adobe.marketing.mobile:core:$mavenCoreVersion-SNAPSHOT")
-    implementation("com.adobe.marketing.mobile:identity:3.0.0-SNAPSHOT"){
-        exclude(group = "com.adobe.marketing.mobile", module = "core")
-    }
-
-    implementation("com.adobe.marketing.mobile:lifecycle:3.0.0-SNAPSHOT"){
-        exclude(group = "com.adobe.marketing.mobile", module = "core")
-    }
-    implementation("com.adobe.marketing.mobile:analytics:3.0.0-SNAPSHOT"){
-        exclude(group = "com.adobe.marketing.mobile", module = "core")
-    }
-    implementation("com.adobe.marketing.mobile:assurance:3.0.0-SNAPSHOT"){
-        exclude(group = "com.adobe.marketing.mobile", module = "core")
-    }
+    implementation("com.adobe.marketing.mobile:core:$mavenCoreVersion")
+    implementation("com.adobe.marketing.mobile:identity:3.0.0")
+    implementation("com.adobe.marketing.mobile:lifecycle:3.0.0")
+    implementation("com.adobe.marketing.mobile:analytics:3.0.0")
+    implementation("com.adobe.marketing.mobile:assurance:3.0.0")
 }
