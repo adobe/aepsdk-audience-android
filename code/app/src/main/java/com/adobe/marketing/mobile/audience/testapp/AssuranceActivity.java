@@ -9,7 +9,7 @@
   governing permissions and limitations under the License.
 */
 
-package com.adobe.audiencetestapp;
+package com.adobe.marketing.mobile.audience.testapp;
 
 import android.os.Bundle;
 import android.widget.Button;
@@ -17,24 +17,21 @@ import android.widget.EditText;
 import androidx.appcompat.app.AppCompatActivity;
 import com.adobe.marketing.mobile.Assurance;
 
-/**
- * An activity representing the Assurance connection screen
- */
+/** An activity representing the Assurance connection screen */
 public class AssuranceActivity extends AppCompatActivity {
 
-	Button btnConnectToAssuranceSession = null;
-	EditText txtAssuranceSessionURL = null;
+    Button btnConnectToAssuranceSession = null;
+    EditText txtAssuranceSessionURL = null;
 
-	@Override
-	protected void onCreate(final Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-		setContentView(R.layout.activity_assurance);
-		btnConnectToAssuranceSession = findViewById(R.id.btnConnectToAssuranceSession);
-		txtAssuranceSessionURL = findViewById(R.id.txtAssuranceSessionURL);
+    @Override
+    protected void onCreate(final Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_assurance);
+        btnConnectToAssuranceSession = findViewById(R.id.btnConnectToAssuranceSession);
+        txtAssuranceSessionURL = findViewById(R.id.txtAssuranceSessionURL);
 
-		//Set up button events
-		btnConnectToAssuranceSession.setOnClickListener(v ->
-			Assurance.startSession(txtAssuranceSessionURL.getText().toString())
-		);
-	}
+        // Set up button events
+        btnConnectToAssuranceSession.setOnClickListener(
+                v -> Assurance.startSession(txtAssuranceSessionURL.getText().toString()));
+    }
 }

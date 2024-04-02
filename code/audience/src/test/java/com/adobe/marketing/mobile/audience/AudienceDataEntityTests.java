@@ -22,98 +22,98 @@ import org.junit.Test;
 
 public class AudienceDataEntityTests {
 
-	private static final Event TEST_EVENT = new Event.Builder("test", "all", "things").build();
-	private static final String TEST_URL = "test.server.com";
+    private static final Event TEST_EVENT = new Event.Builder("test", "all", "things").build();
+    private static final String TEST_URL = "test.server.com";
 
-	@Test
-	public void testConstructor_allParams() {
-		AudienceDataEntity entity = new AudienceDataEntity(TEST_EVENT, TEST_URL, 5);
-		assertEquals(TEST_EVENT, entity.getEvent());
-		assertEquals(TEST_URL, entity.getUrl());
-		assertEquals(5, entity.getTimeoutSec());
-	}
+    @Test
+    public void testConstructor_allParams() {
+        AudienceDataEntity entity = new AudienceDataEntity(TEST_EVENT, TEST_URL, 5);
+        assertEquals(TEST_EVENT, entity.getEvent());
+        assertEquals(TEST_URL, entity.getUrl());
+        assertEquals(5, entity.getTimeoutSec());
+    }
 
-	@Test(expected = IllegalArgumentException.class)
-	public void testConstructor_withNullEvent_throwsIllegalArgumentEx() {
-		new AudienceDataEntity(null, TEST_URL, 5);
-	}
+    @Test(expected = IllegalArgumentException.class)
+    public void testConstructor_withNullEvent_throwsIllegalArgumentEx() {
+        new AudienceDataEntity(null, TEST_URL, 5);
+    }
 
-	@Test
-	public void testConstructor_whenNullUrl() {
-		AudienceDataEntity entity = new AudienceDataEntity(TEST_EVENT, null, 5);
-		assertNotNull(entity.getEvent());
-		assertNull(entity.getUrl());
-		assertEquals(5, entity.getTimeoutSec());
-	}
+    @Test
+    public void testConstructor_whenNullUrl() {
+        AudienceDataEntity entity = new AudienceDataEntity(TEST_EVENT, null, 5);
+        assertNotNull(entity.getEvent());
+        assertNull(entity.getUrl());
+        assertEquals(5, entity.getTimeoutSec());
+    }
 
-	@Test
-	public void testToFromDataEntity() {
-		Event event = new Event.Builder("name", "type", "source")
-			.setEventData(
-				new HashMap<String, Object>() {
-					{
-						put("key", "value");
-					}
-				}
-			)
-			.build();
+    @Test
+    public void testToFromDataEntity() {
+        Event event =
+                new Event.Builder("name", "type", "source")
+                        .setEventData(
+                                new HashMap<String, Object>() {
+                                    {
+                                        put("key", "value");
+                                    }
+                                })
+                        .build();
 
-		AudienceDataEntity entity = new AudienceDataEntity(event, TEST_URL, 5);
-		DataEntity serializedEntity = entity.toDataEntity();
-		assertNotNull(serializedEntity);
+        AudienceDataEntity entity = new AudienceDataEntity(event, TEST_URL, 5);
+        DataEntity serializedEntity = entity.toDataEntity();
+        assertNotNull(serializedEntity);
 
-		AudienceDataEntity deserializedEntity = AudienceDataEntity.fromDataEntity(serializedEntity);
-		assertNotNull(deserializedEntity);
+        AudienceDataEntity deserializedEntity = AudienceDataEntity.fromDataEntity(serializedEntity);
+        assertNotNull(deserializedEntity);
 
-		assertEquals(TEST_URL, deserializedEntity.getUrl());
-		assertEquals(5, deserializedEntity.getTimeoutSec());
+        assertEquals(TEST_URL, deserializedEntity.getUrl());
+        assertEquals(5, deserializedEntity.getTimeoutSec());
 
-		// Assert Event
-		Event deserializedEvent = deserializedEntity.getEvent();
-		assertNotNull(deserializedEvent);
-		assertEquals(event.getName(), deserializedEvent.getName());
-		assertEquals(event.getType(), deserializedEvent.getType());
-		assertEquals(event.getSource(), deserializedEvent.getSource());
-		assertEquals(event.getUniqueIdentifier(), deserializedEvent.getUniqueIdentifier());
-		assertEquals(event.getTimestamp(), deserializedEvent.getTimestamp());
-		assertEquals(event.getEventData(), deserializedEvent.getEventData());
-	}
+        // Assert Event
+        Event deserializedEvent = deserializedEntity.getEvent();
+        assertNotNull(deserializedEvent);
+        assertEquals(event.getName(), deserializedEvent.getName());
+        assertEquals(event.getType(), deserializedEvent.getType());
+        assertEquals(event.getSource(), deserializedEvent.getSource());
+        assertEquals(event.getUniqueIdentifier(), deserializedEvent.getUniqueIdentifier());
+        assertEquals(event.getTimestamp(), deserializedEvent.getTimestamp());
+        assertEquals(event.getEventData(), deserializedEvent.getEventData());
+    }
 
-	@Test
-	public void testToFromDataEntity_withNullUrl() {
-		AudienceDataEntity entity = new AudienceDataEntity(TEST_EVENT, null, 5);
-		DataEntity serializedEntity = entity.toDataEntity();
-		assertNotNull(serializedEntity);
+    @Test
+    public void testToFromDataEntity_withNullUrl() {
+        AudienceDataEntity entity = new AudienceDataEntity(TEST_EVENT, null, 5);
+        DataEntity serializedEntity = entity.toDataEntity();
+        assertNotNull(serializedEntity);
 
-		AudienceDataEntity deserializedEntity = AudienceDataEntity.fromDataEntity(serializedEntity);
-		assertNotNull(deserializedEntity);
+        AudienceDataEntity deserializedEntity = AudienceDataEntity.fromDataEntity(serializedEntity);
+        assertNotNull(deserializedEntity);
 
-		assertNull(deserializedEntity.getUrl());
-		assertEquals(5, deserializedEntity.getTimeoutSec());
+        assertNull(deserializedEntity.getUrl());
+        assertEquals(5, deserializedEntity.getTimeoutSec());
 
-		// Assert Event
-		Event deserializedEvent = deserializedEntity.getEvent();
-		assertNotNull(deserializedEvent);
-		assertEquals(TEST_EVENT.getName(), deserializedEvent.getName());
-		assertEquals(TEST_EVENT.getType(), deserializedEvent.getType());
-		assertEquals(TEST_EVENT.getSource(), deserializedEvent.getSource());
-		assertEquals(TEST_EVENT.getUniqueIdentifier(), deserializedEvent.getUniqueIdentifier());
-		assertEquals(TEST_EVENT.getTimestamp(), deserializedEvent.getTimestamp());
-		assertEquals(TEST_EVENT.getEventData(), deserializedEvent.getEventData());
-	}
+        // Assert Event
+        Event deserializedEvent = deserializedEntity.getEvent();
+        assertNotNull(deserializedEvent);
+        assertEquals(TEST_EVENT.getName(), deserializedEvent.getName());
+        assertEquals(TEST_EVENT.getType(), deserializedEvent.getType());
+        assertEquals(TEST_EVENT.getSource(), deserializedEvent.getSource());
+        assertEquals(TEST_EVENT.getUniqueIdentifier(), deserializedEvent.getUniqueIdentifier());
+        assertEquals(TEST_EVENT.getTimestamp(), deserializedEvent.getTimestamp());
+        assertEquals(TEST_EVENT.getEventData(), deserializedEvent.getEventData());
+    }
 
-	@Test
-	public void testFromDataEntity_whenDataEntityWithNullData_returnsNull() {
-		assertNull(AudienceDataEntity.fromDataEntity(new DataEntity(null)));
-	}
+    @Test
+    public void testFromDataEntity_whenDataEntityWithNullData_returnsNull() {
+        assertNull(AudienceDataEntity.fromDataEntity(new DataEntity(null)));
+    }
 
-	@Test
-	public void testFromDataEntity_whenDataEntityWithEmptyData_returnsNull() {
-		assertNull(AudienceDataEntity.fromDataEntity(new DataEntity("")));
-	}
+    @Test
+    public void testFromDataEntity_whenDataEntityWithEmptyData_returnsNull() {
+        assertNull(AudienceDataEntity.fromDataEntity(new DataEntity("")));
+    }
 
-	@Test
-	public void testFromDataEntity_whenInvalidDataEntity_returnsNull() {
-		assertNull(AudienceDataEntity.fromDataEntity(new DataEntity("abc")));
-	}
+    @Test
+    public void testFromDataEntity_whenInvalidDataEntity_returnsNull() {
+        assertNull(AudienceDataEntity.fromDataEntity(new DataEntity("abc")));
+    }
 }

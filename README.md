@@ -15,7 +15,7 @@ Integrate the Audience mobile extension into your app by following the [getting 
 
 **Open the project**
 
-To open and run the project, open the `code/settings.gradle` file in Android Studio.
+To open and run the project, open the `code/settings.gradle.kt` file in Android Studio.
 
 
 **Run test application**
@@ -29,7 +29,6 @@ To configure and run the test app for this project, follow the [getting started 
 | [Core extensions](https://github.com/adobe/aepsdk-core-android)                      | The Mobile Core represents the foundation of the Adobe Experience Platform mobile SDK.               |
 | [Analytics extension](https://github.com/adobe/aepsdk-analytics-android)             | The Analytics extension allows for sending mobile interaction data from your app to Adobe Analytics. |
 | [Assurance extension](https://github.com/adobe/aepsdk-assurance-android)             | The Assurance extension enables validation workflows for your SDK implementation.                    |
-| [Adobe Experience Platform Mobile SDK sample app for Android](https://github.com/adobe/aepsdk-sample-app-android) | Contains Android sample app for the Mobile SDKs.                                                        |
 
 ## Documentation
 

@@ -8,7 +8,6 @@ Refer to the [Getting started guide](./getting-started.md)
 
 - [extensionVersion](#extensionversion)
 - [getVisitorProfile](#getvisitorprofile)
-- [registerExtension](#registerextension)
 - [reset](#reset)
 - [signalWithData](#signalwithdata)
 
@@ -33,10 +32,6 @@ String audienceExtensionVersion = Audience.extensionVersion();
 ```
 
 #### Kotlin
-##### Syntax
-```kotlin
-fun extensionVersion(): String
-```
 
 ##### Example
 ```kotlin
@@ -68,48 +63,12 @@ Audience.getVisitorProfile(new AdobeCallback<Map<String, String>>() {
 
 #### Kotlin
 
-##### Syntax
-```kotlin
-fun getVisitorProfile(adobeCallback: AdobeCallback<Map<String, String?>?>)
-```
-
 ##### Example
 ```kotlin
 Audience.getVisitorProfile { visitorProfile ->
     // provide code to process the visitorProfile
 }
 
-```
-
-## registerExtension
-
-> **Warning**
-> Deprecated as of 2.0.0. Use the [MobileCore.registerExtensions API](https://github.com/adobe/aepsdk-core-android/blob/main/Documentation/MobileCore/api-reference.md) instead.
-
-Registers the Audience extension with `MobileCore`.
-
-#### Java
-
-##### Syntax
-```java
-public static void registerExtension();
-```
-
-##### Example
-```java
-Audience.registerExtension();
-```
-
-#### Kotlin
-
-##### Syntax
-```kotlin
-fun registerExtension()
-```
-
-##### Example
-```kotlin
-Audience.registerExtension()
 ```
 
 ## reset
@@ -129,11 +88,6 @@ Audience.reset();
 ```
 
 #### Kotlin
-
-##### Syntax
-```kotlin
-fun reset()
-```
 
 ##### Example
 ```kotlin
@@ -176,13 +130,6 @@ Audience.signalWithData(traits, new AdobeCallback<Map<String, String>>() {
 ```
 
 #### Kotlin
-
-##### Syntax
-```kotlin
-fun signalWithData(
-        data: Map<String, String?>,
-        adobeCallback: AdobeCallback<Map<String, String?>?>?)
-```
 
 ##### Example
 ```kotlin
