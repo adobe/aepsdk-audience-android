@@ -31,10 +31,9 @@ checkformat:
 format-license:
 	(./code/gradlew -p code licenseFormat)
 
-lint:
+# Used by build and test CI workflow
+lint: checkformat
 	(./code/gradlew -p code/$(EXTENSION-LIBRARY-FOLDER-NAME) lint)
-
-ci-lint: checkformat lint
 
 unit-test:
 	(./code/gradlew -p code/$(EXTENSION-LIBRARY-FOLDER-NAME) testPhoneDebugUnitTest)
