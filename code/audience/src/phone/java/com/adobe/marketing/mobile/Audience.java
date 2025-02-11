@@ -24,7 +24,7 @@ public final class Audience {
     private static final String LOG_TAG = "Audience";
     private static final String LOG_SOURCE = "Audience";
 
-    private static final String EXTENSION_VERSION = "3.0.0";
+    private static final String EXTENSION_VERSION = "3.0.1";
     private static final int CALLBACK_TIMEOUT_MILLIS = 5000;
 
     @NonNull public static final Class<? extends Extension> EXTENSION = AudienceExtension.class;
